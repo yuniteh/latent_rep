@@ -30,5 +30,5 @@ def process_daq(daq,params,win=200,ch=6):
 def process_df(params):
     df = pd.DataFrame(data=params,columns=['sub','trial','ind','group','class','pos'])
     df = df.set_index('sub')
-
+    
     return df
