@@ -9,12 +9,12 @@ def train_lda(data,label):
     n_class = u_class.shape[0]
 
     mu = np.mean(data,axis=0,keepdims = True)
-    C = np.zeros([m,m]);
+    C = np.zeros([m,m])
     mu_class = np.zeros([n_class,m])
     Sb = np.zeros([mu.shape[1],mu.shape[1]])
 
     for i in range(0,n_class):
-        ind = label == u_class[i];
+        ind = label == u_class[i]
         mu_class[i,:] = np.mean(data[ind[:,0],:],axis=0,keepdims=True)
         Sb += ind.shape[0] * np.dot((mu_class[np.newaxis,i,:] - mu).T,(mu_class[np.newaxis,i,:] - mu))
         C += np.cov(data[ind[:,0],:].T)
@@ -37,12 +37,12 @@ def train_lda2(data,label):
     n_class = u_class.shape[0]
 
     mu = np.mean(data,axis=1,keepdims = True)
-    C = np.zeros([m,m]);
+    C = np.zeros([m,m])
     mu_class = np.zeros([m,n_class])
     Sb = np.zeros([mu.shape[0],mu.shape[0]])
 
     for i in range(0,n_class):
-        ind = label == u_class[i];
+        ind = label == u_class[i]
         mu_class[:,i,np.newaxis] = np.mean(data[:,ind[0,:]],axis=1,keepdims=True)
         Sb += ind.shape[1] * np.dot((mu_class[:,i,np.newaxis] - mu).T,(mu_class[:,i,np.newaxis] - mu))
         C += np.cov(data[:,ind[0,:]])
