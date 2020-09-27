@@ -78,7 +78,7 @@ def build_vae(latent_dim, input_type='feat'):
     z_log_var = Dense(latent_dim, name="z_log_var")(x)
     z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
     encoder = Model(inputs, [z_mean, z_log_var, z], name="encoder")
-    encoder.summary()
+    # encoder.summary()
     plot_model(encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
 
     # build decoder model
@@ -89,14 +89,15 @@ def build_vae(latent_dim, input_type='feat'):
     x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
     decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
     decoder = Model(latent_inputs, decoder_outputs, name="decoder")
-    decoder.summary()
+    # decoder.summary()
     plot_model(decoder, to_file='vae_mlp_decoder.png', show_shapes=True)
 
     # New: add a classifier
     clf_latent_inputs = Input(shape=(latent_dim,), name='z_sampling_clf')
-    clf_outputs = Dense(7, activation='softmax', name='class_output')(clf_latent_inputs)
+    clf_outputs = Dense(32, activation='relu')(clf_latent_inputs)
+    clf_outputs = Dense(7, activation='softmax', name='class_output')(clf_outputs)
     clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
-    clf_supervised.summary()
+    # clf_supervised.summary()
 
     # instantiate VAE model
     outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]
