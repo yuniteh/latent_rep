@@ -2,7 +2,14 @@ import numpy as np
 import scipy.io 
 import pandas as pd
 
-# train LDA classifier for data: (samples,feat)
+# train and predict for data: (samples,feat), label: (samples, 1)
+def eval_lda(x_train, y_train, x_test, y_test):
+    w, c = train_lda(x_train, y_train)
+    out = predict(x_test, w, c)
+    acc = np.sum(out.reshape(y_test.shape) == y_test)/y_test.shape[0]
+    return acc
+
+# train LDA classifier for data: (samples,feat), label: (samples, 1)
 def train_lda(data,label):
     m = data.shape[1]
     u_class = np.unique(label)
