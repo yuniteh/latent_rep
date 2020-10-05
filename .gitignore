@@ -1,3 +1,5 @@
 *.mat
+*.h5
+*.png
 MyoArmbandDataset-master/EvaluationDataset
 MyoArmbandDataset-master/PreTrainingDataset

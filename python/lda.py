@@ -3,8 +3,7 @@ import scipy.io
 import pandas as pd
 
 # train and predict for data: (samples,feat), label: (samples, 1)
-def eval_lda(x_train, y_train, x_test, y_test):
-    w, c = train_lda(x_train, y_train)
+def eval_lda(w, c, x_test, y_test):
     out = predict(x_test, w, c)
     acc = np.sum(out.reshape(y_test.shape) == y_test)/y_test.shape[0]
     return acc
