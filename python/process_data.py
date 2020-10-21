@@ -13,6 +13,7 @@ def load_raw(filename):
 
     return daq,pvd
 
+# params structure: [subject ID, Iter, Index, Training group, DOF, Pos]
 def load_train_data(filename):
     struct = scipy.io.loadmat(filename)
     feat = struct['feat']
