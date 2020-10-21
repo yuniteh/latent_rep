@@ -103,6 +103,7 @@ def norm_sub(feat, params):
     return feat
 
 def add_noise(raw, params, sub):
+    # Index subject and training group
     ind = (params[:,0] == sub) & (params[:,3] == 2)
     num_ch = raw.shape[1]
     sub_params = np.tile(params[ind,:],(num_ch+1,1))
