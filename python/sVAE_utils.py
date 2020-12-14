@@ -142,32 +142,32 @@ def build_svae_corrupt(latent_dim, n_class, input_type='feat'):
         inter_shape = (3,50,1)
 
     inputs = Input(shape=input_shape)
-    x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(inputs)
-    x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(x)
+    x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
+    x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = Flatten()(x)
     x = Dense(16, activation="relu")(x)
     z_mean = Dense(latent_dim, name="z_mean")(x)
     z_log_var = Dense(latent_dim, name="z_log_var")(x)
     z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
     encoder = Model(inputs, [z_mean, z_log_var, z], name="encoder")
-    # encoder.summary()
+    encoder.summary()
 
     # build decoder model
     latent_inputs = Input(shape=(latent_dim,))
     x = Dense(inter_shape[0]*inter_shape[1]*32, activation="relu")(latent_inputs)
     x = Reshape((inter_shape[0], inter_shape[1], 32))(x)
-    x = Conv2DTranspose(32, 3, activation="relu", strides=1, padding="same")(x)
     x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
+    # x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
     decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
     decoder = Model(latent_inputs, decoder_outputs, name="decoder")
-    # decoder.summary()
+    decoder.summary()
 
     # New: add a classifier
     clf_latent_inputs = Input(shape=(latent_dim,), name='z_sampling_clf')
     # clf_outputs = Dense(32, activation='relu')(clf_latent_inputs)
     clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
     clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
-    # clf_supervised.summary()
+    clf_supervised.summary()
 
     # instantiate VAE model
     outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]

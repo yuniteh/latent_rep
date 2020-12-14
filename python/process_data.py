@@ -104,15 +104,16 @@ def norm_sub(feat, params):
 
 def add_noise(raw, params, sub):
     # Index subject and training group
-    ind = (params[:,0] == sub) & (params[:,3] == 1)
     num_ch = raw.shape[1] + 1
-    sub_params = np.tile(params[ind,:],(num_ch,1))
-    orig = np.tile(raw[ind,:,:],(num_ch,1,1))
-    out = raw[ind,:,:]
+    sub_params = np.tile(params,(num_ch,1))
+    orig = np.tile(raw,(num_ch,1,1))
+    out = raw
 
     for ch in range(0,num_ch-1):
-        temp = raw[ind,:,:]
+        temp = raw
         temp[:,ch,:] = 0
+        # temp = np.zeros(raw[ind,:,:].shape)
+        # temp[:,ch,:] = raw[ind,ch,:]
         out = np.concatenate((out,temp))
 
     x, x2, y = out,orig,to_categorical(sub_params[:,-2]-1)
