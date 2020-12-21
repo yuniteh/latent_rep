@@ -102,25 +102,31 @@ def norm_sub(feat, params):
     
     return feat
 
-def add_noise(raw, params, sub):
+def add_noise(raw, params, sub, n_type='flat', scale=1):
     # Index subject and training group
-    num_ch = raw.shape[1] + 1
-    sub_params = np.tile(params,(num_ch,1))
-    orig = np.tile(raw,(num_ch,1,1))
+    num_ch = raw.shape[1]
+    sub_params = np.tile(params,(num_ch+1,1))
+    orig = np.tile(raw,(num_ch+1,1,1))
     out = raw
 
-    for ch in range(0,num_ch-1):
+    for ch in range(0,num_ch):
         temp = raw
-        temp[:,ch,:] = 0
+        if n_type == 'gaussian':
+            temp[:,ch,:] += np.random.normal(0,scale,temp.shape[2])
+        elif n_type == 'flat':
+            temp[:,ch,:] = 0
         # temp = np.zeros(raw[ind,:,:].shape)
         # temp[:,ch,:] = raw[ind,ch,:]
         out = np.concatenate((out,temp))
 
-    x, x2, y = out,orig,to_categorical(sub_params[:,-2]-1)
+    noisy, clean, y = out, orig, to_categorical(sub_params[:,-2]-1)
+    # x, x2, y = out,orig,to_categorical(sub_params[:,-2]-1)
     # Add dimension to x data to fit CNN architecture
-    x = x[...,np.newaxis]
-    x2 = x2[...,np.newaxis]
-    return x,x2,y
+    # x = x[...,np.newaxis]
+    # x2 = x2[...,np.newaxis]
+    clean = clean[...,np.newxis]
+    noisy = noisy[...,np.newaxis]
+    return clean,noisy,y
 
 def extract_feats(raw):
     raw = np.squeeze(raw)
