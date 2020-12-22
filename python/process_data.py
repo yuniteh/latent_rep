@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.io 
 import pandas as pd
+import copy as cp
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
@@ -107,14 +108,14 @@ def add_noise(raw, params, sub, n_type='flat', scale=1):
     num_ch = raw.shape[1]
     sub_params = np.tile(params,(num_ch+1,1))
     orig = np.tile(raw,(num_ch+1,1,1))
-    out = raw[:,:,:]
+    out = cp.copy(raw)
 
     for ch in range(0,num_ch):
-        temp = raw
-        if n_type == 'gaussian':
-            temp[:,ch,:] += np.random.normal(0,scale,temp.shape[2])
-        elif n_type == 'flat':
-            temp[:,ch,:] = 0
+        temp = cp.copy(raw)
+        # if n_type == 'gaussian':
+        #     temp[:,ch,:] += np.random.normal(0,scale,temp.shape[2])
+        # elif n_type == 'flat':
+        temp[:,ch,:] = 0
         # temp = np.zeros(raw[ind,:,:].shape)
         # temp[:,ch,:] = raw[ind,ch,:]
         out = np.concatenate((out,temp))
