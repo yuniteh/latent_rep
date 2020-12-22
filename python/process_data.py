@@ -107,7 +107,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=1):
     num_ch = raw.shape[1]
     sub_params = np.tile(params,(num_ch+1,1))
     orig = np.tile(raw,(num_ch+1,1,1))
-    out = raw
+    out = raw[:,:,:]
 
     for ch in range(0,num_ch):
         temp = raw
@@ -124,7 +124,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=1):
     # Add dimension to x data to fit CNN architecture
     # x = x[...,np.newaxis]
     # x2 = x2[...,np.newaxis]
-    clean = clean[...,np.newxis]
+    clean = clean[...,np.newaxis]
     noisy = noisy[...,np.newaxis]
     return clean,noisy,y
 
