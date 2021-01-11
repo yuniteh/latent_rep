@@ -112,10 +112,10 @@ def add_noise(raw, params, sub, n_type='flat', scale=1):
 
     for ch in range(0,num_ch):
         temp = cp.copy(raw)
-        # if n_type == 'gaussian':
-        #     temp[:,ch,:] += np.random.normal(0,scale,temp.shape[2])
-        # elif n_type == 'flat':
-        temp[:,ch,:] = 0
+        if n_type == 'gauss':
+            temp[:,ch,:] += np.random.normal(0,scale,temp.shape[2])
+        elif n_type == 'flat':
+            temp[:,ch,:] = 0
         # temp = np.zeros(raw[ind,:,:].shape)
         # temp[:,ch,:] = raw[ind,ch,:]
         out = np.concatenate((out,temp))
@@ -127,7 +127,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=1):
     # x2 = x2[...,np.newaxis]
     clean = clean[...,np.newaxis]
     noisy = noisy[...,np.newaxis]
-    return clean,noisy,y
+    return noisy,clean,y
 
 def extract_feats(raw):
     raw = np.squeeze(raw)

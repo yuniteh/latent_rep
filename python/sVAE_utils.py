@@ -150,7 +150,7 @@ def build_svae_corrupt(latent_dim, n_class, input_type='feat'):
     z_log_var = Dense(latent_dim, name="z_log_var")(x)
     z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
     encoder = Model(inputs, [z_mean, z_log_var, z], name="encoder")
-    encoder.summary()
+    # encoder.summary()
 
     # build decoder model
     latent_inputs = Input(shape=(latent_dim,))
@@ -160,14 +160,14 @@ def build_svae_corrupt(latent_dim, n_class, input_type='feat'):
     # x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
     decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
     decoder = Model(latent_inputs, decoder_outputs, name="decoder")
-    decoder.summary()
+    # decoder.summary()
 
     # New: add a classifier
     clf_latent_inputs = Input(shape=(latent_dim,), name='z_sampling_clf')
     # clf_outputs = Dense(32, activation='relu')(clf_latent_inputs)
     clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
     clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
-    clf_supervised.summary()
+    # clf_supervised.summary()
 
     # instantiate VAE model
     outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]
@@ -195,19 +195,50 @@ def build_svae_corrupt(latent_dim, n_class, input_type='feat'):
     vae.compile(optimizer='adam', loss=[VAE_loss,'categorical_crossentropy'],experimental_run_tf_function=False)
     return vae, encoder, decoder, clf_supervised
 
+def build_ae(latent_dim, n_class, input_type='feat'):
+    # build encoder model
+    if input_type == 'feat':
+        input_shape = (6,4,1)
+    elif input_type == 'raw':
+        input_shape = (6,100,1)
+
+    inputs = Input(shape=input_shape)
+    x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
+    x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
+    x = Flatten()(x)
+    x = Dense(16, activation="relu")(x)
+    z_mean = Dense(latent_dim, name="z_mean")(x)
+    z_log_var = Dense(latent_dim, name="z_log_var")(x)
+    z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
+    encoder = Model(inputs, [z_mean, z_log_var, z], name="encoder")
+    # encoder.summary()
+
+    # classifier
+    clf_latent_inputs = Input(shape=(latent_dim,), name='z_sampling_clf')
+    clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
+    clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
+    # clf_supervised.summary()
+
+    # instantiate VAE model
+    outputs = clf_supervised(encoder(inputs)[2])
+    vae = Model(inputs, outputs, name='vae_mlp')
+
+    vae.compile(optimizer='adam', loss='categorical_crossentropy',experimental_run_tf_function=False)
+    return vae, encoder, clf_supervised
+    
 def build_vae_corrupt(latent_dim, input_type='feat'):
     # VAE model = encoder + decoder
     # build encoder model
     if input_type == 'feat':
-        input_shape = (6,10,1)
-        inter_shape = (3,5,1)
+        input_shape = (6,4,1)
+        inter_shape = (3,2,1)
     elif input_type == 'raw':
         input_shape = (6,100,1)
         inter_shape = (3,50,1)
 
     inputs = Input(shape=input_shape)
-    x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(inputs)
-    x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(x)
+    x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
+    x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = Flatten()(x)
     x = Dense(16, activation="relu")(x)
     z_mean = Dense(latent_dim, name="z_mean")(x)
@@ -220,7 +251,7 @@ def build_vae_corrupt(latent_dim, input_type='feat'):
     latent_inputs = Input(shape=(latent_dim,))
     x = Dense(inter_shape[0]*inter_shape[1]*32, activation="relu")(latent_inputs)
     x = Reshape((inter_shape[0], inter_shape[1], 32))(x)
-    x = Conv2DTranspose(32, 3, activation="relu", strides=1, padding="same")(x)
+    # x = Conv2DTranspose(32, 3, activation="relu", strides=1, padding="same")(x)
     x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
     decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
     decoder = Model(latent_inputs, decoder_outputs, name="decoder")
@@ -242,7 +273,6 @@ def build_vae_corrupt(latent_dim, input_type='feat'):
         vae_loss = K.mean((reconstruction_loss + kl_loss)/100.0)
         return vae_loss
     # reconstruction_loss = tf.reduce_mean(mse(inputs, outputs[0]))
-
     # reconstruction_loss *= input_shape[0] * input_shape[1]
     # kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
     # kl_loss = K.sum(kl_loss, axis=-1)
