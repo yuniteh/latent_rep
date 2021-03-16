@@ -195,7 +195,7 @@ def build_svae_corrupt(latent_dim, n_class, input_type='feat'):
     vae.compile(optimizer='adam', loss=[VAE_loss,'categorical_crossentropy'],experimental_run_tf_function=False)
     return vae, encoder, decoder, clf_supervised
 
-def build_ae(latent_dim, n_class, input_type='feat'):
+def build_sae(latent_dim, n_class, input_type='feat'):
     # build encoder model
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -211,13 +211,11 @@ def build_ae(latent_dim, n_class, input_type='feat'):
     z_log_var = Dense(latent_dim, name="z_log_var")(x)
     z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
     encoder = Model(inputs, [z_mean, z_log_var, z], name="encoder")
-    # encoder.summary()
 
     # classifier
     clf_latent_inputs = Input(shape=(latent_dim,), name='z_sampling_clf')
     clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
     clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
-    # clf_supervised.summary()
 
     # instantiate VAE model
     outputs = clf_supervised(encoder(inputs)[2])
@@ -351,12 +349,19 @@ def eval_vae_s(enc, clf, x_test, y_test):
     return y_pred, acc
 
 def eval_vae(vae, x_test, y_test):
-    y_pred = np.argmax(vae.predict(x=x_test)[1], axis=1)
+    try:
+        y_pred = np.argmax(vae.predict(x=x_test)[1], axis=1)
+    except:
+        y_pred = np.argmax(vae.predict(x=x_test), axis=1)
     acc = np.sum(np.argmax(y_test, axis=1) == y_pred)/y_pred.shape[0]
     return y_pred, acc
 
-def recon_vae(vae, x_test):
+def recon_svae(vae, x_test):
     x_pred = vae.predict(x=x_test)[0]
+    return x_pred
+
+def recon_vae(vae, x_test):
+    x_pred = vae.predict(x=x_test)
     return x_pred
 
 def build_pnn(source_weights, latent_dim, input_type='feat'):

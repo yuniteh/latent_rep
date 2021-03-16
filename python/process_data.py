@@ -112,10 +112,14 @@ def add_noise(raw, params, sub, n_type='flat', scale=1):
 
     for ch in range(0,num_ch):
         temp = cp.copy(raw)
-        if n_type == 'gauss':
+        if n_type == 'gaussflat':
+            temp[:temp.shape[0]//3,ch,:] += np.random.normal(0,scale,temp.shape[2])
+            temp[temp.shape[0]//3:2*temp.shape[0]//3,ch,:] += np.random.normal(0,scale/2,temp.shape[2])
+            temp[2*temp.shape[0]//3:,ch,:] = 0 
+        elif n_type == 'gauss':
             temp[:,ch,:] += np.random.normal(0,scale,temp.shape[2])
         elif n_type == 'flat':
-            temp[:,ch,:] = 0
+            temp[:,ch,:] = 0 
         # temp = np.zeros(raw[ind,:,:].shape)
         # temp[:,ch,:] = raw[ind,ch,:]
         out = np.concatenate((out,temp))
