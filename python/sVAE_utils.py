@@ -3,7 +3,6 @@ import os
 import numpy as np
 
 import tensorflow as tf
-
 import tensorflow.keras
 from tensorflow.keras.layers import Lambda, Input, Dense, Conv2D, Flatten, Conv2DTranspose, Reshape, concatenate
 from tensorflow.keras.models import Model
@@ -12,128 +11,8 @@ from tensorflow.keras.losses import mse, binary_crossentropy
 from tensorflow.keras.utils import plot_model, to_categorical
 from tensorflow.keras import backend as K
 
-# reparameterization trick
-# instead of sampling from Q(z|X), sample epsilon = N(0,I)
-# z = z_mean + sqrt(var) * epsilon
-def sampling(args):
-    """Reparameterization trick by sampling from an isotropic unit Gaussian.
-    # Arguments
-        args (tensor): mean and log of variance of Q(z|X)
-    # Returns
-        z (tensor): sampled latent vector
-    """
-
-    z_mean, z_log_var = args
-    batch = K.shape(z_mean)[0]
-    dim = K.int_shape(z_mean)[1]
-    # by default, random_normal has mean = 0 and std = 1.0
-    epsilon = K.random_normal(shape=(batch, dim))
-    return z_mean + K.exp(0.5 * z_log_var) * epsilon
-
-def corrupt(raw):
-    num_ch = raw.shape[1]
-    sub_params = np.tile(params[ind,:],(num_ch+1,1))
-    orig = np.tile(raw[ind,:,:],(num_ch+1,1,1))
-    out = raw[ind,:,:]
-
-    for ch in range(0,num_ch):
-        temp = raw[ind,:,:]
-        temp[:,ch,:] = 0
-        out = np.concatenate((out,temp))
-
-    x, y = shuffle(out,to_categorical(sub_params[:,-2]-1))
-    # Add dimension to x data to fit CNN architecture
-    x = x[...,np.newaxis]
-    orig = orig[...,np.newaxis]
-    return x,orig,y
-
-
-def plot_results(models,
-                 data,
-                 batch_size=128,
-                 model_name="vae_mnist"):
-    """Plots labels and MNIST digits as a function of the 2D latent vector
-    # Arguments
-        models (tuple): encoder and decoder models
-        data (tuple): test data and label
-        batch_size (int): prediction batch size
-        model_name (string): which model is using this function
-    """
-
-    encoder, decoder = models
-    x_test, y_test = data
-    os.makedirs(model_name, exist_ok=True)
-
-    filename = os.path.join(model_name, "digits_over_latent.png")
-
-    z_mean, _, _ = encoder.predict(x_test,
-                                   batch_size=batch_size)
-    plt.figure(figsize=(12, 10))
-    plt.scatter(z_mean[:, 0], z_mean[:, 1], c=y_test)
-    plt.colorbar()
-    plt.xlabel("z[0]")
-    plt.ylabel("z[1]")
-    plt.savefig(filename)
-    plt.show()
-
-def build_vae(latent_dim, input_type='feat'):
-    # VAE model = encoder + decoder
-    # build encoder model
-    if input_type == 'feat':
-        input_shape = (6,10,1)
-        inter_shape = (3,5,1)
-    elif input_type == 'raw':
-        input_shape = (6,100,1)
-        inter_shape = (3,50,1)
-
-    inputs = Input(shape=input_shape)
-    x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(inputs)
-    x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(x)
-    x = Flatten()(x)
-    x = Dense(16, activation="relu")(x)
-    z_mean = Dense(latent_dim, name="z_mean")(x)
-    z_log_var = Dense(latent_dim, name="z_log_var")(x)
-    z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
-    encoder = Model(inputs, [z_mean, z_log_var, z], name="encoder")
-    # encoder.summary()
-    plot_model(encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
-
-    # build decoder model
-    latent_inputs = Input(shape=(latent_dim,))
-    x = Dense(inter_shape[0]*inter_shape[1]*32, activation="relu")(latent_inputs)
-    x = Reshape((inter_shape[0], inter_shape[1], 32))(x)
-    x = Conv2DTranspose(32, 3, activation="relu", strides=1, padding="same")(x)
-    x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
-    decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
-    decoder = Model(latent_inputs, decoder_outputs, name="decoder")
-    # decoder.summary()
-    plot_model(decoder, to_file='vae_mlp_decoder.png', show_shapes=True)
-
-    # New: add a classifier
-    clf_latent_inputs = Input(shape=(latent_dim,), name='z_sampling_clf')
-    # clf_outputs = Dense(32, activation='relu')(clf_latent_inputs)
-    clf_outputs = Dense(7, activation='softmax', name='class_output')(clf_latent_inputs)
-    clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
-    # clf_supervised.summary()
-
-    # instantiate VAE model
-    outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]
-    vae = Model(inputs, outputs, name='vae_mlp')
-
-    reconstruction_loss = tf.reduce_mean(mse(inputs, outputs[0]))
-
-    reconstruction_loss *= input_shape[0] * input_shape[1]
-    kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
-    kl_loss = K.sum(kl_loss, axis=-1)
-    kl_loss *= -0.5
-    vae_loss = K.mean((reconstruction_loss + kl_loss)/100.0)
-    vae.add_loss(vae_loss)
-    vae.compile(optimizer='adam', loss={'clf': 'categorical_crossentropy'})
-    return vae, encoder, decoder, clf_supervised
-    
-def build_svae_corrupt(latent_dim, n_class, input_type='feat'):
-    # VAE model = encoder + decoder
-    # build encoder model
+## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
+def build_svae(latent_dim, n_class, input_type='feat'):
     if input_type == 'feat':
         input_shape = (6,4,1)
         inter_shape = (3,2,1)
@@ -141,6 +20,7 @@ def build_svae_corrupt(latent_dim, n_class, input_type='feat'):
         input_shape = (6,100,1)
         inter_shape = (3,50,1)
 
+    # build encoder model
     inputs = Input(shape=input_shape)
     x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
@@ -162,9 +42,8 @@ def build_svae_corrupt(latent_dim, n_class, input_type='feat'):
     decoder = Model(latent_inputs, decoder_outputs, name="decoder")
     # decoder.summary()
 
-    # New: add a classifier
+    # New: add a linear classifier
     clf_latent_inputs = Input(shape=(latent_dim,), name='z_sampling_clf')
-    # clf_outputs = Dense(32, activation='relu')(clf_latent_inputs)
     clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
     clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
     # clf_supervised.summary()
@@ -184,24 +63,19 @@ def build_svae_corrupt(latent_dim, n_class, input_type='feat'):
         kl_loss *= -0.5
         vae_loss = K.mean((reconstruction_loss + kl_loss)/100.0)
         return vae_loss
-    # reconstruction_loss = tf.reduce_mean(mse(inputs, outputs[0]))
 
-    # reconstruction_loss *= input_shape[0] * input_shape[1]
-    # kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
-    # kl_loss = K.sum(kl_loss, axis=-1)
-    # kl_loss *= -0.5
-    # vae_loss = K.mean((reconstruction_loss + kl_loss)/100.0)
-    # vae.add_loss(vae_loss)
     vae.compile(optimizer='adam', loss=[VAE_loss,'categorical_crossentropy'],experimental_run_tf_function=False)
     return vae, encoder, decoder, clf_supervised
 
+## LATENT SPACE CLASSIFIER - NO DECODER
 def build_sae(latent_dim, n_class, input_type='feat'):
-    # build encoder model
+    
     if input_type == 'feat':
         input_shape = (6,4,1)
     elif input_type == 'raw':
         input_shape = (6,100,1)
 
+    # build encoder model
     inputs = Input(shape=input_shape)
     x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
@@ -223,10 +97,9 @@ def build_sae(latent_dim, n_class, input_type='feat'):
 
     vae.compile(optimizer='adam', loss='categorical_crossentropy',experimental_run_tf_function=False)
     return vae, encoder, clf_supervised
-    
-def build_vae_corrupt(latent_dim, input_type='feat'):
-    # VAE model = encoder + decoder
-    # build encoder model
+
+## VARIATIONAL AUTOENCODER - NO CLASSIFIER
+def build_vae(latent_dim, input_type='feat'):
     if input_type == 'feat':
         input_shape = (6,4,1)
         inter_shape = (3,2,1)
@@ -234,6 +107,7 @@ def build_vae_corrupt(latent_dim, input_type='feat'):
         input_shape = (6,100,1)
         inter_shape = (3,50,1)
 
+    # build encoder model
     inputs = Input(shape=input_shape)
     x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
@@ -270,17 +144,27 @@ def build_vae_corrupt(latent_dim, input_type='feat'):
         kl_loss *= -0.5
         vae_loss = K.mean((reconstruction_loss + kl_loss)/100.0)
         return vae_loss
-    # reconstruction_loss = tf.reduce_mean(mse(inputs, outputs[0]))
-    # reconstruction_loss *= input_shape[0] * input_shape[1]
-    # kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
-    # kl_loss = K.sum(kl_loss, axis=-1)
-    # kl_loss *= -0.5
-    # vae_loss = K.mean((reconstruction_loss + kl_loss)/100.0)
-    # vae.add_loss(vae_loss)
+
     vae.compile(optimizer='adam', loss=VAE_loss, experimental_run_tf_function=False)
     return vae, encoder, decoder
 
-def build_vae_s(latent_dim, input_type='feat'):
+def eval_vae(vae, x_test, y_test):
+    try:
+        y_pred = np.argmax(vae.predict(x=x_test)[1], axis=1)
+    except:
+        y_pred = np.argmax(vae.predict(x=x_test), axis=1)
+    acc = np.sum(np.argmax(y_test, axis=1) == y_pred)/y_pred.shape[0]
+    return y_pred, acc
+
+def recon_vae(vae, x_test):
+    if type(vae.predict(x=x_test)) is list:
+        x_pred = vae.predict(x=x_test)[0]
+    else:
+        x_pred = vae.predict(x=x_test)
+    return x_pred
+
+## NOT SURE IF THIS WORKS
+def build_vae_old(latent_dim, input_type='feat'):
     # VAE model = encoder + decoder
     # build encoder model
     if input_type == 'feat':
@@ -295,8 +179,57 @@ def build_vae_s(latent_dim, input_type='feat'):
     x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(x)
     x = Flatten()(x)
     x = Dense(16, activation="relu")(x)
+    z_mean = Dense(latent_dim, name="z_mean")(x)
+    z_log_var = Dense(latent_dim, name="z_log_var")(x)
+    z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
+    encoder = Model(inputs, [z_mean, z_log_var, z], name="encoder")
+    plot_model(encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
+
+    # build decoder model
+    latent_inputs = Input(shape=(latent_dim,))
+    x = Dense(inter_shape[0]*inter_shape[1]*32, activation="relu")(latent_inputs)
+    x = Reshape((inter_shape[0], inter_shape[1], 32))(x)
+    x = Conv2DTranspose(32, 3, activation="relu", strides=1, padding="same")(x)
+    x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
+    decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
+    decoder = Model(latent_inputs, decoder_outputs, name="decoder")
+    plot_model(decoder, to_file='vae_mlp_decoder.png', show_shapes=True)
+
+    # New: add a classifier
+    clf_latent_inputs = Input(shape=(latent_dim,), name='z_sampling_clf')
+    clf_outputs = Dense(7, activation='softmax', name='class_output')(clf_latent_inputs)
+    clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
+
+    # instantiate VAE model
+    outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]
+    vae = Model(inputs, outputs, name='vae_mlp')
+
+    reconstruction_loss = tf.reduce_mean(mse(inputs, outputs[0]))
+    reconstruction_loss *= input_shape[0] * input_shape[1]
+    kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
+    kl_loss = K.sum(kl_loss, axis=-1)
+    kl_loss *= -0.5
+    vae_loss = K.mean((reconstruction_loss + kl_loss)/100.0)
+    vae.add_loss(vae_loss)
+    vae.compile(optimizer='adam', loss={'clf': 'categorical_crossentropy'})
+    return vae, encoder, decoder, clf_supervised
+
+## NOT SURE WHAT THIS IS
+def build_vae_s(latent_dim, input_type='feat'):
+    if input_type == 'feat':
+        input_shape = (6,10,1)
+        inter_shape = (3,5,1)
+    elif input_type == 'raw':
+        input_shape = (6,100,1)
+        inter_shape = (3,50,1)
+
+    # build encoder model
+    inputs = Input(shape=input_shape)
+    x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(inputs)
+    x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(x)
+    x = Flatten()(x)
+    x = Dense(16, activation="relu")(x)
     encoder1 = Model(inputs,x, name="encoder1")
-    plot_model(encoder1, to_file='vae_enc1.png', show_shapes=True)
 
     enc_latent_inputs = Input(shape=(16,))
     z_mean = Dense(latent_dim, name="z_mean")(enc_latent_inputs)
@@ -304,7 +237,6 @@ def build_vae_s(latent_dim, input_type='feat'):
     z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
     encoder = Model(enc_latent_inputs, [z_mean, z_log_var, z], name="encoder")
     # encoder.summary()
-    plot_model(encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
 
     # New: add a classifier
     clf_latent_inputs = Input(shape=(16,), name='z_sampling_clf')
@@ -325,7 +257,6 @@ def build_vae_s(latent_dim, input_type='feat'):
     decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
     decoder = Model([label_inputs, latent_inputs], decoder_outputs, name="decoder")
     # decoder.summary()
-    plot_model(decoder, to_file='vae_dec.png', show_shapes=True)
 
     # instantiate VAE model
     outputs = decoder([clf_supervised(encoder1(inputs)), encoder(encoder1(inputs))[2]])
@@ -348,22 +279,7 @@ def eval_vae_s(enc, clf, x_test, y_test):
     acc = np.sum(np.argmax(y_test, axis=1) == y_pred)/y_pred.shape[0]
     return y_pred, acc
 
-def eval_vae(vae, x_test, y_test):
-    try:
-        y_pred = np.argmax(vae.predict(x=x_test)[1], axis=1)
-    except:
-        y_pred = np.argmax(vae.predict(x=x_test), axis=1)
-    acc = np.sum(np.argmax(y_test, axis=1) == y_pred)/y_pred.shape[0]
-    return y_pred, acc
-
-def recon_svae(vae, x_test):
-    x_pred = vae.predict(x=x_test)[0]
-    return x_pred
-
-def recon_vae(vae, x_test):
-    x_pred = vae.predict(x=x_test)
-    return x_pred
-
+## OLD TRANSFER LEARNING STUFF
 def build_pnn(source_weights, latent_dim, input_type='feat'):
     
     ## SOURCE MODEL
@@ -471,3 +387,49 @@ def build_pnn(source_weights, latent_dim, input_type='feat'):
     plot_model(t_vae, to_file='pnn.png', show_shapes=True)
 
     return t_vae, t_encoder, t_decoder, t_clf
+
+## FROM OLD TUTORIAL
+# reparameterization trick
+# instead of sampling from Q(z|X), sample epsilon = N(0,I)
+# z = z_mean + sqrt(var) * epsilon
+def sampling(args):
+    """Reparameterization trick by sampling from an isotropic unit Gaussian.
+    # Arguments
+        args (tensor): mean and log of variance of Q(z|X)
+    # Returns
+        z (tensor): sampled latent vector
+    """
+
+    z_mean, z_log_var = args
+    batch = K.shape(z_mean)[0]
+    dim = K.int_shape(z_mean)[1]
+    # by default, random_normal has mean = 0 and std = 1.0
+    epsilon = K.random_normal(shape=(batch, dim))
+    return z_mean + K.exp(0.5 * z_log_var) * epsilon
+
+def plot_results(models,
+                 data,
+                 batch_size=128,
+                 model_name="vae_mnist"):
+    """Plots labels and MNIST digits as a function of the 2D latent vector
+    # Arguments
+        models (tuple): encoder and decoder models
+        data (tuple): test data and label
+        batch_size (int): prediction batch size
+        model_name (string): which model is using this function
+    """
+    encoder, decoder = models
+    x_test, y_test = data
+    os.makedirs(model_name, exist_ok=True)
+
+    filename = os.path.join(model_name, "digits_over_latent.png")
+
+    z_mean, _, _ = encoder.predict(x_test,
+                                   batch_size=batch_size)
+    plt.figure(figsize=(12, 10))
+    plt.scatter(z_mean[:, 0], z_mean[:, 1], c=y_test)
+    plt.colorbar()
+    plt.xlabel("z[0]")
+    plt.ylabel("z[1]")
+    plt.savefig(filename)
+    plt.show()

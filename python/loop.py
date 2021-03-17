@@ -1,7 +1,7 @@
 
 import tensorflow as tf
-import numpy as np
 import tensorflow.keras
+import numpy as np
 import os
 import pickle
 
@@ -80,8 +80,8 @@ def run_loop(raw, params, sub_type, nn='svae', load=True, batch_size=128, latent
                 x_test_vae = scaler.transform(x_test_noise_temp.reshape(x_test_noise_temp.shape[0],-1)).reshape(x_test_noise_temp.shape)
 
                 # # Build VAE
-                # vae, encoder, decoder,clf = svae.build_svae_corrupt(latent_dim, y_train_clean.shape[1], input_type=feat_type)
-                vae, encoder, decoder = svae.build_vae_corrupt(latent_dim, input_type=feat_type)
+                # vae, encoder, decoder,clf = svae.build_svae(latent_dim, y_train_clean.shape[1], input_type=feat_type)
+                vae, encoder, decoder = svae.build_vae(latent_dim, input_type=feat_type)
                 # vae, encoder, clf = svae.build_sae(latent_dim, y_train_clean.shape[1], input_type=feat_type)
 
                 # Fit sVAE and get weights
