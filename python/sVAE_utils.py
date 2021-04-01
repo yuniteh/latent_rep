@@ -68,7 +68,7 @@ def build_svae(latent_dim, n_class, input_type='feat'):
     return vae, encoder, decoder, clf_supervised
 
 ## VARIATIONAL LATENT SPACE CLASSIFIER - NO DECODER
-def build_cnn_var(latent_dim, n_class, input_type='feat'):
+def build_vcnn(latent_dim, n_class, input_type='feat'):
     
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -103,7 +103,7 @@ def build_cnn_var(latent_dim, n_class, input_type='feat'):
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
-        vae_loss = class_loss + kl_loss
+        vae_loss = K.mean((class_loss + kl_loss)/100)
         # vae_loss = kl_loss
         return vae_loss
 
