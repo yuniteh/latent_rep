@@ -7,7 +7,7 @@ import tensorflow.keras
 from tensorflow.keras.layers import Lambda, Input, Dense, Conv2D, Flatten, Conv2DTranspose, Reshape, concatenate
 from tensorflow.keras.models import Model
 from tensorflow.keras.datasets import mnist
-from tensorflow.keras.losses import mse, binary_crossentropy
+from tensorflow.keras.losses import mse, binary_crossentropy, categorical_crossentropy
 from tensorflow.keras.utils import plot_model, to_categorical
 from tensorflow.keras import backend as K
 
@@ -67,8 +67,8 @@ def build_svae(latent_dim, n_class, input_type='feat'):
     vae.compile(optimizer='adam', loss=[VAE_loss,'categorical_crossentropy'],experimental_run_tf_function=False)
     return vae, encoder, decoder, clf_supervised
 
-## LATENT SPACE CLASSIFIER - NO DECODER
-def build_sae(latent_dim, n_class, input_type='feat'):
+## VARIATIONAL LATENT SPACE CLASSIFIER - NO DECODER
+def build_cnn_var(latent_dim, n_class, input_type='feat'):
     
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -93,6 +93,76 @@ def build_sae(latent_dim, n_class, input_type='feat'):
 
     # instantiate VAE model
     outputs = clf_supervised(encoder(inputs)[2])
+    vae = Model(inputs, outputs, name='vae_mlp')
+
+    def VAE_loss(x_origin, x_out):
+        # x_origin=K.flatten(x_origin)
+        # x_out=K.flatten(x_out)
+        # xent_loss = input_shape[0]*input_shape[1] * binary_crossentropy(x_origin, x_out)
+        class_loss = categorical_crossentropy(x_origin, x_out)
+        kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
+        kl_loss = K.sum(kl_loss, axis=-1)
+        kl_loss *= -0.5
+        vae_loss = class_loss + kl_loss
+        # vae_loss = kl_loss
+        return vae_loss
+
+    vae.compile(optimizer='adam', loss=VAE_loss,experimental_run_tf_function=False)
+    return vae, encoder, clf_supervised
+
+def build_cnn(latent_dim, n_class, input_type='feat'):
+    
+    if input_type == 'feat':
+        input_shape = (6,4,1)
+    elif input_type == 'raw':
+        input_shape = (6,100,1)
+
+    # build encoder model
+    inputs = Input(shape=input_shape)
+    x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
+    x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
+    x = Flatten()(x)
+    x = Dense(16, activation="relu")(x)
+    z = Dense(latent_dim, name="z")(x)
+    encoder = Model(inputs, z, name="encoder")
+
+    # classifier
+    clf_latent_inputs = Input(shape=(latent_dim,), name='z_clf')
+    clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
+    clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
+
+    # instantiate VAE model
+    outputs = clf_supervised(encoder(inputs))
+    vae = Model(inputs, outputs, name='vae_mlp')
+
+    vae.compile(optimizer='adam', loss='categorical_crossentropy',experimental_run_tf_function=False)
+    return vae, encoder, clf_supervised
+
+## LATENT SPACE CLASSIFIER - NO DECODER
+def build_sae(latent_dim, n_class, input_type='feat'):
+    
+    if input_type == 'feat':
+        input_shape = (24,)
+    elif input_type == 'raw':
+        input_shape = (600,)
+
+    # build encoder model
+    inputs = Input(shape=input_shape)
+    x = Dense(24, activation="relu")(inputs)
+    x = Dense(12, activation="relu")(x)
+    x = Dense(8, activation="relu")(x)
+    z = Dense(latent_dim, name="z")(x)
+    encoder = Model(inputs, z, name="encoder")
+    encoder.summary()
+
+    # classifier
+    clf_latent_inputs = Input(shape=(latent_dim,), name='z_clf')
+    clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
+    clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
+    clf_supervised.summary()
+
+    # instantiate VAE model
+    outputs = clf_supervised(encoder(inputs))
     vae = Model(inputs, outputs, name='vae_mlp')
 
     vae.compile(optimizer='adam', loss='categorical_crossentropy',experimental_run_tf_function=False)
