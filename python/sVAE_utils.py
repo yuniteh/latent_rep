@@ -55,9 +55,9 @@ def build_svae(latent_dim, n_class, input_type='feat'):
     def VAE_loss(x_origin,x_out):
         # x_origin=K.flatten(x_origin)
         # x_out=K.flatten(x_out)
-        # xent_loss = input_shape[0]*input_shape[1] * binary_crossentropy(x_origin, x_out)
-        reconstruction_loss = tf.reduce_mean(mse(x_origin, x_out))
-        reconstruction_loss *= input_shape[0] * input_shape[1]
+        reconstruction_loss = input_shape[0]*input_shape[1] * binary_crossentropy(x_origin, x_out)
+        # reconstruction_loss = mse(x_origin, x_out)
+        # reconstruction_loss *= input_shape[0] * input_shape[1]
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
@@ -99,7 +99,7 @@ def build_vcnn(latent_dim, n_class, input_type='feat'):
         # x_origin=K.flatten(x_origin)
         # x_out=K.flatten(x_out)
         # xent_loss = input_shape[0]*input_shape[1] * binary_crossentropy(x_origin, x_out)
-        class_loss = categorical_crossentropy(x_origin, x_out)
+        class_loss = input_shape[0]*input_shape[1]*categorical_crossentropy(x_origin, x_out)
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
@@ -153,13 +153,11 @@ def build_sae(latent_dim, n_class, input_type='feat'):
     x = Dense(8, activation="relu")(x)
     z = Dense(latent_dim, name="z")(x)
     encoder = Model(inputs, z, name="encoder")
-    encoder.summary()
 
     # classifier
     clf_latent_inputs = Input(shape=(latent_dim,), name='z_clf')
     clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
     clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
-    clf_supervised.summary()
 
     # instantiate VAE model
     outputs = clf_supervised(encoder(inputs))
