@@ -2,17 +2,16 @@ from matplotlib import pyplot as plt
 import os
 import numpy as np
 
-import tensorflow as tf
-import tensorflow.keras
-from tensorflow.keras.layers import Lambda, Input, Dense, Conv2D, Flatten, Conv2DTranspose, Reshape, concatenate
+from tensorflow.keras.layers import Lambda, Input, Dense, Conv2D, Flatten, Conv2DTranspose, Reshape, concatenate, BatchNormalization
 from tensorflow.keras.models import Model
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.losses import mse, binary_crossentropy, categorical_crossentropy
 from tensorflow.keras.utils import plot_model, to_categorical
 from tensorflow.keras import backend as K
+from tensorflow.keras import regularizers
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
-def build_svae(latent_dim, n_class, input_type='feat'):
+def build_svae(latent_dim, n_class, input_type='feat', sparse='True'):
     if input_type == 'feat':
         input_shape = (6,4,1)
         inter_shape = (3,2,1)
@@ -23,11 +22,22 @@ def build_svae(latent_dim, n_class, input_type='feat'):
     # build encoder model
     inputs = Input(shape=input_shape)
     x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
+    x = BatchNormalization()(x)
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
+    x = BatchNormalization()(x)
     x = Flatten()(x)
     x = Dense(16, activation="relu")(x)
-    z_mean = Dense(latent_dim, name="z_mean")(x)
-    z_log_var = Dense(latent_dim, name="z_log_var")(x)
+    x = BatchNormalization()(x)
+
+    if sparse:
+        z_mean = Dense(latent_dim, name="z_mean", activity_regularizer=regularizers.l1(10e-5))(x)
+        z_log_var = Dense(latent_dim, name="z_log_var", activity_regularizer=regularizers.l1(10e-5))(x)
+    else:
+        z_mean = Dense(latent_dim, name="z_mean")(x)
+        z_log_var = Dense(latent_dim, name="z_log_var")(x)
+        
+    z_mean = BatchNormalization()(z_mean)
+    z_log_var = BatchNormalization()(z_log_var)
     z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
     encoder = Model(inputs, [z_mean, z_log_var, z], name="encoder")
     # encoder.summary()
@@ -35,8 +45,10 @@ def build_svae(latent_dim, n_class, input_type='feat'):
     # build decoder model
     latent_inputs = Input(shape=(latent_dim,))
     x = Dense(inter_shape[0]*inter_shape[1]*32, activation="relu")(latent_inputs)
+    x = BatchNormalization()(x)
     x = Reshape((inter_shape[0], inter_shape[1], 32))(x)
     x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
+    x = BatchNormalization()(x)
     # x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
     decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
     decoder = Model(latent_inputs, decoder_outputs, name="decoder")
@@ -55,8 +67,8 @@ def build_svae(latent_dim, n_class, input_type='feat'):
     def VAE_loss(x_origin,x_out):
         # x_origin=K.flatten(x_origin)
         # x_out=K.flatten(x_out)
-        reconstruction_loss = input_shape[0]*input_shape[1] * binary_crossentropy(x_origin, x_out)
-        # reconstruction_loss = mse(x_origin, x_out)
+        # reconstruction_loss = input_shape[0]*input_shape[1] * binary_crossentropy(x_origin, x_out)
+        reconstruction_loss = K.mean(mse(x_origin, x_out))
         # reconstruction_loss *= input_shape[0] * input_shape[1]
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
@@ -68,7 +80,7 @@ def build_svae(latent_dim, n_class, input_type='feat'):
     return vae, encoder, decoder, clf_supervised
 
 ## VARIATIONAL LATENT SPACE CLASSIFIER - NO DECODER
-def build_vcnn(latent_dim, n_class, input_type='feat'):
+def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True'):
     
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -78,11 +90,22 @@ def build_vcnn(latent_dim, n_class, input_type='feat'):
     # build encoder model
     inputs = Input(shape=input_shape)
     x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
+    x = BatchNormalization()(x)
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
+    x = BatchNormalization()(x)
     x = Flatten()(x)
     x = Dense(16, activation="relu")(x)
-    z_mean = Dense(latent_dim, name="z_mean")(x)
-    z_log_var = Dense(latent_dim, name="z_log_var")(x)
+    x = BatchNormalization()(x)
+
+    if sparse:
+        z_mean = Dense(latent_dim, name="z_mean", activity_regularizer=regularizers.l1(10e-5))(x)
+        z_log_var = Dense(latent_dim, name="z_log_var", activity_regularizer=regularizers.l1(10e-5))(x)
+    else:
+        z_mean = Dense(latent_dim, name="z_mean")(x)
+        z_log_var = Dense(latent_dim, name="z_log_var")(x)
+        
+    z_mean = BatchNormalization()(z_mean)
+    z_log_var = BatchNormalization()(z_log_var)
     z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
     encoder = Model(inputs, [z_mean, z_log_var, z], name="encoder")
 
@@ -110,7 +133,7 @@ def build_vcnn(latent_dim, n_class, input_type='feat'):
     vae.compile(optimizer='adam', loss=VAE_loss,experimental_run_tf_function=False)
     return vae, encoder, clf_supervised
 
-def build_cnn(latent_dim, n_class, input_type='feat'):
+def build_cnn(latent_dim, n_class, input_type='feat',sparse='True'):
     
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -120,10 +143,17 @@ def build_cnn(latent_dim, n_class, input_type='feat'):
     # build encoder model
     inputs = Input(shape=input_shape)
     x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
+    x = BatchNormalization()(x)
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
+    x = BatchNormalization()(x)
     x = Flatten()(x)
     x = Dense(16, activation="relu")(x)
-    z = Dense(latent_dim, name="z")(x)
+    x = BatchNormalization()(x)
+    if sparse:
+        z = Dense(latent_dim, name="z", activity_regularizer=regularizers.l1(10e-5))(x)
+    else:
+        z = Dense(latent_dim, name="z")(x)
+    z = BatchNormalization()(z)
     encoder = Model(inputs, z, name="encoder")
 
     # classifier
@@ -139,7 +169,7 @@ def build_cnn(latent_dim, n_class, input_type='feat'):
     return vae, encoder, clf_supervised
 
 ## LATENT SPACE CLASSIFIER - NO DECODER
-def build_sae(latent_dim, n_class, input_type='feat'):
+def build_sae(latent_dim, n_class, input_type='feat', sparse='True'):
     
     if input_type == 'feat':
         input_shape = (24,)
@@ -149,9 +179,16 @@ def build_sae(latent_dim, n_class, input_type='feat'):
     # build encoder model
     inputs = Input(shape=input_shape)
     x = Dense(24, activation="relu")(inputs)
+    x = BatchNormalization()(x)
     x = Dense(12, activation="relu")(x)
+    x = BatchNormalization()(x)
     x = Dense(8, activation="relu")(x)
-    z = Dense(latent_dim, name="z")(x)
+    x = BatchNormalization()(x)
+    if sparse:
+        z = Dense(latent_dim, name="z", activity_regularizer=regularizers.l1(10e-5))(x)
+    else:
+        z = Dense(latent_dim, name="z")(x)
+    # z = BatchNormalization()(z)
     encoder = Model(inputs, z, name="encoder")
 
     # classifier
@@ -205,7 +242,7 @@ def build_vae(latent_dim, input_type='feat'):
         # x_origin=K.flatten(x_origin)
         # x_out=K.flatten(x_out)
         # xent_loss = input_shape[0]*input_shape[1] * binary_crossentropy(x_origin, x_out)
-        reconstruction_loss = tf.reduce_mean(mse(x_origin, x_out))
+        reconstruction_loss = K.mean(mse(x_origin, x_out))
         reconstruction_loss *= input_shape[0] * input_shape[1]
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
@@ -272,7 +309,7 @@ def build_vae_old(latent_dim, input_type='feat'):
     outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]
     vae = Model(inputs, outputs, name='vae_mlp')
 
-    reconstruction_loss = tf.reduce_mean(mse(inputs, outputs[0]))
+    reconstruction_loss = K.mean(mse(inputs, outputs[0]))
     reconstruction_loss *= input_shape[0] * input_shape[1]
     kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
     kl_loss = K.sum(kl_loss, axis=-1)
@@ -331,7 +368,7 @@ def build_vae_s(latent_dim, input_type='feat'):
     vae = Model(inputs, outputs, name='vae_mlp')
     plot_model(vae, to_file='vae.png', show_shapes=True)
 
-    reconstruction_loss = tf.reduce_mean(mse(inputs, outputs))
+    reconstruction_loss = K.mean(mse(inputs, outputs))
 
     reconstruction_loss *= input_shape[0] * input_shape[1]
     kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
@@ -393,7 +430,7 @@ def build_pnn(source_weights, latent_dim, input_type='feat'):
     outputs = [decoder(encoder(inputs)[2]), clf(encoder(inputs)[2])]
     vae = Model(inputs, outputs, name='s_vae')
 
-    reconstruction_loss = tf.reduce_mean(mse(inputs, outputs[0]))
+    reconstruction_loss = K.mean(mse(inputs, outputs[0]))
 
     reconstruction_loss *= input_shape[0] * input_shape[1]
     kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
@@ -442,7 +479,7 @@ def build_pnn(source_weights, latent_dim, input_type='feat'):
     t_outputs = [t_decoder(t_encoder(inputs)[2]), t_clf(t_encoder(inputs)[2])]
     t_vae = Model(inputs, t_outputs, name='t_vae')
 
-    reconstruction_loss = tf.reduce_mean(mse(inputs, outputs[0]))
+    reconstruction_loss = K.mean(mse(inputs, outputs[0]))
 
     reconstruction_loss *= input_shape[0] * input_shape[1]
     kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)

@@ -2,6 +2,9 @@ import numpy as np
 import scipy.io 
 import pandas as pd
 import copy as cp
+import pickle
+import os
+from datetime import date
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
@@ -94,6 +97,27 @@ def sub_split_loo(feat, params, sub, grp):
         y = 0
     return x,y
 
+def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True):
+    if dt == 0:
+        today = date.today()
+        dt = today.strftime("%m%d")
+    # foldername = 'models' + '_' + str(train_grp) + '_' + dt
+    foldername = 'traindata'
+    filename = foldername + '/' + sub_type + str(sub) + '_traindata.p'
+    if load:
+        if os.path.isfile(filename):
+            with open(filename,'rb') as f:
+                x_train, x_test, p_train, p_test = pickle.load(f)
+        else:
+            load=False
+    if not load:
+        ind = (params[:,0] == sub) & (params[:,3] == train_grp)
+        # Split training and testing data
+        x_train, x_test, p_train, p_test = train_test_split(raw[ind,:,:], params[ind,:], test_size = 0.33, stratify=params[ind,4])
+        with open(filename, 'wb') as f:
+            pickle.dump([x_train, x_test, p_train, p_test],f)
+    return x_train, x_test, p_train, p_test
+
 def norm_sub(feat, params):
     for sub in range(1,np.max(params[:,0])):
         ind = params[:,0] == sub
@@ -114,12 +138,45 @@ def add_noise(raw, params, sub, n_type='flat', scale=1):
         temp = cp.deepcopy(raw)
         if n_type == 'gaussflat':
             temp[:temp.shape[0]//3,ch,:] += np.random.normal(0,scale,temp.shape[2])
+            # temp[temp.shape[0]//2:,ch,:] = 0 
             temp[temp.shape[0]//3:2*temp.shape[0]//3,ch,:] += np.random.normal(0,scale/2,temp.shape[2])
             temp[2*temp.shape[0]//3:,ch,:] = 0 
         elif n_type == 'gauss':
             temp[:,ch,:] += np.random.normal(0,scale,temp.shape[2])
         elif n_type == 'flat':
             temp[:,ch,:] = 0 
+        # temp = np.zeros(raw[ind,:,:].shape)
+        # temp[:,ch,:] = raw[ind,ch,:]
+        out = np.concatenate((out,temp))
+
+    noisy, clean, y = out, orig, to_categorical(sub_params[:,-2]-1)
+    # x, x2, y = out,orig,to_categorical(sub_params[:,-2]-1)
+    # Add dimension to x data to fit CNN architecture
+    # x = x[...,np.newaxis]
+    # x2 = x2[...,np.newaxis]
+    clean = clean[...,np.newaxis]
+    noisy = noisy[...,np.newaxis]
+    return noisy,clean,y
+
+def add_noise_2ch(raw, params, sub, n_type='flat', scale=1):
+    # Index subject and training group
+    num_ch = raw.shape[1]
+    sub_params = np.tile(params,(num_ch,1))
+    orig = np.tile(raw,(num_ch,1,1))
+    out = cp.deepcopy(raw)
+
+    for ch in range(0,num_ch-1):
+        temp = cp.deepcopy(raw)
+        if n_type == 'gaussflat':
+            temp[:temp.shape[0]//3,ch:ch+2,:] += np.random.normal(0,scale,temp.shape[2])
+            temp[temp.shape[0]//3:2*temp.shape[0]//3,ch:ch+2,:] += np.random.normal(0,scale/2,temp.shape[2])
+            temp[2*temp.shape[0]//3:,ch:ch+2,:] = 0 
+        elif n_type == 'gauss2':
+            temp[:,ch,:] += np.random.normal(0,scale,temp.shape[2])
+            temp[:,ch+1,:] += np.random.normal(0,scale,temp.shape[2])
+        elif n_type == 'flat2':
+            temp[:,ch,:] = 0 
+            temp[:,ch+1,:] = 0 
         # temp = np.zeros(raw[ind,:,:].shape)
         # temp[:,ch,:] = raw[ind,ch,:]
         out = np.concatenate((out,temp))
