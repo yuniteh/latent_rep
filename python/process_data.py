@@ -9,6 +9,8 @@ from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from sklearn.preprocessing import MinMaxScaler
+from collections import deque
+from itertools import combinations
 
 def load_raw(filename):
     struct = scipy.io.loadmat(filename)
@@ -108,14 +110,18 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True):
         if os.path.isfile(filename):
             with open(filename,'rb') as f:
                 x_train, x_test, p_train, p_test = pickle.load(f)
+                x_train, p_train = shuffle(x_train, p_train, random_state = 0)
+                x_test, p_test = shuffle(x_test, p_test, random_state = 0)
         else:
             load=False
     if not load:
         ind = (params[:,0] == sub) & (params[:,3] == train_grp)
         # Split training and testing data
-        x_train, x_test, p_train, p_test = train_test_split(raw[ind,:,:], params[ind,:], test_size = 0.33, stratify=params[ind,4])
+        x_train, x_test, p_train, p_test = train_test_split(raw[ind,:,:], params[ind,:], test_size = 0.33, stratify=params[ind,4], shuffle=True)
         with open(filename, 'wb') as f:
             pickle.dump([x_train, x_test, p_train, p_test],f)
+        x_train, p_train = shuffle(x_train, p_train, random_state = 0)
+        x_test, p_test = shuffle(x_test, p_test, random_state = 0)
     return x_train, x_test, p_train, p_test
 
 def norm_sub(feat, params):
@@ -127,59 +133,156 @@ def norm_sub(feat, params):
     
     return feat
 
-def add_noise(raw, params, sub, n_type='flat', scale=1):
+def add_noise(raw, params, sub, n_type='flat', scale=5):
     # Index subject and training group
-    num_ch = raw.shape[1]
-    sub_params = np.tile(params,(num_ch+1,1))
-    orig = np.tile(raw,(num_ch+1,1,1))
+    max_ch = raw.shape[1] + 1
+    num_ch = int(n_type[-1]) + 1
     out = cp.deepcopy(raw)
+    full_type = n_type[0:4]
+    noise_type = n_type[4:-1]
 
-    for ch in range(0,num_ch):
+    if full_type == 'full':
+        start_ch = 1
+        sub_params = np.tile(params,(num_ch,1))
+        orig = np.tile(raw,(num_ch,1,1))
+    elif full_type == 'part':
+        start_ch = num_ch - 1
+        sub_params = np.tile(params,(2,1))
+        orig = np.tile(raw,(2,1,1))
+
+    # loop through channel noise
+    for num_noise in range(start_ch,num_ch):
+        ch_all = list(combinations(range(0,6),num_noise))
         temp = cp.deepcopy(raw)
-        if n_type == 'gaussflat':
-            temp[:temp.shape[0]//3,ch,:] += np.random.normal(0,scale,temp.shape[2])
-            # temp[temp.shape[0]//2:,ch,:] = 0 
-            temp[temp.shape[0]//3:2*temp.shape[0]//3,ch,:] += np.random.normal(0,scale/2,temp.shape[2])
-            temp[2*temp.shape[0]//3:,ch,:] = 0 
-        elif n_type == 'gauss':
-            temp[:,ch,:] += np.random.normal(0,scale,temp.shape[2])
-        elif n_type == 'flat':
-            temp[:,ch,:] = 0 
-        # temp = np.zeros(raw[ind,:,:].shape)
-        # temp[:,ch,:] = raw[ind,ch,:]
+        if noise_type == 'gaussflat':
+            ch_split = temp.shape[0]//(3*len(ch_all))
+        else:
+            ch_split = temp.shape[0]//len(ch_all)
+        for ch in range(0,len(ch_all)):
+            for i in ch_all[ch]:
+                # if full_type == 'part':
+                #     temp = cp.deepcopy(raw)
+                # temp[:,i,:] += np.random.normal(0,scale,temp.shape[2])
+                if noise_type == 'gaussflat':
+                    # if ch == 0:
+                    #     print('gaussflat:' + str(ch_split))
+                    temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] += np.random.normal(0,scale,temp.shape[2])
+                    temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += np.random.normal(0,scale/5,temp.shape[2])
+                    temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] = 0
+                elif noise_type == 'gauss':
+                    # if ch == 0:
+                    #     print('gauss:' + str(ch_split))
+                    temp[ch*ch_split:(ch+1)*ch_split,i,:] += np.random.normal(0,scale,temp.shape[2])
+                    # temp[:,i,:] += np.random.normal(0,scale,temp.shape[2])
+                elif noise_type == 'flat':
+                    # if ch == 0:
+                    #     print('flat:' + str(ch_split))
+                    temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
+                    # temp[:,i,:] = 0
+                # if full_type == 'part':
+                #     out = np.concatenate((out,temp))
+        # if full_type == 'full':
         out = np.concatenate((out,temp))
+        
 
     noisy, clean, y = out, orig, to_categorical(sub_params[:,-2]-1)
-    # x, x2, y = out,orig,to_categorical(sub_params[:,-2]-1)
-    # Add dimension to x data to fit CNN architecture
-    # x = x[...,np.newaxis]
-    # x2 = x2[...,np.newaxis]
+
     clean = clean[...,np.newaxis]
     noisy = noisy[...,np.newaxis]
     return noisy,clean,y
 
-def add_noise_2ch(raw, params, sub, n_type='flat', scale=1):
+def add_noise_old(raw, params, sub, n_type='flat', scale=5):
     # Index subject and training group
-    num_ch = raw.shape[1]
-    sub_params = np.tile(params,(num_ch,1))
-    orig = np.tile(raw,(num_ch,1,1))
-    out = cp.deepcopy(raw)
+    max_ch = raw.shape[1] + 1
+    # if n_type[-5:] == 'skip2':
+    #     ch_rot = np.concatenate(range(0,max_ch-1), range(0,max_ch-1))
+    if n_type[0:4] == 'full':
+        num_ch = int(n_type[-1]) + 1
+        sub_params = np.tile(params,(num_ch,1))
+        orig = np.tile(raw,(num_ch,1,1))
+        out = cp.deepcopy(raw)
 
-    for ch in range(0,num_ch-1):
-        temp = cp.deepcopy(raw)
-        if n_type == 'gaussflat':
-            temp[:temp.shape[0]//3,ch:ch+2,:] += np.random.normal(0,scale,temp.shape[2])
-            temp[temp.shape[0]//3:2*temp.shape[0]//3,ch:ch+2,:] += np.random.normal(0,scale/2,temp.shape[2])
-            temp[2*temp.shape[0]//3:,ch:ch+2,:] = 0 
-        elif n_type == 'gauss2':
-            temp[:,ch,:] += np.random.normal(0,scale,temp.shape[2])
-            temp[:,ch+1,:] += np.random.normal(0,scale,temp.shape[2])
-        elif n_type == 'flat2':
-            temp[:,ch,:] = 0 
-            temp[:,ch+1,:] = 0 
-        # temp = np.zeros(raw[ind,:,:].shape)
-        # temp[:,ch,:] = raw[ind,ch,:]
-        out = np.concatenate((out,temp))
+        # single channel noise
+        # temp = cp.deepcopy(raw)
+        # ch_split = temp.shape[0]//(3*(max_ch-1))
+        # for ch in range(0,max_ch-1):
+        #     temp[3*ch*ch_split:(3*ch+1)*ch_split,ch,:] += np.random.normal(0,scale,temp.shape[2])
+        #     temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,ch,:] += np.random.normal(0,scale/5,temp.shape[2])
+        #     temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,ch,:] = 0 
+        # out = np.concatenate((out,temp))
+
+        # double channel noise
+        for num_noise in range(1,num_ch):
+            ch_all = list(combinations(range(0,6),num_noise))
+            temp = cp.deepcopy(raw)
+            ch_split = temp.shape[0]//(3*len(ch_all))
+            for ch in range(0,len(ch_all)):
+                for i in ch_all[ch]:
+                    # temp[:,i,:] += np.random.normal(0,scale,temp.shape[2])
+                    temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] += np.random.normal(0,scale,temp.shape[2])
+                    temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += np.random.normal(0,scale/5,temp.shape[2])
+                    temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] = 0
+            out = np.concatenate((out,temp))
+    else:
+        if n_type[-1].isnumeric():
+            ch_rot = np.concatenate((range(0,max_ch-1), range(0,max_ch-1)))
+            if n_type[-5:-1] == 'skip':
+                max_i = int(n_type[-1])
+            else:
+                max_i = 1
+            if n_type[-1] == '3':
+                max_ch = 4
+        sub_params = np.tile(params,(max_ch,1))
+        orig = np.tile(raw,(max_ch,1,1))
+        out = cp.deepcopy(raw)
+        
+        for ch in range(0,max_ch-1):
+            temp = cp.deepcopy(raw)
+            if n_type == 'gaussflat':
+                temp[:temp.shape[0]//3,ch,:] += np.random.normal(0,scale,temp.shape[2])
+                # temp[temp.shape[0]//2:,ch,:] = 0 
+                temp[temp.shape[0]//3:2*temp.shape[0]//3,ch,:] += np.random.normal(0,scale/2,temp.shape[2])
+                temp[2*temp.shape[0]//3:,ch,:] = 0 
+            elif n_type == 'gaussflatup2':
+                temp[:temp.shape[0]//6,ch,:] += np.random.normal(0,scale,temp.shape[2])
+                temp[temp.shape[0]//6:2*temp.shape[0]//6,ch,:] += np.random.normal(0,scale/2,temp.shape[2])
+                temp[2*temp.shape[0]//6:3*temp.shape[0]//6,ch,:] = 0     
+                for i_ch in range(0,max_i+1,max_i):
+                    temp[3*temp.shape[0]//6:4*temp.shape[0]//6,ch_rot[ch+i_ch],:] += np.random.normal(0,scale,temp.shape[2])
+                    temp[4*temp.shape[0]//6:5*temp.shape[0]//6,ch_rot[ch+i_ch],:] += np.random.normal(0,scale/2,temp.shape[2])
+                    temp[5*temp.shape[0]//6:,ch_rot[ch+i_ch],:] = 0     
+            elif n_type == 'gaussflatup12':
+                temp[:temp.shape[0]//6,ch,:] += np.random.normal(0,scale,temp.shape[2])
+                temp[temp.shape[0]//6:2*temp.shape[0]//6,ch,:] += np.random.normal(0,scale/5,temp.shape[2])
+                temp[2*temp.shape[0]//6:3*temp.shape[0]//6,ch,:] = 0     
+                for i_ch in range(0,max_i+1,max_i):
+                    temp[3*temp.shape[0]//6:4*temp.shape[0]//6,ch_rot[ch+i_ch],:] += np.random.normal(0,scale,temp.shape[2])
+                    temp[4*temp.shape[0]//6:5*temp.shape[0]//6,ch_rot[ch+i_ch],:] += np.random.normal(0,scale/5,temp.shape[2])
+                    temp[5*temp.shape[0]//6:,ch_rot[ch+i_ch],:] = 0
+            elif n_type == 'gaussflatskip2':
+                temp[:temp.shape[0]//9,ch,:] += np.random.normal(0,scale,temp.shape[2])
+                temp[temp.shape[0]//9:2*temp.shape[0]//9,ch,:] += np.random.normal(0,scale/5,temp.shape[2])
+                temp[2*temp.shape[0]//9:3*temp.shape[0]//9,ch,:] = 0     
+                for i_ch in range(0,2):
+                    temp[3*temp.shape[0]//9:4*temp.shape[0]//9,ch_rot[ch+i_ch],:] += np.random.normal(0,scale,temp.shape[2])
+                    temp[4*temp.shape[0]//9:5*temp.shape[0]//9,ch_rot[ch+i_ch],:] += np.random.normal(0,scale/5,temp.shape[2])
+                    temp[5*temp.shape[0]//9:6*temp.shape[0]//9,ch_rot[ch+i_ch],:] = 0
+                for i_ch in range(0,max_i+1,max_i):
+                    temp[6*temp.shape[0]//9:7*temp.shape[0]//9,ch_rot[ch+i_ch],:] += np.random.normal(0,scale,temp.shape[2])
+                    temp[7*temp.shape[0]//9:8*temp.shape[0]//9,ch_rot[ch+i_ch],:] += np.random.normal(0,scale/5,temp.shape[2])
+                    temp[8*temp.shape[0]//9:,ch_rot[ch+i_ch],:] = 0    
+            elif n_type == 'gauss':
+                temp[:,ch,:] += np.random.normal(0,scale,temp.shape[2])
+            elif n_type == 'flat':
+                temp[:,ch,:] = 0 
+            elif n_type == 'gauss2' or n_type == 'gaussskip2' or n_type == 'gaussskip3':
+                for i_ch in range(0,max_i+1,max_i):
+                    temp[:,ch_rot[ch+i_ch],:] += np.random.normal(0,scale,temp.shape[2])          
+            elif n_type == 'flat2' or n_type == 'flatskip2' or n_type == 'gaussskip3':
+                for i_ch in range(0,max_i+1,max_i):
+                    temp[:,ch_rot[ch+i_ch],:] = 0        
+
+            out = np.concatenate((out,temp))
 
     noisy, clean, y = out, orig, to_categorical(sub_params[:,-2]-1)
     # x, x2, y = out,orig,to_categorical(sub_params[:,-2]-1)
