@@ -141,10 +141,12 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
     full_type = n_type[0:4]
     noise_type = n_type[4:-1]
 
+    # tile data once for each channel
     if full_type == 'full':
         start_ch = 1
         sub_params = np.tile(params,(num_ch,1))
         orig = np.tile(raw,(num_ch,1,1))
+    # tile data twice, once for clean and once for noise
     elif full_type == 'part':
         start_ch = num_ch - 1
         sub_params = np.tile(params,(2,1))
