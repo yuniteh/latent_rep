@@ -211,7 +211,7 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
                 load = True
                 with open(filename + '.p', 'rb') as f:
                     scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, w_svae, c_svae, \
-                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise = pickle.load(f)   
+                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, mu_class, C = pickle.load(f)   
             else:
                 load = False
 
@@ -296,13 +296,13 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
                 w_vcnn, c_vcnn = train_lda(x_train_vcnn,y_train_aligned)
 
                 # Train LDA
-                w,c = train_lda(x_train_lda,y_train_lda)
+                w,c, mu, mu_class, C = train_lda(x_train_lda,y_train_lda)
                 w_noise,c_noise = train_lda(x_train_lda2,y_train_lda2)
 
                 # Pickle variables
                 with open(filename + '.p', 'wb') as f:
                     pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
-                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise],f)
+                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, mu_class, C],f)
             else:
                 svae.set_weights(svae_w)
                 svae_enc.set_weights(svae_enc_w)

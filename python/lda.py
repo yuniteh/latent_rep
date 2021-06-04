@@ -9,23 +9,26 @@ def eval_lda(w, c, x_test, y_test):
     return acc
 
 # train LDA classifier for data: (samples,feat), label: (samples, 1)
-def train_lda(data,label):
+def train_lda(data,label,mu_bool = False, mu = 0, mu_class = 0, C = 0):
     m = data.shape[1]
     u_class = np.unique(label)
     n_class = u_class.shape[0]
 
-    mu = np.mean(data,axis=0,keepdims = True)
-    C = np.zeros([m,m])
-    mu_class = np.zeros([n_class,m])
+    if not mu_bool:
+        mu = np.mean(data,axis=0,keepdims = True)
+        C = np.zeros([m,m])
+        mu_class = np.zeros([n_class,m])
     Sb = np.zeros([mu.shape[1],mu.shape[1]])
 
     for i in range(0,n_class):
         ind = label == u_class[i]
-        mu_class[i,:] = np.mean(data[ind[:,0],:],axis=0,keepdims=True)
-        Sb += ind.shape[0] * np.dot((mu_class[np.newaxis,i,:] - mu).T,(mu_class[np.newaxis,i,:] - mu))
-        C += np.cov(data[ind[:,0],:].T)
+        if not mu_bool:
+            mu_class[i,:] = np.mean(data[ind[:,0],:],axis=0,keepdims=True)
+            C += np.cov(data[ind[:,0],:].T)
+        Sb += ind.shape[0] * np.dot((mu_class[np.newaxis,i,:] - mu).T,(mu_class[np.newaxis,i,:] - mu))    
 
-    C /= n_class
+    if not mu_bool:
+        C /= n_class
     prior = 1/n_class
 
     w = np.zeros([n_class, m])
@@ -34,34 +37,11 @@ def train_lda(data,label):
     for i in range(0, n_class):
         w[i,:] = np.dot(mu_class[np.newaxis,i,:],np.linalg.pinv(C))
         c[i,:] = np.dot(-.5 * np.dot(mu_class[np.newaxis,i,:], np.linalg.pinv(C)),mu_class[np.newaxis,i,:].T) + np.log(prior)
-    return w, c
 
-# train LDA classifier for data: (samples,feat), label: (samples, 1)
-def train_lda_part(data, label, mu, mu_class, C):
-    ch_ind = np.isnan(data)
-    data = data[ch_ind]
-    m = data.shape[1]
-    u_class = np.unique(label)
-    n_class = u_class.shape[0]
-
-    Sb = np.zeros([mu.shape[1],mu.shape[1]])
-
-    for i in range(0,n_class):
-        ind = label == u_class[i]
-        mu_class[i,:] = np.mean(data[ind[:,0],:],axis=0,keepdims=True)
-        Sb += ind.shape[0] * np.dot((mu_class[np.newaxis,i,:] - mu).T,(mu_class[np.newaxis,i,:] - mu))
-        C += np.cov(data[ind[:,0],:].T)
-
-    C /= n_class
-    prior = 1/n_class
-
-    w = np.zeros([n_class, m])
-    c = np.zeros([n_class, 1])
-
-    for i in range(0, n_class):
-        w[i,:] = np.dot(mu_class[np.newaxis,i,:],np.linalg.pinv(C))
-        c[i,:] = np.dot(-.5 * np.dot(mu_class[np.newaxis,i,:], np.linalg.pinv(C)),mu_class[np.newaxis,i,:].T) + np.log(prior)
-    return w, c
+    if mu_bool:
+        return w, c, mu, mu_class, C
+    else:
+        return w, c
 
 # train LDA classifier for data: (feat, samples)
 def train_lda2(data,label):
