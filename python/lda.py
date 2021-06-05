@@ -1,6 +1,8 @@
 import numpy as np
 import scipy.io 
 import pandas as pd
+from itertools import combinations
+import process_data as prd
 
 # train and predict for data: (samples,feat), label: (samples, 1)
 def eval_lda(w, c, x_test, y_test):
@@ -8,8 +10,42 @@ def eval_lda(w, c, x_test, y_test):
     acc = np.sum(out.reshape(y_test.shape) == y_test)/y_test.shape[0]
     return acc
 
+def eval_lda_ch(mu_class, C, n_type, x, y):
+    # Index subject and training group
+    num_ch = int(n_type[-1]) + 1
+    full_type = n_type[0:4]
+    noise_type = n_type[4:-1]
+
+    # tile data once for each channel
+    if full_type == 'full':
+        start_ch = 1
+    # tile data twice, once for clean and once for noise
+    elif full_type == 'part':
+        start_ch = num_ch - 1
+
+    acc = np.zeros(num_ch-start_ch)
+    # loop through channel noise
+    for num_noise in range(start_ch,num_ch):
+        ch_all = list(combinations(range(0,6),num_noise))
+        ch_split = x.shape[0]//len(ch_all)
+        acc_ch = np.zeros(len(ch_all))
+        for ch in range(0,len(ch_all)):
+            temp = x[ch*ch_split:(ch+1)*ch_split,...]
+            y_test = y[ch*ch_split:(ch+1)*ch_split,...]
+            mask = np.ones(temp.shape[1],dtype=bool)
+            for i in ch_all[ch]:
+                mask[i] = 0
+            maskmu = np.tile(mask,4)
+            test_data = prd.extract_feats(temp[:,mask,:])
+            C_temp = C[maskmu,:]
+            C_in = C_temp[:,maskmu]
+            w_temp, c_temp = train_lda(test_data,y_test,mu_bool = True, mu_class = mu_class[:,maskmu], C = C_in)
+            acc_ch[ch] = eval_lda(w_temp, c_temp, test_data, y_test)
+        acc[num_noise-start_ch] = np.mean(acc_ch)
+    return acc
+
 # train LDA classifier for data: (samples,feat), label: (samples, 1)
-def train_lda(data,label,mu_bool = False, mu = 0, mu_class = 0, C = 0):
+def train_lda(data,label,mu_bool = False, mu_class = 0, C = 0):
     m = data.shape[1]
     u_class = np.unique(label)
     n_class = u_class.shape[0]
@@ -18,17 +54,16 @@ def train_lda(data,label,mu_bool = False, mu = 0, mu_class = 0, C = 0):
         mu = np.mean(data,axis=0,keepdims = True)
         C = np.zeros([m,m])
         mu_class = np.zeros([n_class,m])
-    Sb = np.zeros([mu.shape[1],mu.shape[1]])
+        Sb = np.zeros([mu.shape[1],mu.shape[1]])
 
-    for i in range(0,n_class):
-        ind = label == u_class[i]
-        if not mu_bool:
+        for i in range(0,n_class):
+            ind = label == u_class[i]
             mu_class[i,:] = np.mean(data[ind[:,0],:],axis=0,keepdims=True)
             C += np.cov(data[ind[:,0],:].T)
-        Sb += ind.shape[0] * np.dot((mu_class[np.newaxis,i,:] - mu).T,(mu_class[np.newaxis,i,:] - mu))    
+            Sb += ind.shape[0] * np.dot((mu_class[np.newaxis,i,:] - mu).T,(mu_class[np.newaxis,i,:] - mu))    
 
-    if not mu_bool:
         C /= n_class
+
     prior = 1/n_class
 
     w = np.zeros([n_class, m])
@@ -38,8 +73,8 @@ def train_lda(data,label,mu_bool = False, mu = 0, mu_class = 0, C = 0):
         w[i,:] = np.dot(mu_class[np.newaxis,i,:],np.linalg.pinv(C))
         c[i,:] = np.dot(-.5 * np.dot(mu_class[np.newaxis,i,:], np.linalg.pinv(C)),mu_class[np.newaxis,i,:].T) + np.log(prior)
 
-    if mu_bool:
-        return w, c, mu, mu_class, C
+    if not mu_bool:
+        return w, c, mu_class, C
     else:
         return w, c
 

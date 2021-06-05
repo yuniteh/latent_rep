@@ -8,7 +8,7 @@ import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
-from lda import train_lda, predict, eval_lda
+from lda import train_lda, predict, eval_lda, eval_lda_ch
 import sVAE_utils as dl
 import process_data as prd
 import copy as cp
@@ -170,7 +170,7 @@ def compile_acc(acc_all, acc_noise, acc_clean, results_file, test_scale):
     return acc_all, acc_clean, acc_noise, ave_all, ave_clean, ave_noise
 
 def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=128, latent_dim=4, epochs=30,train_scale=5, test_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True):
-    i_tot = 12
+    i_tot = 13
     acc_all = np.full([np.max(params[:,0])+1, i_tot],np.nan)
     acc_clean = np.full([np.max(params[:,0])+1, i_tot],np.nan)
     acc_noise = np.full([np.max(params[:,0])+1, i_tot],np.nan)
@@ -211,7 +211,7 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
                 load = True
                 with open(filename + '.p', 'rb') as f:
                     scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, w_svae, c_svae, \
-                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, mu_class, C = pickle.load(f)   
+                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, _, mu, C = pickle.load(f)   
             else:
                 load = False
 
@@ -290,19 +290,19 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
                 y_train_aligned = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
                 # Train ENC-LDA
-                w_svae, c_svae = train_lda(x_train_svae,y_train_aligned)
-                w_sae, c_sae = train_lda(x_train_sae,y_train_aligned)
-                w_cnn, c_cnn = train_lda(x_train_cnn,y_train_aligned)
-                w_vcnn, c_vcnn = train_lda(x_train_vcnn,y_train_aligned)
+                w_svae, c_svae, _, _ = train_lda(x_train_svae,y_train_aligned)
+                w_sae, c_sae, _, _ = train_lda(x_train_sae,y_train_aligned)
+                w_cnn, c_cnn, _, _ = train_lda(x_train_cnn,y_train_aligned)
+                w_vcnn, c_vcnn, _, _ = train_lda(x_train_vcnn,y_train_aligned)
 
                 # Train LDA
-                w,c, mu, mu_class, C = train_lda(x_train_lda,y_train_lda)
+                w,c, mu_class, C = train_lda(x_train_lda,y_train_lda)
                 w_noise,c_noise = train_lda(x_train_lda2,y_train_lda2)
 
                 # Pickle variables
                 with open(filename + '.p', 'wb') as f:
                     pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
-                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, mu_class, C],f)
+                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
             else:
                 svae.set_weights(svae_w)
                 svae_enc.set_weights(svae_enc_w)
@@ -320,6 +320,14 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
                 vcnn.set_weights(vcnn_w)
                 vcnn_enc.set_weights(vcnn_enc_w)
                 vcnn_clf.set_weights(vcnn_clf_w)
+
+                # # Train LDA TEMP
+                w,c, mu, C = train_lda(x_train_lda,y_train_lda)
+
+                # Pickle variables TEMP
+                with open(filename + '.p', 'wb') as f:
+                    pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
+                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
 
             # Extract features
             if feat_type == 'feat':
@@ -342,22 +350,23 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
             x_test_sae = sae_enc.predict(x_test_dlsae)
             x_test_cnn = cnn_enc.predict(x_test_vae)
             _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
-
             y_test_aligned = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
 
             # Non NN methods
             x_test_lda = prd.extract_feats(x_test_noise)
             y_test_lda = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
 
+            y_test_ch = y_test_lda[:y_test_lda.shape[0]//2,...]
+
             # Compile models and test data into lists
             dl_mods = 4
             align_mods = 4
             lda_mods = 2
             qda_mods = 2
-            mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w,c],[w_noise,c_noise],qda,qda_noise]
-            x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda']
-            y_test_all = np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda'))
-            mods_type =  np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda'))
+            mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, n_test]]
+            x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
+            y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
+            mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
 
             for i in range(0,len(mods_all)):
                 acc_all[sub-1,i], acc_noise[sub-1,i], acc_clean[sub-1,i] = eval_noise_clean(eval(x_test_all[i]), eval(y_test_all[i]), clean_size, mod=mods_all[i], eval_type=mods_type[i])
@@ -371,7 +380,7 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
     return acc_all, acc_noise, acc_clean, filename
 
 def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=128, latent_dim=4, epochs=30,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True):
-    i_tot = 12
+    i_tot = 13
     test_tot = 5
     acc_all = np.full([np.max(params[:,0])+1, test_tot, i_tot],np.nan)
     acc_clean = np.full([np.max(params[:,0])+1, test_tot, i_tot],np.nan)
@@ -412,7 +421,7 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                 load = True
                 with open(filename + '.p', 'rb') as f:
                     scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, w_svae, c_svae, \
-                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise = pickle.load(f)   
+                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu_class, C = pickle.load(f)   
             else:
                 load = False
             # else:
@@ -484,19 +493,19 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                 y_train_aligned = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
                 # Train ENC-LDA
-                w_svae, c_svae = train_lda(x_train_svae,y_train_aligned)
-                w_sae, c_sae = train_lda(x_train_sae,y_train_aligned)
-                w_cnn, c_cnn = train_lda(x_train_cnn,y_train_aligned)
-                w_vcnn, c_vcnn = train_lda(x_train_vcnn,y_train_aligned)
+                w_svae, c_svae,_, _ = train_lda(x_train_svae,y_train_aligned)
+                w_sae, c_sae,_, _ = train_lda(x_train_sae,y_train_aligned)
+                w_cnn, c_cnn,_, _ = train_lda(x_train_cnn,y_train_aligned)
+                w_vcnn, c_vcnn, _, _ = train_lda(x_train_vcnn,y_train_aligned)
 
                 # Train LDA
-                w,c = train_lda(x_train_lda,y_train_lda)
+                w,c, mu_class, C = train_lda(x_train_lda,y_train_lda)
                 w_noise,c_noise = train_lda(x_train_lda2,y_train_lda2)
 
                 # Pickle variables
                 with open(filename + '.p', 'wb') as f:
                     pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
-                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise],f)
+                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu_class, C],f)
             else:
                 svae.set_weights(svae_w)
                 svae_enc.set_weights(svae_enc_w)
@@ -554,15 +563,17 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                 x_test_lda = prd.extract_feats(x_test_noise)
                 y_test_lda = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
 
+                y_test_ch = y_test_lda[:y_test_lda.shape[0]//2,...]
+
                 # Compile models and test data into lists
                 dl_mods = 4
                 align_mods = 4
                 lda_mods = 2
                 qda_mods = 2
-                mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w,c],[w_noise,c_noise],qda,qda_noise]
-                x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda']
-                y_test_all = np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda'))
-                mods_type =  np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda'))
+                mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu_class, C, n_test]]
+                x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
+                y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
+                mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
 
                 for i in range(0,len(mods_all)):
                     acc_all[sub-1,test_scale-1,i], acc_noise[sub-1,test_scale-1,i], acc_clean[sub-1,test_scale-1,i] = eval_noise_clean(eval(x_test_all[i]), eval(y_test_all[i]), clean_size, mod=mods_all[i], eval_type=mods_type[i])
@@ -835,6 +846,10 @@ def eval_noise_clean(x_test, y_test, clean_size, mod=0, eval_type='dl'):
         acc_all = mod.score(x_test,np.squeeze(y_test))
         acc_noise = mod.score(x_test[clean_size:,:],np.squeeze(y_test[clean_size:,:]))
         acc_clean = mod.score(x_test[:clean_size,:],np.squeeze(y_test[:clean_size,:]))
+    elif eval_type == 'lda_ch':
+        acc_noise = eval_lda_ch(mod[0], mod[1], mod[2], x_test, y_test)
+        acc_all = 0
+        acc_clean = 0
 
     return acc_all, acc_noise, acc_clean
 
