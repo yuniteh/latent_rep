@@ -76,7 +76,7 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True'):
         vae_loss = K.mean((reconstruction_loss + kl_loss)/100.0)
         return vae_loss
 
-    vae.compile(optimizer='adam', loss=[VAE_loss,'categorical_crossentropy'],experimental_run_tf_function=False)
+    vae.compile(optimizer='adam', loss=[VAE_loss,'categorical_crossentropy'],validation_split=0.33,experimental_run_tf_function=False)
     return vae, encoder, decoder, clf_supervised
 
 ## VARIATIONAL LATENT SPACE CLASSIFIER - NO DECODER
@@ -130,7 +130,7 @@ def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True'):
         # vae_loss = kl_loss
         return vae_loss
 
-    vae.compile(optimizer='adam', loss=VAE_loss,experimental_run_tf_function=False)
+    vae.compile(optimizer='adam', loss=VAE_loss,validation_split=0.33,experimental_run_tf_function=False)
     return vae, encoder, clf_supervised
 
 def build_cnn(latent_dim, n_class, input_type='feat',sparse='True'):
@@ -165,7 +165,7 @@ def build_cnn(latent_dim, n_class, input_type='feat',sparse='True'):
     outputs = clf_supervised(encoder(inputs))
     vae = Model(inputs, outputs, name='vae_mlp')
 
-    vae.compile(optimizer='adam', loss='categorical_crossentropy',experimental_run_tf_function=False)
+    vae.compile(optimizer='adam', loss='categorical_crossentropy',validation_split=0.33,experimental_run_tf_function=False)
     return vae, encoder, clf_supervised
 
 ## LATENT SPACE CLASSIFIER - NO DECODER
@@ -200,7 +200,7 @@ def build_sae(latent_dim, n_class, input_type='feat', sparse='True'):
     outputs = clf_supervised(encoder(inputs))
     vae = Model(inputs, outputs, name='vae_mlp')
 
-    vae.compile(optimizer='adam', loss='categorical_crossentropy',experimental_run_tf_function=False)
+    vae.compile(optimizer='adam', loss='categorical_crossentropy',validation_split=0.33,experimental_run_tf_function=False)
     return vae, encoder, clf_supervised
 
 ## VARIATIONAL AUTOENCODER - NO CLASSIFIER
@@ -250,7 +250,7 @@ def build_vae(latent_dim, input_type='feat'):
         vae_loss = K.mean((reconstruction_loss + kl_loss)/100.0)
         return vae_loss
 
-    vae.compile(optimizer='adam', loss=VAE_loss, experimental_run_tf_function=False)
+    vae.compile(optimizer='adam', loss=VAE_loss,validation_split=0.33, experimental_run_tf_function=False)
     return vae, encoder, decoder
 
 def eval_vae(vae, x_test, y_test):
