@@ -260,23 +260,23 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
                     x_train_clean_temp = cp.deepcopy(x_train_clean)/5
 
                 # Fit NNs and get weights
-                svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,batch_size=batch_size)
+                svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_split=0.33,batch_size=batch_size)
                 svae_w = svae.get_weights()
                 svae_enc_w = svae_enc.get_weights()
                 svae_dec_w = svae_dec.get_weights()
                 svae_clf_w = svae_clf.get_weights()
                 
-                sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,batch_size=batch_size)
+                sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
                 sae_w = sae.get_weights()
                 sae_enc_w = sae_enc.get_weights()
                 sae_clf_w = sae_clf.get_weights()
 
-                cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,batch_size=batch_size)
+                cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
                 cnn_w = cnn.get_weights()
                 cnn_enc_w = cnn_enc.get_weights()
                 cnn_clf_w = cnn_clf.get_weights()
 
-                vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,batch_size=batch_size)
+                vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
                 vcnn_w = vcnn.get_weights()
                 vcnn_enc_w = vcnn_enc.get_weights()
                 vcnn_clf_w = vcnn_clf.get_weights()
@@ -463,23 +463,23 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                     x_train_clean_temp = cp.deepcopy(x_train_clean)/5
 
                 # Fit NNs and get weights
-                svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,batch_size=batch_size)
+                svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_split=0.33,batch_size=batch_size)
                 svae_w = svae.get_weights()
                 svae_enc_w = svae_enc.get_weights()
                 svae_dec_w = svae_dec.get_weights()
                 svae_clf_w = svae_clf.get_weights()
                 
-                sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,batch_size=batch_size)
+                sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
                 sae_w = sae.get_weights()
                 sae_enc_w = sae_enc.get_weights()
                 sae_clf_w = sae_clf.get_weights()
 
-                cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,batch_size=batch_size)
+                cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
                 cnn_w = cnn.get_weights()
                 cnn_enc_w = cnn_enc.get_weights()
                 cnn_clf_w = cnn_clf.get_weights()
 
-                vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,batch_size=batch_size)
+                vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
                 vcnn_w = vcnn.get_weights()
                 vcnn_enc_w = vcnn_enc.get_weights()
                 vcnn_clf_w = vcnn_clf.get_weights()
