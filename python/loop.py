@@ -207,11 +207,11 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
             #     load = 'True'
             # Load saved data
             if load:
-            # if sub < 12:
+            # if sub < 13:
                 load = True
                 with open(filename + '.p', 'rb') as f:
                     scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, w_svae, c_svae, \
-                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, _, mu, C = pickle.load(f)   
+                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C = pickle.load(f)   
             else:
                 load = False
 
@@ -296,8 +296,8 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
                 w_vcnn, c_vcnn, _, _ = train_lda(x_train_vcnn,y_train_aligned)
 
                 # Train LDA
-                w,c, mu_class, C = train_lda(x_train_lda,y_train_lda)
-                w_noise,c_noise = train_lda(x_train_lda2,y_train_lda2)
+                w,c, mu, C = train_lda(x_train_lda,y_train_lda)
+                w_noise,c_noise, _, _ = train_lda(x_train_lda2,y_train_lda2)
 
                 # Pickle variables
                 with open(filename + '.p', 'wb') as f:
@@ -421,7 +421,7 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                 load = True
                 with open(filename + '.p', 'rb') as f:
                     scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, w_svae, c_svae, \
-                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu_class, C = pickle.load(f)   
+                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C = pickle.load(f)   
             else:
                 load = False
             # else:
@@ -499,13 +499,13 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                 w_vcnn, c_vcnn, _, _ = train_lda(x_train_vcnn,y_train_aligned)
 
                 # Train LDA
-                w,c, mu_class, C = train_lda(x_train_lda,y_train_lda)
-                w_noise,c_noise = train_lda(x_train_lda2,y_train_lda2)
+                w,c, mu, C = train_lda(x_train_lda,y_train_lda)
+                w_noise,c_noise, _, _ = train_lda(x_train_lda2,y_train_lda2)
 
                 # Pickle variables
                 with open(filename + '.p', 'wb') as f:
                     pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
-                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu_class, C],f)
+                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
             else:
                 svae.set_weights(svae_w)
                 svae_enc.set_weights(svae_enc_w)
@@ -570,7 +570,7 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                 align_mods = 4
                 lda_mods = 2
                 qda_mods = 2
-                mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu_class, C, n_test]]
+                mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, n_test]]
                 x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
                 y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
                 mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))

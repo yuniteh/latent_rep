@@ -133,6 +133,66 @@ def norm_sub(feat, params):
     
     return feat
 
+def remove_ch(raw, params, sub, n_type='flat', scale=5):
+    # Index subject and training group
+    max_ch = raw.shape[1] + 1
+    num_ch = int(n_type[-1]) + 1
+    out = cp.deepcopy(raw)
+    full_type = n_type[0:4]
+    noise_type = n_type[4:-1]
+
+    # tile data once for each channel
+    if full_type == 'full':
+        start_ch = 1
+        sub_params = np.tile(params,(num_ch,1))
+        orig = np.tile(raw,(num_ch,1,1))
+    # tile data twice, once for clean and once for noise
+    elif full_type == 'part':
+        start_ch = num_ch - 1
+        sub_params = np.tile(params,(2,1))
+        orig = np.tile(raw,(2,1,1))
+
+    # loop through channel noise
+    for num_noise in range(start_ch,num_ch):
+        ch_all = list(combinations(range(0,6),num_noise))
+        temp = cp.deepcopy(raw)
+        if noise_type == 'gaussflat':
+            ch_split = temp.shape[0]//(3*len(ch_all))
+        else:
+            ch_split = temp.shape[0]//len(ch_all)
+        for ch in range(0,len(ch_all)):
+            for i in ch_all[ch]:
+                # if full_type == 'part':
+                #     temp = cp.deepcopy(raw)
+                # temp[:,i,:] += np.random.normal(0,scale,temp.shape[2])
+                if noise_type == 'gaussflat':
+                    # if ch == 0:
+                    #     print('gaussflat:' + str(ch_split))
+                    temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] = np.nan
+                    temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] = np.nan
+                    temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] = np.nan
+                elif noise_type == 'gauss':
+                    # if ch == 0:
+                    #     print('gauss:' + str(ch_split))
+                    temp[ch*ch_split:(ch+1)*ch_split,i,:] = np.nan
+                    # temp[:,i,:] += np.random.normal(0,scale,temp.shape[2])
+                elif noise_type == 'flat':
+                    # if ch == 0:
+                    #     print('flat:' + str(ch_split))
+                    temp[ch*ch_split:(ch+1)*ch_split,i,:] = np.nan
+                    # temp[:,i,:] = 0
+                # if full_type == 'part':
+                #     out = np.concatenate((out,temp))
+        # if full_type == 'full':
+        out = np.concatenate((out,temp))
+        
+
+    noisy, clean, y = out, orig, to_categorical(sub_params[:,-2]-1)
+
+    clean = clean[...,np.newaxis]
+    noisy = noisy[...,np.newaxis]
+    return noisy,clean,y
+
 def add_noise(raw, params, sub, n_type='flat', scale=5):
     # Index subject and training group
     max_ch = raw.shape[1] + 1
@@ -296,7 +356,8 @@ def add_noise_old(raw, params, sub, n_type='flat', scale=5):
     return noisy,clean,y
 
 def extract_feats(raw):
-    raw = np.squeeze(raw)
+    if raw.shape[-1] == 1:
+        raw = np.squeeze(raw)
     N=raw.shape[2]
     samp = raw.shape[0]
     mav=np.sum(np.absolute(raw),axis=2)/N
@@ -304,7 +365,9 @@ def extract_feats(raw):
     th = 0.01
     zc= np.zeros([samp,raw.shape[1]])
     for i in range(0,N-1):
-        temp = np.squeeze(1*((raw[:,:,i]*raw[:,:,i+1]<0) & (np.absolute(raw[:,:,i]-raw[:,:,i+1])>th)))
+        temp = 1*((raw[:,:,i]*raw[:,:,i+1]<0) & (np.absolute(raw[:,:,i]-raw[:,:,i+1])>th))
+        if temp.ndim >= 3:
+            temp = np.squeeze(temp)
         zc += temp
 
     ssc= np.zeros([samp, raw.shape[1]])
