@@ -200,55 +200,47 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
     # Index subject and training group
     max_ch = raw.shape[1] + 1
     num_ch = int(n_type[-1]) + 1
-    out = cp.deepcopy(raw)
     full_type = n_type[0:4]
     noise_type = n_type[4:-1]
 
-    # tile data once for each channel
-    if full_type == 'full':
-        start_ch = 1
-        sub_params = np.tile(params,(num_ch,1))
-        orig = np.tile(raw,(num_ch,1,1))
-    # tile data twice, once for clean and once for noise
-    elif full_type == 'part':
-        start_ch = num_ch - 1
-        sub_params = np.tile(params,(2,1))
-        orig = np.tile(raw,(2,1,1))
+    if noise_type == 'gaussflat':
+        rep = 6
+    else:
+        rep = 1
+    
+    out = []
+    for rep_i in range(0,rep):    
+        # tile data once for each channel
+        if full_type == 'full':
+            start_ch = 1
+            sub_params = np.tile(params,(rep*(num_ch-1)+1,1))
+            orig = np.tile(raw,(rep*(num_ch-1),1,1))
+        # tile data twice, once for clean and once for noise
+        elif full_type == 'part':
+            start_ch = num_ch - 1
+            sub_params = np.tile(params,(2,1))
+            orig = np.tile(raw,(2,1,1))
 
-    # loop through channel noise
-    for num_noise in range(start_ch,num_ch):
-        ch_all = list(combinations(range(0,6),num_noise))
-        temp = cp.deepcopy(raw)
-        if noise_type == 'gaussflat':
-            ch_split = temp.shape[0]//(3*len(ch_all))
-        else:
+        # loop through channel noise
+        for num_noise in range(start_ch,num_ch):
+            ch_all = list(combinations(range(0,6),num_noise))
+            temp = cp.deepcopy(raw)
             ch_split = temp.shape[0]//len(ch_all)
-        for ch in range(0,len(ch_all)):
-            for i in ch_all[ch]:
-                # if full_type == 'part':
-                #     temp = cp.deepcopy(raw)
-                # temp[:,i,:] += np.random.normal(0,scale,temp.shape[2])
-                if noise_type == 'gaussflat':
-                    # if ch == 0:
-                    #     print('gaussflat:' + str(ch_split))
-                    temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] += np.random.normal(0,scale,temp.shape[2])
-                    temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += np.random.normal(0,scale/5,temp.shape[2])
-                    temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] = 0
-                elif noise_type == 'gauss':
-                    # if ch == 0:
-                    #     print('gauss:' + str(ch_split))
-                    temp[ch*ch_split:(ch+1)*ch_split,i,:] += np.random.normal(0,scale,temp.shape[2])
-                    # temp[:,i,:] += np.random.normal(0,scale,temp.shape[2])
-                elif noise_type == 'flat':
-                    # if ch == 0:
-                    #     print('flat:' + str(ch_split))
-                    temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
-                    # temp[:,i,:] = 0
-                # if full_type == 'part':
-                #     out = np.concatenate((out,temp))
-        # if full_type == 'full':
-        out = np.concatenate((out,temp))
-        
+            for ch in range(0,len(ch_all)):
+                for i in ch_all[ch]:
+                    if noise_type == 'gaussflat':
+                        if rep_i == 0:
+                            temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
+                        else:
+                            temp[ch*ch_split:(ch+1)*ch_split,i,:] += np.random.normal(0,rep_i,temp.shape[2])
+                    elif noise_type == 'gauss':
+                        temp[ch*ch_split:(ch+1)*ch_split,i,:] += np.random.normal(0,scale,temp.shape[2])
+                    elif noise_type == 'flat':
+                        temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
+            out = np.concatenate((out,temp))
+    
+    out = np.concatenate((raw, out))
+    orig = np. concatenate((raw, orig))
 
     noisy, clean, y = out, orig, to_categorical(sub_params[:,-2]-1)
 
