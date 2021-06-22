@@ -109,20 +109,23 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True):
     if load:
         if os.path.isfile(filename):
             with open(filename,'rb') as f:
-                x_train, x_test, p_train, p_test = pickle.load(f)
+                x_train, x_test, x_valid, p_train, p_test, p_valid = pickle.load(f)
                 x_train, p_train = shuffle(x_train, p_train, random_state = 0)
                 x_test, p_test = shuffle(x_test, p_test, random_state = 0)
+                x_valid, p_valid = shuffle(x_valid, p_valid, random_state = 0)
         else:
             load=False
     if not load:
         ind = (params[:,0] == sub) & (params[:,3] == train_grp)
         # Split training and testing data
-        x_train, x_test, p_train, p_test = train_test_split(raw[ind,:,:], params[ind,:], test_size = 0.33, stratify=params[ind,4], shuffle=True)
+        x_temp, x_test, p_temp, p_test = train_test_split(raw[ind,:,:], params[ind,:], test_size = 0.2, stratify=params[ind,4], shuffle=True)
+        x_train, x_valid, p_train, p_valid = train_test_split(x_temp, p_temp, test_size = 0.33, stratify=p_temp[:,4], shuffle=True)
         with open(filename, 'wb') as f:
-            pickle.dump([x_train, x_test, p_train, p_test],f)
+            pickle.dump([x_train, x_test, x_valid, p_train, p_test, p_valid],f)
         x_train, p_train = shuffle(x_train, p_train, random_state = 0)
         x_test, p_test = shuffle(x_test, p_test, random_state = 0)
-    return x_train, x_test, p_train, p_test
+        x_valid, p_valid = shuffle(x_valid, p_valid, random_state = 0)
+    return x_train, x_test, x_valid, p_train, p_test, p_valid
 
 def norm_sub(feat, params):
     for sub in range(1,np.max(params[:,0])):

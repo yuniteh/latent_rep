@@ -195,7 +195,7 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
 
         # Check if training data exists
         if np.sum(ind):
-            x_train, x_test, p_train, p_test = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
+            x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
             scaler = MinMaxScaler(feature_range=(-1,1))
             print('Running sub ' + str(sub) + ', model ' + str(train_grp) + ', latent dim ' + str(latent_dim))
             filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_' + n_train + '_' + str(train_scale)
@@ -221,11 +221,13 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
 
             # Add noise and index EMG data
             x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, n_train, train_scale)
+            x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, n_train, train_scale)
             x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, n_test, test_scale)
             # clean_size = int(np.size(x_test,axis=0)/(np.size(x_test_clean,axis=1)+1))
             clean_size = int(np.size(x_test,axis=0))
             if not noise:
                 x_train_noise = cp.deepcopy(x_train_clean)
+                x_valid_noise = cp.deepcopy(x_valid_clean)
                 x_test_noise = cp.deepcopy(x_test_clean)
 
             # Build VAE
@@ -255,28 +257,36 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
                     x_train_vae = scaler.transform(x_train_clean_temp.reshape(x_train_clean_temp.shape[0]*x_train_clean_temp.shape[1],-1)).reshape(x_train_clean_temp.shape)
                     x_train_noise_sae = x_train_noise_vae.reshape(x_train_noise_vae.shape[0],-1)
                     x_train_sae = x_train_vae.reshape(x_train_vae.shape[0],-1)
+
+                    x_valid_noise_temp = np.transpose(prd.extract_feats(x_valid_noise).reshape((x_valid_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                    x_valid_clean_temp = np.transpose(prd.extract_feats(x_valid_clean).reshape((x_valid_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                    x_valid_noise_vae = scaler.transform(x_valid_noise_temp.reshape(x_valid_noise_temp.shape[0]*x_valid_noise_temp.shape[1],-1)).reshape(x_valid_noise_temp.shape)
+                    
+                    x_valid_vae = scaler.transform(x_valid_clean_temp.reshape(x_valid_clean_temp.shape[0]*x_valid_clean_temp.shape[1],-1)).reshape(x_valid_clean_temp.shape)
+                    x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
+                    x_valid_sae = x_valid_vae.reshape(x_valid_vae.shape[0],-1)
                 elif feat_type == 'raw':
                     x_train_noise_temp = cp.deepcopy(x_train_noise)/5
                     x_train_clean_temp = cp.deepcopy(x_train_clean)/5
 
                 # Fit NNs and get weights
-                svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_split=0.33,batch_size=batch_size)
+                svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_data=[x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
                 svae_w = svae.get_weights()
                 svae_enc_w = svae_enc.get_weights()
                 svae_dec_w = svae_dec.get_weights()
                 svae_clf_w = svae_clf.get_weights()
                 
-                sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
+                sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_data=[x_valid_noise_sae,y_valid_clean],batch_size=batch_size)
                 sae_w = sae.get_weights()
                 sae_enc_w = sae_enc.get_weights()
                 sae_clf_w = sae_clf.get_weights()
 
-                cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
+                cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data=[x_valid_noise_vae,y_valid_clean],batch_size=batch_size)
                 cnn_w = cnn.get_weights()
                 cnn_enc_w = cnn_enc.get_weights()
                 cnn_clf_w = cnn_clf.get_weights()
 
-                vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
+                vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data=[x_valid_noise_vae,y_valid_clean],batch_size=batch_size)
                 vcnn_w = vcnn.get_weights()
                 vcnn_enc_w = vcnn_enc.get_weights()
                 vcnn_clf_w = vcnn_clf.get_weights()
@@ -405,7 +415,7 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
 
         # Check if training data exists
         if np.sum(ind):
-            x_train, x_test, p_train, p_test = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
+            x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
             scaler = MinMaxScaler(feature_range=(-1,1))
             print('Running sub ' + str(sub) + ', model ' + str(train_grp) + ', latent dim ' + str(latent_dim))
             filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_' + n_train + '_' + str(train_scale)
@@ -428,6 +438,7 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
             y_train = p_train[:,4]
             
             x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, n_train, train_scale)
+            x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, n_train, train_scale)
             if not noise:
                 x_train_noise = cp.deepcopy(x_train_clean)
 
@@ -458,28 +469,36 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                     x_train_vae = scaler.transform(x_train_clean_temp.reshape(x_train_clean_temp.shape[0]*x_train_clean_temp.shape[1],-1)).reshape(x_train_clean_temp.shape)
                     x_train_noise_sae = x_train_noise_vae.reshape(x_train_noise_vae.shape[0],-1)
                     x_train_sae = x_train_vae.reshape(x_train_vae.shape[0],-1)
+
+                    x_valid_noise_temp = np.transpose(prd.extract_feats(x_valid_noise).reshape((x_valid_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                    x_valid_clean_temp = np.transpose(prd.extract_feats(x_valid_clean).reshape((x_valid_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                    x_valid_noise_vae = scaler.transform(x_valid_noise_temp.reshape(x_valid_noise_temp.shape[0]*x_valid_noise_temp.shape[1],-1)).reshape(x_valid_noise_temp.shape)
+                    
+                    x_valid_vae = scaler.transform(x_valid_clean_temp.reshape(x_valid_clean_temp.shape[0]*x_valid_clean_temp.shape[1],-1)).reshape(x_valid_clean_temp.shape)
+                    x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
+                    x_valid_sae = x_valid_vae.reshape(x_valid_vae.shape[0],-1)
                 elif feat_type == 'raw':
                     x_train_noise_temp = cp.deepcopy(x_train_noise)/5
                     x_train_clean_temp = cp.deepcopy(x_train_clean)/5
 
                 # Fit NNs and get weights
-                svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_split=0.33,batch_size=batch_size)
+                svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_data = [x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
                 svae_w = svae.get_weights()
                 svae_enc_w = svae_enc.get_weights()
                 svae_dec_w = svae_dec.get_weights()
                 svae_clf_w = svae_clf.get_weights()
                 
-                sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
+                sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=batch_size)
                 sae_w = sae.get_weights()
                 sae_enc_w = sae_enc.get_weights()
                 sae_clf_w = sae_clf.get_weights()
 
-                cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
+                cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
                 cnn_w = cnn.get_weights()
                 cnn_enc_w = cnn_enc.get_weights()
                 cnn_clf_w = cnn_clf.get_weights()
-
-                vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_split=0.33,batch_size=batch_size)
+                
+                vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
                 vcnn_w = vcnn.get_weights()
                 vcnn_enc_w = vcnn_enc.get_weights()
                 vcnn_clf_w = vcnn_clf.get_weights()
