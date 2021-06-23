@@ -106,6 +106,8 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, m
     # foldername = 'models' + '_' + str(train_grp) + '_' + dt
     foldername = 'traindata'
     filename = foldername + '/' + sub_type + str(sub) + '_traindata.p'
+    if not os.path.isdir(foldername):
+        os.mkdir(foldername)
     if load:
         if os.path.isfile(filename):
             with open(filename,'rb') as f:
