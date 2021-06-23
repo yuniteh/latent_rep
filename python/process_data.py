@@ -99,7 +99,7 @@ def sub_split_loo(feat, params, sub, grp):
         y = 0
     return x,y
 
-def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, manual=False):
+def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, manual=False, split=0.2):
     if dt == 0:
         today = date.today()
         dt = today.strftime("%m%d")
@@ -120,12 +120,28 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, m
     if not load:
         ind = (params[:,0] == sub) & (params[:,3] == train_grp)
         if manual:
-            train_ind = ind & (params[:,1] < 4)
-            valid_ind = ind & (params[:,1] == 4)
-            test_ind = ind & (params[:,1] == 5)
-            x_train, p_train = raw[train_ind,:,:], params[train_ind,:]
-            x_valid, p_valid = raw[valid_ind,:,:], params[valid_ind,:]
-            x_test, p_test = raw[test_ind,:,:], params[test_ind,:]
+            max_dof = np.max(params[ind,4])
+
+            # initialize training data arrays
+            train_split = (1-2*split)*500
+            vt_split = split*500
+            x_train = np.full((max_dof*train_split,raw.shape[1],raw.shape[2]),np.nan)
+            x_valid = np.full((max_dof*vt_split,raw.shape[1],raw.shape[2]),np.nan)
+            x_test = np.full((max_dof*vt_split,raw.shape[1],raw.shape[2]),np.nan)
+            p_train = np.full((max_dof*train_split,params.shape[1]),np.nan)
+            p_valid = np.full((max_dof*vt_split,params.shape[1]),np.nan)
+            p_test = np.full((max_dof*vt_split,params.shape[1]),np.nan)
+
+            for dof in range(1,max_dof+1):
+                dof_ind = ind & (params[:,4] == dof)
+                temp = raw[dof_ind,...]
+                temp_p = params[dof_ind,...]
+                x_train[(dof-1)*train_split:dof*train_split,...] = temp[:train_split,...]
+                p_train[(dof-1)*train_split:dof*train_split,...] = params[:train_split,...]
+                x_valid[(dof-1)*vt_split:dof*vt_split,...] = temp[train_split:train_split+vt_split,...]
+                p_valid[(dof-1)*vt_split:dof*vt_split,...] = params[train_split:train_split+vt_split,...]
+                x_test[(dof-1)*vt_split:dof*vt_split,...] = temp[train_split+vt_split:,...]
+                p_test[(dof-1)*vt_split:dof*vt_split,...] = params[train_split+vt_split:,...]
         else:
             # Split training and testing data
             x_temp, x_test, p_temp, p_test = train_test_split(raw[ind,:,:], params[ind,:], test_size = 0.2, stratify=params[ind,4], shuffle=True)
