@@ -18,7 +18,7 @@ def eval_lda_ch(mu_class, C, n_type, x, y):
 
     # tile data once for each channel
     if full_type == 'full':
-        start_ch = 1
+        start_ch = num_ch - 1
     # tile data twice, once for clean and once for noise
     elif full_type == 'part':
         start_ch = num_ch - 1
