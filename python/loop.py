@@ -201,10 +201,6 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
             filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_' + n_train + '_' + str(train_scale)
             if sparsity:
                 filename = filename + '_sparse'
-            # if os.path.isfile(filename):
-            #     load = 'False'
-            # else:
-            #     load = 'True'
             # Load saved data
             if load:
             # if sub < 11:
