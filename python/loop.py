@@ -379,6 +379,10 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
             mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
 
             for i in range(0,len(mods_all)):
+                test, test1, test2 = eval_noise_clean(eval(x_test_all[i]), eval(y_test_all[i]), clean_size, mod=mods_all[i], eval_type=mods_type[i])
+                print(np.shape(test))
+                print(np.shape(test1))
+                print(np.shape(test2))
                 acc_all[sub-1,i], acc_noise[sub-1,i], acc_clean[sub-1,i] = eval_noise_clean(eval(x_test_all[i]), eval(y_test_all[i]), clean_size, mod=mods_all[i], eval_type=mods_type[i])
 
     resultsfile = foldername + '/' + sub_type + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_' + n_train + '_' + str(train_scale) + '_' + n_test + '_' + str(test_scale)

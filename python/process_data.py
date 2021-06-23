@@ -208,19 +208,19 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
     else:
         rep = 1
     
-    out = []
-    for rep_i in range(0,rep):    
-        # tile data once for each channel
-        if full_type == 'full':
-            start_ch = 1
-            sub_params = np.tile(params,(rep*(num_ch-1)+1,1))
-            orig = np.tile(raw,(rep*(num_ch-1),1,1))
-        # tile data twice, once for clean and once for noise
-        elif full_type == 'part':
-            start_ch = num_ch - 1
-            sub_params = np.tile(params,(2,1))
-            orig = np.tile(raw,(2,1,1))
-
+    # tile data once for each channel
+    if full_type == 'full':
+        start_ch = 1
+        sub_params = np.tile(params,(rep*(num_ch-1)+1,1))
+        orig = np.tile(raw,(rep*(num_ch-1),1,1))
+    # tile data twice, once for clean and once for noise
+    elif full_type == 'part':
+        start_ch = num_ch - 1
+        sub_params = np.tile(params,(2,1))
+        orig = np.tile(raw,(2,1,1))
+        
+    out = np.array([]).reshape(0,6,200)
+    for rep_i in range(0,rep):   
         # loop through channel noise
         for num_noise in range(start_ch,num_ch):
             ch_all = list(combinations(range(0,6),num_noise))
@@ -237,10 +237,11 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += np.random.normal(0,scale,temp.shape[2])
                     elif noise_type == 'flat':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
+
             out = np.concatenate((out,temp))
     
     out = np.concatenate((raw, out))
-    orig = np. concatenate((raw, orig))
+    orig = np.concatenate((raw, orig))
 
     noisy, clean, y = out, orig, to_categorical(sub_params[:,-2]-1)
 
