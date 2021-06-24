@@ -99,12 +99,12 @@ def sub_split_loo(feat, params, sub, grp):
         y = 0
     return x,y
 
-def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, manual=False, split=0.2):
+def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True):
     if dt == 0:
         today = date.today()
         dt = today.strftime("%m%d")
     # foldername = 'models' + '_' + str(train_grp) + '_' + dt
-    foldername = 'traindata'
+    foldername = 'traindata_' + dt
     filename = foldername + '/' + sub_type + str(sub) + '_traindata.p'
     if not os.path.isdir(foldername):
         os.mkdir(foldername)
@@ -119,8 +119,13 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, m
             load=False
     if not load:
         ind = (params[:,0] == sub) & (params[:,3] == train_grp)
-        if manual:
-            x_train = raw[ind,:]
+        if dt == 'manual':
+            train_ind = ind & (params[:,6] < 4)
+            valid_ind = ind & (params[:,6] == 4)
+            test_ind = ind & (params[:,6] == 5)
+            x_train, p_train = raw[train_ind,:,:], params[train_ind,:]
+            x_valid, p_valid = raw[valid_ind,:,:], params[valid_ind,:]
+            x_test, p_test = raw[test_ind,:,:], params[test_ind,:]
         else:
             # Split training and testing data
             x_temp, x_test, p_temp, p_test = train_test_split(raw[ind,:,:], params[ind,:], test_size = 0.2, stratify=params[ind,4], shuffle=True)
@@ -249,7 +254,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
     out = np.concatenate((raw, out))
     orig = np.concatenate((raw, orig))
 
-    noisy, clean, y = out, orig, to_categorical(sub_params[:,-2]-1)
+    noisy, clean, y = out, orig, to_categorical(sub_params[:,4]-1)
 
     clean = clean[...,np.newaxis]
     noisy = noisy[...,np.newaxis]
