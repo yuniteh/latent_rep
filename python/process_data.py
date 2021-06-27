@@ -249,7 +249,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
                     elif noise_type == 'flat':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
                     elif noise_type == '60hz':
-                        x = np.linspace(0,ch_split,ch_split)
+                        x = np.linspace(0,temp.shape[2],temp.shape[2])
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += scale*np.sin(2*np.pi*60*x)
 
             out = np.concatenate((out,temp))
