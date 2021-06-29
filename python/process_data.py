@@ -105,7 +105,7 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True):
         dt = today.strftime("%m%d")
     # foldername = 'models' + '_' + str(train_grp) + '_' + dt
     foldername = 'traindata_' + dt
-    filename = foldername + '/' + sub_type + str(sub) + '_traindata.p'
+    filename = foldername + '/' + sub_type + str(sub) + '_traindata_' + str(train_grp) + '.p'
     if not os.path.isdir(foldername):
         os.mkdir(foldername)
     if load:
@@ -119,17 +119,22 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True):
             load=False
     if not load:
         ind = (params[:,0] == sub) & (params[:,3] == train_grp)
-        if dt == 'manual':
-            train_ind = ind & (params[:,6] < 4)
-            valid_ind = ind & (params[:,6] == 4)
-            test_ind = ind & (params[:,6] == 5)
-            x_train, p_train = raw[train_ind,:,:], params[train_ind,:]
-            x_valid, p_valid = raw[valid_ind,:,:], params[valid_ind,:]
-            x_test, p_test = raw[test_ind,:,:], params[test_ind,:]
+        if train_grp > 2:
+            x_train, p_train = 0
+            x_valid, p_valid = 0
+            x_test, p_test = raw[ind,:,:], params[ind,:,:] 
         else:
-            # Split training and testing data
-            x_temp, x_test, p_temp, p_test = train_test_split(raw[ind,:,:], params[ind,:], test_size = 0.2, stratify=params[ind,4], shuffle=True)
-            x_train, x_valid, p_train, p_valid = train_test_split(x_temp, p_temp, test_size = 0.33, stratify=p_temp[:,4], shuffle=True)
+            if dt == 'manual':
+                train_ind = ind & (params[:,6] < 4)
+                valid_ind = ind & (params[:,6] == 4)
+                test_ind = ind & (params[:,6] == 5)
+                x_train, p_train = raw[train_ind,:,:], params[train_ind,:]
+                x_valid, p_valid = raw[valid_ind,:,:], params[valid_ind,:]
+                x_test, p_test = raw[test_ind,:,:], params[test_ind,:]
+            else:
+                # Split training and testing data
+                x_temp, x_test, p_temp, p_test = train_test_split(raw[ind,:,:], params[ind,:], test_size = 0.2, stratify=params[ind,4], shuffle=True)
+                x_train, x_valid, p_train, p_valid = train_test_split(x_temp, p_temp, test_size = 0.33, stratify=p_temp[:,4], shuffle=True)
         
         with open(filename, 'wb') as f:
             pickle.dump([x_train, x_test, x_valid, p_train, p_test, p_valid],f)
