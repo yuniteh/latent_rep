@@ -107,23 +107,23 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                     x_train_clean_temp = cp.deepcopy(x_train_clean)/5
 
                 # Fit NNs and get weights
-                svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_data = [x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
+                svae_hist = svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_data = [x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
                 svae_w = svae.get_weights()
                 svae_enc_w = svae_enc.get_weights()
                 svae_dec_w = svae_dec.get_weights()
                 svae_clf_w = svae_clf.get_weights()
                 
-                sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=batch_size)
+                sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=batch_size)
                 sae_w = sae.get_weights()
                 sae_enc_w = sae_enc.get_weights()
                 sae_clf_w = sae_clf.get_weights()
 
-                cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
+                cnn_hist = cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
                 cnn_w = cnn.get_weights()
                 cnn_enc_w = cnn_enc.get_weights()
                 cnn_clf_w = cnn_clf.get_weights()
                 
-                vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
+                vcnn_hist = vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
                 vcnn_w = vcnn.get_weights()
                 vcnn_enc_w = vcnn_enc.get_weights()
                 vcnn_clf_w = vcnn_clf.get_weights()
@@ -150,6 +150,9 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                 with open(filename + '.p', 'wb') as f:
                     pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
                         w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
+                
+                with open(filename + '_hist.p', 'wb') as f:
+                    pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist],f)
             else:
                 svae.set_weights(svae_w)
                 svae_enc.set_weights(svae_enc_w)

@@ -99,7 +99,7 @@ def sub_split_loo(feat, params, sub, grp):
         y = 0
     return x,y
 
-def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True):
+def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, valid_i = 4, test_i = 5):
     if dt == 0:
         today = date.today()
         dt = today.strftime("%m%d")
@@ -126,9 +126,9 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True):
             x_test, p_test = raw[ind,:,:], params[ind,:] 
         else:
             if dt == 'manual':
-                train_ind = ind & (params[:,6] < 4)
-                valid_ind = ind & (params[:,6] == 4)
-                test_ind = ind & (params[:,6] == 5)
+                train_ind = ind & (params[:,6] != valid_i) & (params[:,6] != test_i)
+                valid_ind = ind & (params[:,6] == valid_i)
+                test_ind = ind & (params[:,6] == test_i)
                 x_train, p_train = raw[train_ind,:,:], params[train_ind,:]
                 x_valid, p_valid = raw[valid_ind,:,:], params[valid_ind,:]
                 x_test, p_test = raw[test_ind,:,:], params[test_ind,:]
