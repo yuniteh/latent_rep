@@ -13,6 +13,7 @@ import sVAE_utils as dl
 import process_data as prd
 import copy as cp
 from datetime import date
+
 def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=128, latent_dim=4, epochs=30,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True):
     i_tot = 13
     noise_type = n_test[4:-1]
@@ -170,7 +171,7 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                 
                 # load test data for diff limb positions
                 if noise_type == 'pos':
-                    _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
+                    _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,sub_type,dt=dt,train_grp=3)
                     pos_ind = params[:,-1] == test_scale
                     x_test_noise = x_test[pos_ind,...]
                     x_test_clean = x_test[pos_ind,...]
