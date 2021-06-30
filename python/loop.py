@@ -176,11 +176,6 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
     acc_noise = np.full([np.max(params[:,0])+1, i_tot],np.nan)
     filename = 0
 
-    if n_train == 'flat':
-        train_scale = 0
-    if n_test == 'flat':
-        test_scale = 0
-
     # Set folder
     if dt == 0:
         today = date.today()
@@ -219,7 +214,6 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
             x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, n_train, train_scale)
             x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, n_train, train_scale)
             x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, n_test, test_scale)
-            # clean_size = int(np.size(x_test,axis=0)/(np.size(x_test_clean,axis=1)+1))
             clean_size = int(np.size(x_test,axis=0))
             if not noise:
                 x_train_noise = cp.deepcopy(x_train_clean)
@@ -327,14 +321,6 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
                 vcnn_enc.set_weights(vcnn_enc_w)
                 vcnn_clf.set_weights(vcnn_clf_w)
 
-                # # Train LDA TEMP
-                w,c, mu, C = train_lda(x_train_lda,y_train_lda)
-
-                # Pickle variables TEMP
-                with open(filename + '.p', 'wb') as f:
-                    pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
-                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
-
             # Extract features
             if feat_type == 'feat':
                 x_test_noise_temp = np.transpose(prd.extract_feats(x_test_noise).reshape((x_test_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
@@ -387,16 +373,19 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
 
 def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=128, latent_dim=4, epochs=30,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True):
     i_tot = 13
-    test_tot = 5
+    noise_type = n_type[4:-1]
+
+    if noise_type == 'gauss' or noise_type == '60hz':
+        test_tot = 5
+    elif noise_type == 'flat':
+        test_tot = 1
+    elif noise_type == 'pos':
+        test_tot = 4
+
     acc_all = np.full([np.max(params[:,0])+1, test_tot, i_tot],np.nan)
     acc_clean = np.full([np.max(params[:,0])+1, test_tot, i_tot],np.nan)
     acc_noise = np.full([np.max(params[:,0])+1, test_tot, i_tot],np.nan)
     filename = 0
-
-    if n_train == 'flat':
-        train_scale = 0
-    if n_test == 'flat':
-        test_scale = 0
 
     # Set folder
     if dt == 0:
@@ -417,10 +406,6 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
             filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_' + n_train + '_' + str(train_scale)
             if sparsity:
                 filename = filename + '_sparse'
-            # if os.path.isfile(filename):
-            #     load = 'False'
-            # else:
-            #     load = 'True'
             # Load saved data
             if load:
             # if latent_dim < 8:
@@ -539,13 +524,12 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                 vcnn_enc.set_weights(vcnn_enc_w)
                 vcnn_clf.set_weights(vcnn_clf_w)
             
-            for test_scale in range(1,6):
+            for test_scale in range(1,test_tot+1):
                 # Get ground truth
                 y_test = p_test[:,4]
 
                 # Add noise and index EMG data
                 x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, n_test, test_scale)
-                # clean_size = int(np.size(x_test_clean,axis=0)/(np.size(x_test_clean,axis=1)+1))
                 clean_size = int(np.size(x_test,axis=0))
                 if not noise:
                     x_test_noise = cp.deepcopy(x_test_clean)
