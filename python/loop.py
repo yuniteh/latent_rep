@@ -373,7 +373,7 @@ def loop_sub(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tru
 
 def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=128, latent_dim=4, epochs=30,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True):
     i_tot = 13
-    noise_type = n_type[4:-1]
+    noise_type = n_test[4:-1]
 
     if noise_type == 'gauss' or noise_type == '60hz':
         test_tot = 5
@@ -864,9 +864,6 @@ def ave_results(params, sub_type, train_grp=2, dt=0, feat_type='feat',epochs=30,
     if loop_i == 'noise':
         ax = 0
         resultsfile = foldername + '/' + sub_type + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_' + n_train + '_' + str(train_scale) + '_' + n_test
-        if n_test[0:4] == 'flat' or n_test[4:-1] == 'flat':
-            test_scale = 0
-            resultsfile += '_' + str(test_scale)
         if sparsity:
              resultsfile += '_sparse'
         with open(resultsfile + '_results.p', 'rb') as f:
