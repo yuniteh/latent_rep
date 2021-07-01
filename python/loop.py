@@ -14,6 +14,7 @@ import sVAE_utils as dl
 import process_data as prd
 import copy as cp
 from datetime import date
+import time
 
 def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=128, latent_dim=4, epochs=30,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5):
     i_tot = 13
@@ -42,7 +43,7 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
     if not os.path.exists(foldername):
         os.makedirs(foldername)
 
-    for sub in range(1,2): #np.max(params[:,0])+1):            
+    for sub in range(1,np.max(params[:,0])+1):            
         ind = (params[:,0] == sub) & (params[:,3] == train_grp)
 
         # Check if training data exists

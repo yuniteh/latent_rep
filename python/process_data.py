@@ -99,7 +99,7 @@ def sub_split_loo(feat, params, sub, grp):
         y = 0
     return x,y
 
-def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, test_i = 5):
+def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, test_i = 5, valid_i = 4):
     if dt == 0:
         today = date.today()
         dt = today.strftime("%m%d")
@@ -125,11 +125,18 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, t
             x_train, x_valid, p_train, p_valid = 0,0,0,0
             x_test, p_test = raw[ind,:,:], params[ind,:] 
         else:
-            if dt == 'manual':
+            if dt == 'cv':
                 train_ind = ind & (params[:,6] != test_i)
                 test_ind = ind & (params[:,6] == test_i)
                 x_train, p_train = raw[train_ind,:,:], params[train_ind,:]
                 x_valid, p_valid = raw[train_ind,:,:], params[train_ind,:]
+                x_test, p_test = raw[test_ind,:,:], params[test_ind,:]
+            elif dt == 'manual':
+                train_ind = ind & (params[:,6] != test_i) & (params[:,6] != valid_i)
+                valid_ind = ind & (params[:,6] == valid_i)
+                test_ind = ind & (params[:,6] == test_i)
+                x_train, p_train = raw[train_ind,:,:], params[train_ind,:]
+                x_valid, p_valid = raw[valid_ind,:,:], params[valid_ind,:]
                 x_test, p_test = raw[test_ind,:,:], params[test_ind,:]
             else:
                 # Split training and testing data
