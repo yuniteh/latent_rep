@@ -88,10 +88,13 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                 vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity)
 
                 # Training data for LDA/QDA
+                t = time.time()
                 x_train_lda = prd.extract_feats(x_train)
                 y_train_lda = y_train[...,np.newaxis] - 1
                 x_train_lda2 = prd.extract_feats(x_train_noise)
                 y_train_lda2 = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
+                print(time.time() - t)
+                print('hi')
 
                 # Train QDA
                 qda = QDA()
@@ -101,8 +104,11 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
 
                 if not load:
                     if feat_type == 'feat':
+                        t = time.time()
                         x_train_noise_temp = np.transpose(prd.extract_feats(x_train_noise).reshape((x_train_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
                         x_train_clean_temp = np.transpose(prd.extract_feats(x_train_clean).reshape((x_train_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                        print(time.time() - t)
+                        print('hi2')
                         x_train_noise_vae = scaler.fit_transform(x_train_noise_temp.reshape(x_train_noise_temp.shape[0]*x_train_noise_temp.shape[1],-1)).reshape(x_train_noise_temp.shape)
                         
                         x_train_vae = scaler.transform(x_train_clean_temp.reshape(x_train_clean_temp.shape[0]*x_train_clean_temp.shape[1],-1)).reshape(x_train_clean_temp.shape)
