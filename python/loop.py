@@ -47,8 +47,11 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
 
         # Check if training data exists
         if np.sum(ind):
+            x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
             for cv in range(start_cv,max_cv):
-                x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt, valid_i=cv)
+                x_valid, p_valid = x_train[p_train[:,6] == cv,...], p_train[p_train[:,6] == cv]
+                x_train, p_train = x_train[p_train[:,6] != cv,...], p_train[p_train[:,6] != cv]
+                
                 scaler = MinMaxScaler(feature_range=(-1,1))
                 print('Running sub ' + str(sub) + ', model ' + str(train_grp) + ', latent dim ' + str(latent_dim))
                 filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_' + n_train + '_' + str(train_scale) + '_cv_' + str(cv)
