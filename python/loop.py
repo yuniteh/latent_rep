@@ -47,14 +47,19 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
 
         # Check if training data exists
         if np.sum(ind):
-            x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
+            if dt == 'cv':
+                x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
+            else:
+                x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
+
             for cv in range(start_cv,max_cv):
-                x_valid, p_valid = x_train[p_train[:,6] == cv,...], p_train[p_train[:,6] == cv]
-                x_train, p_train = x_train[p_train[:,6] != cv,...], p_train[p_train[:,6] != cv]
-                
-                scaler = MinMaxScaler(feature_range=(-1,1))
+                filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_' + n_train + '_' + str(train_scale)
+                if dt == 'cv':
+                    x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
+                    x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
+                    filename += '_cv_' + str(cv)
+
                 print('Running sub ' + str(sub) + ', model ' + str(train_grp) + ', latent dim ' + str(latent_dim))
-                filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_' + n_train + '_' + str(train_scale) + '_cv_' + str(cv)
                 if sparsity:
                     filename = filename + '_sparse'
 
@@ -65,6 +70,7 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                         scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, w_svae, c_svae, \
                             w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C = pickle.load(f)   
                 else:
+                    scaler = MinMaxScaler(feature_range=(-1,1))
                     load = False
                 # else:
                 y_train = p_train[:,4]
