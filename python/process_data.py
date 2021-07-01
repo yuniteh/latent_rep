@@ -11,6 +11,7 @@ from sklearn.utils import shuffle
 from sklearn.preprocessing import MinMaxScaler
 from collections import deque
 from itertools import combinations
+import time
 
 def load_raw(filename):
     struct = scipy.io.loadmat(filename)
@@ -388,20 +389,66 @@ def extract_feats(raw):
 
     th = 0.01
     zc= np.zeros([samp,raw.shape[1]])
+    t = time.time()
     for i in range(0,N-1):
         temp = 1*((raw[:,:,i]*raw[:,:,i+1]<0) & (np.absolute(raw[:,:,i]-raw[:,:,i+1])>th))
         if temp.ndim >= 3:
             temp = np.squeeze(temp)
         zc += temp
+    print(time.time()-t)
+
 
     ssc= np.zeros([samp, raw.shape[1]])
+    t = time.time()
     for i in range(1,N-1):
         temp = (((raw[:,:,i]>raw[:,:,i-1]) & (raw[:,:,i]>raw[:,:,i+1])) | ((raw[:,:,i]<raw[:,:,i-1]) & (raw[:,:,i]<raw[:,:,i+1])))  & ((np.absolute(raw[:,:,i]-raw[:,:,i+1])>th) & (np.absolute(raw[:,:,i]-raw[:,:,i-1])>th))
         ssc += temp
+    print(time.time()-t)
+
 
     wl=0
-    for i in range(2,N):
+    t = time.time()
+    for i in range(1,N):
         wl+=np.absolute(raw[:,:,i]-raw[:,:,i-1])
+    print(time.time()-t)
+
 
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
+    return feat_out
+
+def extract_feats_slow(raw,th=0.01):
+    if raw.shape[-1] == 1:
+        raw = np.squeeze(raw)
+    N=raw.shape[2]
+    samp = raw.shape[0]
+
+    mav=np.sum(np.absolute(raw),axis=2)/N
+
+    last = np.roll(raw, 1, axis=2)
+    next = np.roll(raw, -1, axis=2)
+
+    t = time.time()
+    # zero crossings
+    zero_change = (next[...,:-1]*raw[...,:-1] < 0) & (np.absolute(next[...,:-1]-raw[...,:-1])>th)
+    print(time.time()-t)
+    t = time.time()
+    zc = np.sum(zero_change, axis=2)
+    print(time.time()-t)
+
+    # slope sign change
+    t = time.time()
+    next_s = next[...,1:-1] - raw[...,1:-1]
+    last_s = raw[...,1:-1] - last[...,1:-1]
+    sign_change = ((next_s > 0) & (last_s < 0)) | ((next_s < 0) & (last_s > 0))
+    th_check = (np.absolute(next_s) > th) & (np.absolute(last_s) > th)
+    ssc = np.sum(sign_change & th_check, axis=2)
+    print(time.time()-t)
+
+    # waveform length
+    t = time.time()
+    wl = np.sum(np.absolute(next[...,:-1] - raw[...,:-1]), axis=2)
+    print(time.time()-t)
+
+    feat_out = 0
+    # feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     return feat_out
