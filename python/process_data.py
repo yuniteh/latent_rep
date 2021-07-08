@@ -251,12 +251,17 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
         for num_noise in range(start_ch,num_ch):
             ch_all = list(combinations(range(0,6),num_noise))
             temp = cp.deepcopy(raw)
-            ch_split = temp.shape[0]//len(ch_all)
+            if full_type == 'full':
+                ch_split = temp.shape[0]//(3*len(ch_all))
+            else:
+                ch_split = temp.shape[0]//len(ch_all)
             for ch in range(0,len(ch_all)):
                 for i in ch_all[ch]:
                     if noise_type == 'gaussflat':
                         if rep_i == 0:
-                            temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
+                            temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] = 0
+                            temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += np.random.normal(0,1,temp.shape[2])
+                            temp[ch*ch_split:(3*ch+3)*ch_split,i,:] += np.random.normal(0,2,temp.shape[2])
                         else:
                             temp[ch*ch_split:(ch+1)*ch_split,i,:] += np.random.normal(0,rep_i,temp.shape[2])
                     elif noise_type == 'gauss':
