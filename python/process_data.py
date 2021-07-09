@@ -230,7 +230,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
     noise_type = n_type[4:-1]
 
     if noise_type == 'gaussflat':
-        rep = 6
+        rep = 2
     else:
         rep = 1
     
@@ -261,9 +261,12 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
                         if rep_i == 0:
                             temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] = 0
                             temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += np.random.normal(0,1,temp.shape[2])
-                            temp[ch*ch_split:(3*ch+3)*ch_split,i,:] += np.random.normal(0,2,temp.shape[2])
+                            temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] += np.random.normal(0,2,temp.shape[2])
                         else:
-                            temp[ch*ch_split:(ch+1)*ch_split,i,:] += np.random.normal(0,rep_i,temp.shape[2])
+                            temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] += np.random.normal(0,3,temp.shape[2])
+                            temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
+                            temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])
+                            # temp[ch*ch_split:(ch+1)*ch_split,i,:] += np.random.normal(0,rep_i,temp.shape[2])
                     elif noise_type == 'gauss':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += np.random.normal(0,scale,temp.shape[2])
                     elif noise_type == 'flat':

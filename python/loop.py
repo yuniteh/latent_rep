@@ -44,7 +44,7 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
     if not os.path.exists(foldername):
         os.makedirs(foldername)
 
-    for sub in range(2,np.max(params[:,0])+1):            
+    for sub in range(1,np.max(params[:,0])+1):            
         ind = (params[:,0] == sub) & (params[:,3] == train_grp)
 
         # Check if training data exists
