@@ -246,7 +246,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
         orig = np.tile(raw,(2,1,1))
         
     out = np.array([]).reshape(0,6,200)
-    for rep_i in range(0,rep):   
+    for rep_i in range(rep):   
         # loop through channel noise
         for num_noise in range(start_ch,num_ch):
             ch_all = list(combinations(range(0,6),num_noise))
