@@ -2,7 +2,7 @@ from matplotlib import pyplot as plt
 import os
 import numpy as np
 
-from tensorflow.keras.layers import Lambda, Input, Dense, Conv2D, Flatten, Conv2DTranspose, Reshape, concatenate, BatchNormalization
+from tensorflow.keras.layers import Lambda, Input, Dense, Conv2D, Flatten, Conv2DTranspose, Reshape, concatenate, BatchNormalization, MaxPooling2D
 from tensorflow.keras.models import Model
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.losses import mse, binary_crossentropy, categorical_crossentropy
@@ -133,7 +133,7 @@ def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True'):
     vae.compile(optimizer='adam', loss=VAE_loss,experimental_run_tf_function=False)
     return vae, encoder, clf_supervised
 
-def build_cnn(latent_dim, n_class, input_type='feat',sparse='True'):
+def build_cnn_old(latent_dim, n_class, input_type='feat',sparse='True'):
     
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -156,6 +156,33 @@ def build_cnn(latent_dim, n_class, input_type='feat',sparse='True'):
     z = BatchNormalization()(z)
     encoder = Model(inputs, z, name="encoder")
 
+    # classifier
+    clf_latent_inputs = Input(shape=(latent_dim,), name='z_clf')
+    clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
+    clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
+
+    # instantiate VAE model
+    outputs = clf_supervised(encoder(inputs))
+    vae = Model(inputs, outputs, name='vae_mlp')
+
+    vae.compile(optimizer='adam', loss='categorical_crossentropy',experimental_run_tf_function=False)
+    return vae, encoder, clf_supervised
+
+def build_cnn(latent_dim, n_class, input_type='feat',sparse='True'):
+    
+    if input_type == 'feat':
+        input_shape = (6,4,1)
+    elif input_type == 'raw':
+        input_shape = (6,50,1)
+
+    # build encoder model
+    inputs = Input(shape=input_shape)
+    x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
+    x = MaxPooling2D((1,3))(x)
+    z = Flatten()(x)
+    encoder = Model(inputs, z, name="encoder")
+
+    latent_dim = 3072
     # classifier
     clf_latent_inputs = Input(shape=(latent_dim,), name='z_clf')
     clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
