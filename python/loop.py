@@ -45,7 +45,7 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
     if not os.path.exists(foldername):
         os.makedirs(foldername)
 
-    for sub in range(3,4):#,np.max(params[:,0])+1):            
+    for sub in range(1,2):#,np.max(params[:,0])+1):            
         ind = (params[:,0] == sub) & (params[:,3] == train_grp)
 
         # Check if training data exists
@@ -143,7 +143,10 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                     sae_enc_w = sae_enc.get_weights()
                     sae_clf_w = sae_clf.get_weights()
 
-                    cnn_hist = cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
+                    x_train_noise_cnn = x_train_noise_vae[:,:,::2,:]
+                    x_valid_noise_cnn = x_valid_noise_vae[:,:,::2,:]
+
+                    cnn_hist = cnn.fit(x_train_noise_cnn, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_cnn, y_valid_clean],batch_size=batch_size)
                     cnn_w = cnn.get_weights()
                     cnn_enc_w = cnn_enc.get_weights()
                     cnn_clf_w = cnn_clf.get_weights()
@@ -156,7 +159,7 @@ def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                     # Align training data for ENC-LDA
                     _, _, x_train_svae = svae_enc.predict(x_train_noise_vae)
                     x_train_sae = sae_enc.predict(x_train_noise_sae)
-                    x_train_cnn = cnn_enc.predict(x_train_noise_vae)
+                    x_train_cnn = cnn_enc.predict(x_train_noise_cnn)
                     _, _, x_train_vcnn = vcnn_enc.predict(x_train_noise_vae)
 
                     y_train_aligned = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
