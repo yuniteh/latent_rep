@@ -9,9 +9,10 @@ from tensorflow.keras.losses import mse, binary_crossentropy, categorical_crosse
 from tensorflow.keras.utils import plot_model, to_categorical
 from tensorflow.keras import backend as K
 from tensorflow.keras import regularizers
+from tensorflow.keras import optimizers
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
-def build_svae(latent_dim, n_class, input_type='feat', sparse='True'):
+def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     if input_type == 'feat':
         input_shape = (6,4,1)
         inter_shape = (3,2,1)
@@ -76,11 +77,12 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True'):
         vae_loss = K.mean((reconstruction_loss + kl_loss)/100.0)
         return vae_loss
 
-    vae.compile(optimizer='adam', loss=[VAE_loss,'categorical_crossentropy'],experimental_run_tf_function=False,metrics=['accuracy'])
+    opt = optimizers.Adam(learning_rate=lr)
+    vae.compile(optimizer=opt, loss=[VAE_loss,'categorical_crossentropy'],experimental_run_tf_function=False,metrics=['accuracy'])
     return vae, encoder, decoder, clf_supervised
 
 ## VARIATIONAL LATENT SPACE CLASSIFIER - NO DECODER
-def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True'):
+def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
     
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -130,10 +132,11 @@ def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True'):
         # vae_loss = kl_loss
         return vae_loss
 
-    vae.compile(optimizer='adam', loss=VAE_loss,experimental_run_tf_function=False,metrics=['accuracy'])
+    opt = optimizers.Adam(learning_rate=lr)
+    vae.compile(optimizer=opt, loss=VAE_loss,experimental_run_tf_function=False,metrics=['accuracy'])
     return vae, encoder, clf_supervised
 
-def build_cnn(latent_dim, n_class, input_type='feat',sparse='True'):
+def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
     
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -165,7 +168,8 @@ def build_cnn(latent_dim, n_class, input_type='feat',sparse='True'):
     outputs = clf_supervised(encoder(inputs))
     vae = Model(inputs, outputs, name='vae_mlp')
 
-    vae.compile(optimizer='adam', loss='categorical_crossentropy',experimental_run_tf_function=False,metrics=['accuracy'])
+    opt = optimizers.Adam(learning_rate=lr)
+    vae.compile(optimizer=opt, loss='categorical_crossentropy',experimental_run_tf_function=False,metrics=['accuracy'])
     return vae, encoder, clf_supervised
 
 def build_cnn_old(latent_dim, n_class, input_type='feat',sparse='True'):
@@ -196,7 +200,7 @@ def build_cnn_old(latent_dim, n_class, input_type='feat',sparse='True'):
     return vae, encoder, clf_supervised
 
 ## LATENT SPACE CLASSIFIER - NO DECODER
-def build_sae(latent_dim, n_class, input_type='feat', sparse='True'):
+def build_sae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     
     if input_type == 'feat':
         input_shape = (24,)
@@ -227,7 +231,8 @@ def build_sae(latent_dim, n_class, input_type='feat', sparse='True'):
     outputs = clf_supervised(encoder(inputs))
     vae = Model(inputs, outputs, name='vae_mlp')
 
-    vae.compile(optimizer='adam', loss='categorical_crossentropy',experimental_run_tf_function=False,metrics=['accuracy'])
+    opt = optimizers.Adam(learning_rate=lr)
+    vae.compile(optimizer=opt, loss='categorical_crossentropy',experimental_run_tf_function=False,metrics=['accuracy'])
     return vae, encoder, clf_supervised
 
 ## VARIATIONAL AUTOENCODER - NO CLASSIFIER
