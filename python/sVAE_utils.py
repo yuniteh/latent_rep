@@ -12,7 +12,7 @@ from tensorflow.keras import regularizers
 from tensorflow.keras import optimizers
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
-def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
+def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,dense=True):
     if input_type == 'feat':
         input_shape = (6,4,1)
         inter_shape = (3,2,1)
@@ -27,6 +27,7 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = Flatten()(x)
+    # if dense:
     x = Dense(16, activation="relu")(x)
     x = BatchNormalization()(x)
 
@@ -82,7 +83,7 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     return vae, encoder, decoder, clf_supervised
 
 ## VARIATIONAL LATENT SPACE CLASSIFIER - NO DECODER
-def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
+def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001, dense=True):
     
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -96,6 +97,7 @@ def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = Flatten()(x)
+    # if dense:
     x = Dense(16, activation="relu")(x)
     x = BatchNormalization()(x)
 
@@ -136,7 +138,7 @@ def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
     vae.compile(optimizer=opt, loss=VAE_loss,experimental_run_tf_function=False,metrics=['accuracy'])
     return vae, encoder, clf_supervised
 
-def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
+def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001,dense=True):
     
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -150,6 +152,7 @@ def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = Flatten()(x)
+    # if dense:
     x = Dense(16, activation="relu")(x)
     x = BatchNormalization()(x)
     if sparse:

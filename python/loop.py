@@ -18,7 +18,7 @@ import copy as cp
 from datetime import date
 import time
 
-def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=4, epochs=30,train_scale=5, n_train='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001):
+def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=4, epochs=30,train_scale=5, n_train='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001,dense=True):
     i_tot = 13
     filename = 0
     if dt == 'manual':
@@ -46,7 +46,9 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
             x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
 
         for cv in range(start_cv,max_cv):
-            filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_bat_' + str(batch_size) + '_' + n_train + '_' + str(train_scale) + '_lr_' + str(int(lr*10000))
+            filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_bat_' + str(batch_size) + '_' + n_train + '_' + str(train_scale) + '_lr_' + str(int(lr*10000)) 
+            if not dense:
+                filename += '_den_'
             if dt == 'cv':
                 x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
                 x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
@@ -80,10 +82,10 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
             x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
 
             # Build VAE
-            svae, svae_enc, svae_dec, svae_clf = dl.build_svae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
+            svae, svae_enc, svae_dec, svae_clf = dl.build_svae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr,dense=dense)
             sae, sae_enc, sae_clf = dl.build_sae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
-            cnn, cnn_enc, cnn_clf = dl.build_cnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
-            vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
+            cnn, cnn_enc, cnn_clf = dl.build_cnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr,dense=dense)
+            vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr,dense=dense)
 
             # Training data for LDA/QDA
             x_train_lda = prd.extract_feats(x_train)
@@ -153,10 +155,16 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 y_train_aligned = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
                 # Train ENC-LDA
-                w_svae, c_svae,_, _ = train_lda(x_train_svae,y_train_aligned)
-                w_sae, c_sae,_, _ = train_lda(x_train_sae,y_train_aligned)
-                w_cnn, c_cnn,_, _ = train_lda(x_train_cnn,y_train_aligned)
-                w_vcnn, c_vcnn, _, _ = train_lda(x_train_vcnn,y_train_aligned)
+                try:
+                    w_svae, c_svae,_, _ = train_lda(x_train_svae,y_train_aligned)
+                    w_sae, c_sae,_, _ = train_lda(x_train_sae,y_train_aligned)
+                    w_cnn, c_cnn,_, _ = train_lda(x_train_cnn,y_train_aligned)
+                    w_vcnn, c_vcnn, _, _ = train_lda(x_train_vcnn,y_train_aligned)
+                except:
+                    w_svae, c_svae = 0, 0
+                    w_sae, c_sae = 0, 0
+                    w_cnn, c_cnn = 0, 0
+                    w_vcnn, c_vcnn = 0, 0
 
                 # Train LDA
                 w,c, mu, C = train_lda(x_train_lda,y_train_lda)
