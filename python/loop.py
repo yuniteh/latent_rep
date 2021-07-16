@@ -141,12 +141,17 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                         y_train_bat = next(y_train_ep)
                         temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_vae_bat,y_train_bat,x_train_vae_bat[:,0,0]])
                     print(svae.metrics_names)           
-                    weight = np.array([[(temp_out[2]+temp_out[3])/temp_out[1], (temp_out[2]+temp_out[1])/temp_out[3]] for _ in range(batch_size)])
+                    weight = np.array([[(temp_out[2])/temp_out[1], (temp_out[2])/temp_out[3]] for _ in range(batch_size)])
                     # weight = np.array([1 for _ in range(len(x_valid_noise_vae))])
                     test_weight = np.array([[1,1] for _ in range(len(x_valid_noise_vae))])
                     svae_hist[ep,:7] = temp_out
                     svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_vae,y_valid_clean,x_valid_vae[:,0,0]])
                     print(svae_hist[ep,...])
+
+                svae_w = svae.get_weights()
+                svae_enc_w = svae_enc.get_weights()
+                svae_dec_w = svae_dec.get_weights()
+                svae_clf_w = svae_clf.get_weights()
 
                 # Fit NNs and get weights
                 sae_hist = svae2.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_data = [x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
