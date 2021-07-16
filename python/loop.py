@@ -129,8 +129,8 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 x_valid_sae = x_valid_vae.reshape(x_valid_vae.shape[0],-1)
 
                 n_batches = len(x_train_noise_vae) // batch_size
-                svae_hist = np.zeros((epochs,10))
-                weight = np.array([1 for _ in range(batch_size)])
+                svae_hist = np.zeros((epochs,14))
+                weight = np.array([[1,1] for _ in range(batch_size)])
                 for ep in range(epochs):
                     x_train_noise_ep = dl.get_batches(x_train_noise_vae, batch_size)
                     x_train_vae_ep = dl.get_batches(x_train_vae, batch_size)
@@ -139,12 +139,13 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                         x_train_noise_bat = next(x_train_noise_ep)
                         x_train_vae_bat = next(x_train_vae_ep)
                         y_train_bat = next(y_train_ep)
-                        temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_vae_bat,y_train_bat])                   
-                    weight = np.array([temp_out[2]/temp_out[1] for _ in range(batch_size)])
+                        temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_vae_bat,y_train_bat,x_train_vae_bat[:,0,0]])
+                    print(svae.metrics_names)           
+                    weight = np.array([[(temp_out[2]+temp_out[3])/temp_out[1], (temp_out[2]+temp_out[1])/temp_out[3]] for _ in range(batch_size)])
                     # weight = np.array([1 for _ in range(len(x_valid_noise_vae))])
-                    test_weight = np.array([1 for _ in range(len(x_valid_noise_vae))])
-                    svae_hist[ep,:5] = temp_out
-                    svae_hist[ep,5:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_vae,y_valid_clean])
+                    test_weight = np.array([[1,1] for _ in range(len(x_valid_noise_vae))])
+                    svae_hist[ep,:7] = temp_out
+                    svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_vae,y_valid_clean,x_valid_vae[:,0,0]])
                     print(svae_hist[ep,...])
 
                 # Fit NNs and get weights

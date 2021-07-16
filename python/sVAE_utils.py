@@ -17,27 +17,27 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
         input_shape = (6,4,1)
         inter_shape = (3,2,1)
     elif input_type == 'raw':
-        input_shape = (6,100,1)
-        inter_shape = (3,50,1)
+        input_shape = (6,50,1)
+        inter_shape = (3,25,1)
 
-    weight = Input(shape=(1,))
+    weight = Input(shape=(2,))
     # build encoder model
     inputs = Input(shape=input_shape)
     x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
     x = BatchNormalization()(x)
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
-    clf_input = Flatten()(x)
+    x = Flatten()(x)
     # if dense:
-    x = Dense(16, activation="relu")(clf_input)
-    x = BatchNormalization()(x)
+    x = Dense(16, activation="relu")(x)
+    clf_input = BatchNormalization()(x)
 
     if sparse:
-        z_mean = Dense(latent_dim, name="z_mean", activity_regularizer=regularizers.l1(10e-5))(x)
-        z_log_var = Dense(latent_dim, name="z_log_var", activity_regularizer=regularizers.l1(10e-5))(x)
+        z_mean = Dense(latent_dim, name="z_mean", activity_regularizer=regularizers.l1(10e-5))(clf_input)
+        z_log_var = Dense(latent_dim, name="z_log_var", activity_regularizer=regularizers.l1(10e-5))(clf_input)
     else:
-        z_mean = Dense(latent_dim, name="z_mean")(x)
-        z_log_var = Dense(latent_dim, name="z_log_var")(x)
+        z_mean = Dense(latent_dim, name="z_mean")(clf_input)
+        z_log_var = Dense(latent_dim, name="z_log_var")(clf_input)
         
     z_mean = BatchNormalization()(z_mean)
     z_log_var = BatchNormalization()(z_log_var)
@@ -66,9 +66,8 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
     decoder = Model([latent_inputs,clf_in], decoder_outputs, name="decoder")
     # decoder.summary()
 
-    print(np.shape(encoder(inputs)[3]))
     # instantiate VAE model
-    outputs = [decoder([encoder(inputs)[2],clf_supervised(encoder(inputs)[3])]), clf_supervised(encoder(inputs)[3])]
+    outputs = [decoder([encoder(inputs)[2],clf_supervised(encoder(inputs)[3])]), clf_supervised(encoder(inputs)[3]), encoder(inputs)[2]]
     # outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]
     vae = Model([inputs,weight], outputs, name='vae_mlp')
 
@@ -78,14 +77,18 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
         # reconstruction_loss = input_shape[0]*input_shape[1] * binary_crossentropy(x_origin, x_out)
         reconstruction_loss = K.mean(mse(x_origin, x_out))
         # reconstruction_loss *= input_shape[0] * input_shape[1]
+        vae_loss = weight[0]*reconstruction_loss
+        return vae_loss
+    
+    def kloss(x_origin,x_out):
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
-        vae_loss = weight*(reconstruction_loss + K.mean(kl_loss))
-        return vae_loss
+        kl_loss = weight[1]*K.mean(kl_loss)
+        return kl_loss
 
     opt = optimizers.Adam(learning_rate=lr)
-    vae.compile(optimizer=opt, loss=[VAE_loss,'categorical_crossentropy'],experimental_run_tf_function=False,metrics=['accuracy'])
+    vae.compile(optimizer=opt, loss=[VAE_loss, 'categorical_crossentropy', kloss],experimental_run_tf_function=False,metrics=['accuracy'])
     return vae, encoder, decoder, clf_supervised
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
