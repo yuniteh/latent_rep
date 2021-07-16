@@ -192,7 +192,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 # with open(filename + '.p', 'wb') as f:
                 #     pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
                 #         w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
-                # svae_hist = svae_hist.history
+                sae_hist = sae_hist.history
                 # svae_hist, sae_hist, cnn_hist, vcnn_hist = svae_hist.history, sae_hist.history, cnn_hist.history, vcnn_hist.history
                 
                 with open(filename + '_hist.p', 'wb') as f:
@@ -216,8 +216,8 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 vcnn_enc.set_weights(vcnn_enc_w)
                 vcnn_clf.set_weights(vcnn_clf_w)
             
-            last_acc[cv-1,:] = np.array([svae_hist['clf_accuracy'][-1], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1]])
-            last_val[cv-1,:] = np.array([svae_hist['val_clf_accuracy'][-1], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1]])
+            # last_acc[cv-1,:] = np.array([svae_hist['clf_accuracy'][-1], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1]])
+            # last_val[cv-1,:] = np.array([svae_hist['val_clf_accuracy'][-1], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1]])
                 
     return last_acc, last_val, filename
 
