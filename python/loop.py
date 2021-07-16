@@ -68,6 +68,9 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 with open(filename + '_hist.p', 'rb') as f:
                     svae_hist, sae_hist, cnn_hist, vcnn_hist = pickle.load(f)
             else:
+                temp_filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(30) + '_bat_' + str(batch_size) + '_' + n_train + '_' + str(train_scale) + '_lr_' + str(int(lr*10000)) + '_den__cv_' + str(cv) + '_sparse'
+                with open(temp_filename + '_hist.p', 'rb') as f:
+                    _, sae_hist, cnn_hist, vcnn_hist = pickle.load(f)
                 scaler = MinMaxScaler(feature_range=(-1,1))
                 load = False
 
@@ -124,42 +127,54 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
                 x_valid_sae = x_valid_vae.reshape(x_valid_vae.shape[0],-1)
 
+                n_batches = len(x_train_noise_vae) // batch_size
+                for ep in range(epochs):
+                    x_train_noise_ep = dl.get_batches(x_train_noise_vae, batch_size)
+                    x_train_vae_ep = dl.get_batches(x_train_vae, batch_size)
+                    y_train_ep = dl.get_batches(y_train_clean, batch_size)
+                    for ii in range(n_batches):
+                        x_train_noise_bat = next(x_train_noise_ep)
+                        x_train_vae_bat = next(x_train_vae_ep)
+                        y_train_bat = next(y_train_ep)
+                        out = svae.train_on_batch(x_train_noise_bat,[x_train_vae_bat,y_train_bat])
+                        print(out)
                 # Fit NNs and get weights
-                svae_hist = svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_data = [x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
-                svae_w = svae.get_weights()
-                svae_enc_w = svae_enc.get_weights()
-                svae_dec_w = svae_dec.get_weights()
-                svae_clf_w = svae_clf.get_weights()
+                # svae_hist = svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_data = [x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
+                # svae_w = svae.get_weights()
+                # svae_enc_w = svae_enc.get_weights()
+                # svae_dec_w = svae_dec.get_weights()
+                # svae_clf_w = svae_clf.get_weights()
                 
-                sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=batch_size)
-                sae_w = sae.get_weights()
-                sae_enc_w = sae_enc.get_weights()
-                sae_clf_w = sae_clf.get_weights()
+                # sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=batch_size)
+                # sae_w = sae.get_weights()
+                # sae_enc_w = sae_enc.get_weights()
+                # sae_clf_w = sae_clf.get_weights()
 
-                cnn_hist = cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
-                cnn_w = cnn.get_weights()
-                cnn_enc_w = cnn_enc.get_weights()
-                cnn_clf_w = cnn_clf.get_weights()
+                # cnn_hist = cnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
+                # cnn_w = cnn.get_weights()
+                # cnn_enc_w = cnn_enc.get_weights()
+                # cnn_clf_w = cnn_clf.get_weights()
                 
-                vcnn_hist = vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
-                vcnn_w = vcnn.get_weights()
-                vcnn_enc_w = vcnn_enc.get_weights()
-                vcnn_clf_w = vcnn_clf.get_weights()
+                # vcnn_hist = vcnn.fit(x_train_noise_vae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
+                # vcnn_w = vcnn.get_weights()
+                # vcnn_enc_w = vcnn_enc.get_weights()
+                # vcnn_clf_w = vcnn_clf.get_weights()
 
-                # Align training data for ENC-LDA
-                _, _, x_train_svae = svae_enc.predict(x_train_noise_vae)
-                x_train_sae = sae_enc.predict(x_train_noise_sae)
-                x_train_cnn = cnn_enc.predict(x_train_noise_vae)
-                _, _, x_train_vcnn = vcnn_enc.predict(x_train_noise_vae)
+                # # Align training data for ENC-LDA
+                # _, _, x_train_svae = svae_enc.predict(x_train_noise_vae)
+                # x_train_sae = sae_enc.predict(x_train_noise_sae)
+                # x_train_cnn = cnn_enc.predict(x_train_noise_vae)
+                # _, _, x_train_vcnn = vcnn_enc.predict(x_train_noise_vae)
 
                 y_train_aligned = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
                 # Train ENC-LDA
                 try:
-                    w_svae, c_svae,_, _ = train_lda(x_train_svae,y_train_aligned)
-                    w_sae, c_sae,_, _ = train_lda(x_train_sae,y_train_aligned)
-                    w_cnn, c_cnn,_, _ = train_lda(x_train_cnn,y_train_aligned)
-                    w_vcnn, c_vcnn, _, _ = train_lda(x_train_vcnn,y_train_aligned)
+                    x = 1
+                    # w_svae, c_svae,_, _ = train_lda(x_train_svae,y_train_aligned)
+                    # w_sae, c_sae,_, _ = train_lda(x_train_sae,y_train_aligned)
+                    # w_cnn, c_cnn,_, _ = train_lda(x_train_cnn,y_train_aligned)
+                    # w_vcnn, c_vcnn, _, _ = train_lda(x_train_vcnn,y_train_aligned)
                 except:
                     w_svae, c_svae = 0, 0
                     w_sae, c_sae = 0, 0
@@ -171,14 +186,15 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 w_noise,c_noise, _, _ = train_lda(x_train_lda2,y_train_lda2)
 
                 # Pickle variables
-                with open(filename + '.p', 'wb') as f:
-                    pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
-                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
+                # with open(filename + '.p', 'wb') as f:
+                #     pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
+                #         w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
+                svae_hist = svae_hist.history
+                # svae_hist, sae_hist, cnn_hist, vcnn_hist = svae_hist.history, sae_hist.history, cnn_hist.history, vcnn_hist.history
                 
                 with open(filename + '_hist.p', 'wb') as f:
-                    pickle.dump([svae_hist.history, sae_hist.history, cnn_hist.history, vcnn_hist.history],f)
+                    pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist],f)
                 
-                svae_hist, sae_hist, cnn_hist, vcnn_hist = svae_hist.history, sae_hist.history, cnn_hist.history, vcnn_hist.history
             else:
                 svae.set_weights(svae_w)
                 svae_enc.set_weights(svae_enc_w)

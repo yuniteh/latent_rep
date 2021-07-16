@@ -75,7 +75,7 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,de
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
-        vae_loss = K.mean((reconstruction_loss + kl_loss)/100.0)
+        vae_loss = reconstruction_loss# + K.mean(kl_loss)
         return vae_loss
 
     opt = optimizers.Adam(learning_rate=lr)
@@ -573,3 +573,10 @@ def plot_results(models,
     plt.ylabel("z[1]")
     plt.savefig(filename)
     plt.show()
+
+def get_batches(x,batch_size):
+    n_batches = len(x)//(batch_size)
+    x = x[:n_batches*batch_size:]
+    for n in range(0, x.shape[0],batch_size):
+        x_batch = x[n:n+(batch_size),...]
+        yield x_batch
