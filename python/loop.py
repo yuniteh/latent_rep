@@ -86,6 +86,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
 
             # Build VAE
             svae, svae_enc, svae_dec, svae_clf = dl.build_svae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr,dense=dense)
+            svae2, svae_enc2, svae_dec2, svae_clf2 = dl.build_svae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr,dense=dense)
             sae, sae_enc, sae_clf = dl.build_sae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
             cnn, cnn_enc, cnn_clf = dl.build_cnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr,dense=dense)
             vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr,dense=dense)
@@ -128,6 +129,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 x_valid_sae = x_valid_vae.reshape(x_valid_vae.shape[0],-1)
 
                 n_batches = len(x_train_noise_vae) // batch_size
+                svae_hist = np.zeros((epochs,5))
                 for ep in range(epochs):
                     x_train_noise_ep = dl.get_batches(x_train_noise_vae, batch_size)
                     x_train_vae_ep = dl.get_batches(x_train_vae, batch_size)
@@ -136,14 +138,15 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                         x_train_noise_bat = next(x_train_noise_ep)
                         x_train_vae_bat = next(x_train_vae_ep)
                         y_train_bat = next(y_train_ep)
-                        out = svae.train_on_batch(x_train_noise_bat,[x_train_vae_bat,y_train_bat])
-                        print(out)
+                        svae_hist[ep,...] = svae.train_on_batch(x_train_noise_bat,[x_train_vae_bat,y_train_bat])
+                    # print(svae.metrics_names)
+                    print(svae_hist[ep,...])
                 # Fit NNs and get weights
-                # svae_hist = svae.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_data = [x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
-                # svae_w = svae.get_weights()
-                # svae_enc_w = svae_enc.get_weights()
-                # svae_dec_w = svae_dec.get_weights()
-                # svae_clf_w = svae_clf.get_weights()
+                sae_hist = svae2.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_data = [x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
+                svae_w = svae2.get_weights()
+                svae_enc_w = svae_enc2.get_weights()
+                svae_dec_w = svae_dec2.get_weights()
+                svae_clf_w = svae_clf2.get_weights()
                 
                 # sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=batch_size)
                 # sae_w = sae.get_weights()
@@ -189,7 +192,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 # with open(filename + '.p', 'wb') as f:
                 #     pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
                 #         w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
-                svae_hist = svae_hist.history
+                # svae_hist = svae_hist.history
                 # svae_hist, sae_hist, cnn_hist, vcnn_hist = svae_hist.history, sae_hist.history, cnn_hist.history, vcnn_hist.history
                 
                 with open(filename + '_hist.p', 'wb') as f:
