@@ -12,7 +12,7 @@ from tensorflow.keras import regularizers
 from tensorflow.keras import optimizers
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
-def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,dense=True):
+def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,dense=True):
     if input_type == 'feat':
         input_shape = (6,4,1)
         inter_shape = (3,2,1)
@@ -20,6 +20,7 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,de
         input_shape = (6,100,1)
         inter_shape = (3,50,1)
 
+    weight = Input(shape=(1,))
     # build encoder model
     inputs = Input(shape=input_shape)
     x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
@@ -64,7 +65,7 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,de
 
     # instantiate VAE model
     outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]
-    vae = Model(inputs, outputs, name='vae_mlp')
+    vae = Model([inputs,weight], outputs, name='vae_mlp')
 
     def VAE_loss(x_origin,x_out):
         # x_origin=K.flatten(x_origin)
@@ -75,7 +76,7 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,de
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
-        vae_loss = reconstruction_loss# + K.mean(kl_loss)
+        vae_loss = weight*(reconstruction_loss + K.mean(kl_loss))
         return vae_loss
 
     opt = optimizers.Adam(learning_rate=lr)
