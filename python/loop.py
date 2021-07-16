@@ -141,15 +141,14 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                         temp_out = svae.train_on_batch(x_train_noise_bat,[x_train_vae_bat,y_train_bat])
                     svae_hist[ep,:5] = temp_out
                     svae_hist[ep,5:] = svae.test_on_batch(x_valid_noise_vae,[x_valid_vae,y_valid_clean])
-                    # print(svae.metrics_names)
                     print(svae_hist[ep,...])
+                    
                 # Fit NNs and get weights
                 sae_hist = svae2.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=epochs,validation_data = [x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
                 svae_w = svae2.get_weights()
                 svae_enc_w = svae_enc2.get_weights()
                 svae_dec_w = svae_dec2.get_weights()
                 svae_clf_w = svae_clf2.get_weights()
-                
                 # sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=epochs,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=batch_size)
                 # sae_w = sae.get_weights()
                 # sae_enc_w = sae_enc.get_weights()
@@ -196,7 +195,8 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 #         w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
                 sae_hist = sae_hist.history
                 # svae_hist, sae_hist, cnn_hist, vcnn_hist = svae_hist.history, sae_hist.history, cnn_hist.history, vcnn_hist.history
-                
+                cnn_hist = 0
+                vcnn_hist = 0
                 with open(filename + '_hist.p', 'wb') as f:
                     pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist],f)
                 
