@@ -27,9 +27,9 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
     x = BatchNormalization()(x)
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
-    x = Flatten()(x)
+    clf_input = Flatten()(x)
     # if dense:
-    x = Dense(16, activation="relu")(x)
+    x = Dense(16, activation="relu")(clf_input)
     x = BatchNormalization()(x)
 
     if sparse:
@@ -42,29 +42,34 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
     z_mean = BatchNormalization()(z_mean)
     z_log_var = BatchNormalization()(z_log_var)
     z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
-    encoder = Model(inputs, [z_mean, z_log_var, z], name="encoder")
+    encoder = Model(inputs, [z_mean, z_log_var, z, clf_input], name="encoder")
     # encoder.summary()
+
+    # New: add a linear classifier
+    clf_latent_inputs = Input(shape=(np.shape(clf_input)[1],), name='z_sampling_clf')
+    clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
+    clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')   
+    # clf_supervised.summary()
 
     # build decoder model
     latent_inputs = Input(shape=(latent_dim,))
-    x = Dense(inter_shape[0]*inter_shape[1]*32, activation="relu")(latent_inputs)
+    clf_in = Input(shape=(n_class,))
+    clf_dec = Dense(latent_dim, activation="relu")(clf_in)
+    cat_inputs = concatenate([latent_inputs, clf_dec],axis=-1)
+    x = Dense(inter_shape[0]*inter_shape[1]*32, activation="relu")(cat_inputs)
     x = BatchNormalization()(x)
     x = Reshape((inter_shape[0], inter_shape[1], 32))(x)
     x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     # x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
     decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
-    decoder = Model(latent_inputs, decoder_outputs, name="decoder")
+    decoder = Model([latent_inputs,clf_in], decoder_outputs, name="decoder")
     # decoder.summary()
 
-    # New: add a linear classifier
-    clf_latent_inputs = Input(shape=(latent_dim,), name='z_sampling_clf')
-    clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
-    clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
-    # clf_supervised.summary()
-
+    print(np.shape(encoder(inputs)[3]))
     # instantiate VAE model
-    outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]
+    outputs = [decoder([encoder(inputs)[2],clf_supervised(encoder(inputs)[3])]), clf_supervised(encoder(inputs)[3])]
+    # outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]
     vae = Model([inputs,weight], outputs, name='vae_mlp')
 
     def VAE_loss(x_origin,x_out):

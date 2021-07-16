@@ -141,6 +141,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                         y_train_bat = next(y_train_ep)
                         temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_vae_bat,y_train_bat])                   
                     weight = np.array([temp_out[2]/temp_out[1] for _ in range(batch_size)])
+                    # weight = np.array([1 for _ in range(len(x_valid_noise_vae))])
                     test_weight = np.array([1 for _ in range(len(x_valid_noise_vae))])
                     svae_hist[ep,:5] = temp_out
                     svae_hist[ep,5:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_vae,y_valid_clean])
