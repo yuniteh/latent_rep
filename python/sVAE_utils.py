@@ -77,14 +77,16 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
         # reconstruction_loss = input_shape[0]*input_shape[1] * binary_crossentropy(x_origin, x_out)
         reconstruction_loss = K.mean(mse(x_origin, x_out))
         # reconstruction_loss *= input_shape[0] * input_shape[1]
-        vae_loss = weight[0]*reconstruction_loss
+        if weight[0] < 1:
+            
+        vae_loss = rat*reconstruction_loss
         return vae_loss
     
     def kloss(x_origin,x_out):
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
-        kl_loss = weight[1]*K.mean(kl_loss)
+        kl_loss = .1*K.mean(kl_loss)
         return kl_loss
 
     opt = optimizers.Adam(learning_rate=lr)
