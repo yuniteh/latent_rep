@@ -10,6 +10,7 @@ from tensorflow.keras.utils import plot_model, to_categorical
 from tensorflow.keras import backend as K
 from tensorflow.keras import regularizers
 from tensorflow.keras import optimizers
+import tensorflow as tf
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
 def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,dense=True):
@@ -78,14 +79,14 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
         reconstruction_loss = K.mean(mse(x_origin, x_out))
         # reconstruction_loss *= input_shape[0] * input_shape[1]
 
-        vae_loss = weight[0]*reconstruction_loss
+        vae_loss = 10*reconstruction_loss
         return vae_loss
     
     def kloss(x_origin,x_out):
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
-        kl_loss = weight[1]*K.mean(kl_loss)
+        kl_loss = K.mean(kl_loss)
         return kl_loss
 
     opt = optimizers.Adam(learning_rate=lr)
@@ -156,7 +157,7 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,de
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
-        vae_loss = reconstruction_loss# + K.mean(kl_loss)
+        vae_loss = (reconstruction_loss + K.mean(kl_loss))/100.0
         return vae_loss
 
     opt = optimizers.Adam(learning_rate=lr)
@@ -373,7 +374,12 @@ def eval_vae(vae, x_test, y_test):
     try:
         y_pred = np.argmax(vae.predict(x=x_test)[1], axis=1)
     except:
-        y_pred = np.argmax(vae.predict(x=x_test), axis=1)
+        try:
+            y_pred = np.argmax(vae.predict(x=x_test), axis=1)
+        except:
+            test_weights = np.array([[1,1] for _ in range(len(x_test))])
+            y_pred = np.argmax(vae.predict(x=[x_test, test_weights])[1], axis=1)
+                        
     acc = np.sum(np.argmax(y_test, axis=1) == y_pred)/y_pred.shape[0]
     return y_pred, acc
 
