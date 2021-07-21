@@ -19,7 +19,7 @@ import copy as cp
 from datetime import date
 import time
 
-def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=4, epochs=30,train_scale=5, n_train='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001, mod =['all']):
+def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=4, epochs=30,train_scale=5, n_train='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001, mod = 'all'):
     i_tot = 13
     filename = 0
     if dt == 'manual':
@@ -62,7 +62,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
             if load:
                 load = True
                 with open(filename + '.p', 'rb') as f:
-                    scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, w_svae, c_svae, \
+                    scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_dec_w, vcnn_clf_w, w_svae, c_svae, \
                         w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C = pickle.load(f)   
                 with open(filename + '_hist.p', 'rb') as f:
                     svae_hist, sae_hist, cnn_hist, vcnn_hist = pickle.load(f)
@@ -85,7 +85,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
             svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
             vcnn, vcnn_enc, vcnn_dec, vcnn_clf = dl.build_svae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
             sae, sae_enc, sae_clf = dl.build_sae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
-            cnn, cnn_enc, cnn_clf = dl.build_cnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lower)
+            cnn, cnn_enc, cnn_clf = dl.build_cnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
             # vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr,dense=dense)
 
             # Training data for LDA/QDA
@@ -119,7 +119,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
             x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
             x_valid_sae = x_valid_vae.reshape(x_valid_vae.shape[0],-1)
             
-            if any("all" in s for s in mod) or any("svae" in s for s in mod):
+            if mod == 'all' or any("svae" in s for s in mod):
                 # Train SVAE
                 n_batches = len(x_train_noise_vae) // batch_size
                 svae_hist = np.zeros((epochs,14))
@@ -150,24 +150,27 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 svae_clf_w = svae_clf.get_weights()
 
             # Fit NNs and get weights
-            if any("all" in s for s in mod) or any("vcnn" in s for s in mod):
+            if mod == 'all' or any("vcnn" in s for s in mod):
                 vcnn_hist = vcnn.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=30,validation_data = [x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
                 vcnn_w = vcnn.get_weights()
                 vcnn_enc_w = vcnn_enc.get_weights()
                 vcnn_dec_w = vcnn_dec.get_weights()
                 vcnn_clf_w = vcnn_clf.get_weights()
+                vcnn_hist = vcnn_hist.history
 
-            if any("all" in s for s in mod) or any("sae" in s for s in mod):
+            if mod == 'all' or any("sae" in s for s in mod):
                 sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=batch_size)
                 sae_w = sae.get_weights()
                 sae_enc_w = sae_enc.get_weights()
                 sae_clf_w = sae_clf.get_weights()
+                sae_hist = sae_hist.history
 
-            if any("all" in s for s in mod) or any("cnn" in s for s in mod):
+            if mod == 'all' or any("cnn" in s for s in mod):
                 cnn_hist = cnn.fit(x_train_noise_vae, y_train_clean,epochs=30,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
                 cnn_w = cnn.get_weights()
                 cnn_enc_w = cnn_enc.get_weights()
                 cnn_clf_w = cnn_clf.get_weights()
+                cnn_hist = cnn_hist.history
             
             # vcnn_hist = vcnn.fit(x_train_noise_vae, y_train_clean,epochs=30,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)
             # vcnn_w = vcnn.get_weights()
@@ -175,7 +178,12 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
             # vcnn_clf_w = vcnn_clf.get_weights()
 
             # Align training data for ENC-LDA
-            if any("all" in s for s in mod) or any("aligned" in s for s in mod):
+            if mod == 'all' or any("aligned" in s for s in mod):
+                svae_enc.set_weights(svae_enc_w)
+                sae_enc.set_weights(sae_enc_w)
+                cnn_enc.set_weights(cnn_enc_w)
+                vcnn_enc.set_weights(vcnn_enc_w)
+
                 _, _, _, x_train_svae = svae_enc.predict(x_train_noise_vae)
                 x_train_sae = sae_enc.predict(x_train_noise_sae)
                 x_train_cnn = cnn_enc.predict(x_train_noise_vae)
@@ -190,7 +198,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 w_vcnn, c_vcnn, _, _ = train_lda(x_train_vcnn,y_train_aligned)
 
             # Train LDA
-            if any("all" in s for s in mod) or any("lda" in s for s in mod):
+            if mod == 'all' or any("lda" in s for s in mod):
                 w,c, mu, C = train_lda(x_train_lda,y_train_lda)
                 w_noise,c_noise, _, _ = train_lda(x_train_lda2,y_train_lda2)
 
@@ -199,35 +207,36 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_dec_w, vcnn_clf_w, \
                     w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
 
-            sae_hist, cnn_hist, vcnn_hist = sae_hist.history, cnn_hist.history, vcnn_hist.history
+            
             with open(filename + '_hist.p', 'wb') as f:
                 pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist],f)
 
-            last_acc[cv-1,:] = np.array([svae_hist[5,-1], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1]])
-            last_val[cv-1,:] = np.array([svae_hist[12,-1], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1]])
+            last_acc[cv-1,:] = np.array([svae_hist[5,-1], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['clf_accuracy'][-1]])
+            last_val[cv-1,:] = np.array([svae_hist[12,-1], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_clf_accuracy'][-1]])
                 
     return last_acc, last_val, filename
 
 def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=10, epochs=100,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001,dense=True):
     i_tot = 13
-    if n_test == 0:
-        noise_type = 'none'
-        n_test = 'fullgauss4'
-    else:
-        noise_type = n_test[4:-1]
+    noise_type = n_test[4:-1]
 
-    if noise_type == 'gauss' or noise_type == '60hz' or noise_type == 'none':
+    if noise_type == 'gauss' or noise_type == '60hz':
         test_tot = 5
     elif noise_type == 'pos':
         test_tot = 4
+
+    # Initialize accuracy arrays
+    if dt == 'cv':
+        cv_tot = 4
+        max_cv = 5
     else:
-        test_tot = 4
-
-    cv_tot = 4
-
+        cv_tot = 1
+        max_cv = 2
+    
     acc_all = np.full([np.max(params[:,0])+1, cv_tot, test_tot, i_tot],np.nan)
     acc_clean = np.full([np.max(params[:,0])+1, cv_tot, test_tot, i_tot],np.nan)
     acc_noise = np.full([np.max(params[:,0])+1, cv_tot, test_tot, i_tot],np.nan)
+
     filename = 0
 
     # Set folder
@@ -328,7 +337,7 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                             skip = True                    
                     else:
                         # Add noise and index EMG data
-                        if noise_type == 'none':
+                        if dt == 'cv':
                             x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_valid, p_valid, sub, n_test, test_scale)
                             clean_size = int(np.size(x_valid,axis=0))
                         else:
@@ -345,7 +354,6 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                             
                             x_test_vae = scaler.transform(x_test_noise_temp.reshape(x_test_noise_temp.shape[0]*x_test_noise_temp.shape[1],-1)).reshape(x_test_noise_temp.shape)
                             x_test_clean_vae = scaler.transform(x_test_clean_temp.reshape(x_test_clean_temp.shape[0]*x_test_clean_temp.shape[1],-1)).reshape(x_test_clean_temp.shape)
-                        
                         elif feat_type == 'raw':
                             x_test_vae = cp.deepcopy(x_test_noise[:,:,::2,:])/5
                             x_test_clean_vae = cp.deepcopy(x_test_clean[:,:,::2,:])/5
@@ -1411,5 +1419,10 @@ def ave_results(params, sub_type, train_grp=2, dt=0, feat_type='feat',epochs=30,
     ave_all = np.nanmean(sub_all,axis=ax)
     ave_noise = np.nanmean(sub_noise,axis=ax)
     ave_clean = np.nanmean(sub_clean,axis=ax)
+
+    if ave_all.ndim > 2:
+        ave_all = np.nanmean(ave_all,axis=ax)
+        ave_noise = np.nanmean(ave_noise,axis=ax)
+        ave_clean = np.nanmean(ave_clean,axis=ax)
     return sub_all, sub_noise, sub_clean, ave_all, ave_noise, ave_clean
     
