@@ -13,7 +13,7 @@ from tensorflow.keras import optimizers
 import tensorflow as tf
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
-def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,dense=True):
+def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     if input_type == 'feat':
         input_shape = (6,4,1)
         inter_shape = (3,2,1)
@@ -29,7 +29,6 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = Flatten()(x)
-    # if dense:
     x = Dense(16, activation="relu")(x)
     clf_input = BatchNormalization()(x)
 
@@ -94,7 +93,7 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
     return vae, encoder, decoder, clf_supervised
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
-def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,dense=True):
+def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     if input_type == 'feat':
         input_shape = (6,4,1)
         inter_shape = (3,2,1)
@@ -109,7 +108,6 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,de
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = Flatten()(x)
-    # if dense:
     x = Dense(16, activation="relu")(x)
     x = BatchNormalization()(x)
 
@@ -165,7 +163,7 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001,de
     return vae, encoder, decoder, clf_supervised
 
 ## VARIATIONAL LATENT SPACE CLASSIFIER - NO DECODER
-def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001, dense=True):
+def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
     
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -179,7 +177,6 @@ def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001, de
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = Flatten()(x)
-    # if dense:
     x = Dense(16, activation="relu")(x)
     x = BatchNormalization()(x)
 
@@ -220,7 +217,7 @@ def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001, de
     vae.compile(optimizer=opt, loss=VAE_loss,experimental_run_tf_function=False,metrics=['accuracy'])
     return vae, encoder, clf_supervised
 
-def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001,dense=True):
+def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
     
     if input_type == 'feat':
         input_shape = (6,4,1)
@@ -234,7 +231,6 @@ def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001,dens
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = Flatten()(x)
-    # if dense:
     x = Dense(16, activation="relu")(x)
     x = BatchNormalization()(x)
     if sparse:
