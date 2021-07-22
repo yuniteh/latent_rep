@@ -16,6 +16,7 @@ def eval_lda_ch(mu_class, C, n_type, x, y):
     full_type = n_type[0:4]
     noise_type = n_type[4:-1]
 
+    # sub_params = np.tile(params,(rep*(num_ch-1)+1,1))
     # tile data once for each channel
     if full_type == 'full':
         start_ch = num_ch - 1

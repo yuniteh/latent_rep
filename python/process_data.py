@@ -238,7 +238,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
     if full_type == 'full':
         start_ch = 1
         sub_params = np.tile(params,(rep*(num_ch-1)+1,1))
-        orig = np.tile(raw,(rep*(num_ch-1),1,1))
+        orig = np.tile(raw,(rep*(num_ch-1)+1,1,1))
     # tile data twice, once for clean and once for noise
     elif full_type == 'part':
         start_ch = num_ch - 1
@@ -278,7 +278,10 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
             out = np.concatenate((out,temp))
     
     out = np.concatenate((raw, out))
-    orig = np.concatenate((raw, orig))
+    # sub_params = np.concatenate((params,sub_params))
+    print(np.shape(out))
+    print(np.shape(orig))
+    print(np.shape(sub_params))
 
     noisy, clean, y = out, orig, to_categorical(sub_params[:,4]-1)
 

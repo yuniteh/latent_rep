@@ -64,6 +64,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 with open(filename + '.p', 'rb') as f:
                     scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_dec_w, vcnn_clf_w, w_svae, c_svae, \
                         w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C = pickle.load(f)   
+
                 with open(filename + '_hist.p', 'rb') as f:
                     svae_hist, sae_hist, cnn_hist, vcnn_hist = pickle.load(f)
             else:
@@ -207,7 +208,6 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_dec_w, vcnn_clf_w, \
                     w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
 
-            
             with open(filename + '_hist.p', 'wb') as f:
                 pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist],f)
 
@@ -216,7 +216,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 
     return last_acc, last_val, filename
 
-def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=10, epochs=100,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001,dense=True):
+def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=10, epochs=100,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001):
     i_tot = 13
     noise_type = n_test[4:-1]
 
@@ -320,6 +320,8 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                 vcnn_dec.set_weights(vcnn_dec_w)
                 vcnn_clf.set_weights(vcnn_clf_w)
 
+                if dt == 'cv':
+                    x_test, p_test = x_valid, p_valid
                 for test_scale in range(1,test_tot + 1):
                     skip = False
                     # load test data for diff limb positions
@@ -337,12 +339,8 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                             skip = True                    
                     else:
                         # Add noise and index EMG data
-                        if dt == 'cv':
-                            x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_valid, p_valid, sub, n_test, test_scale)
-                            clean_size = int(np.size(x_valid,axis=0))
-                        else:
-                            x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, n_test, test_scale)
-                            clean_size = int(np.size(x_test,axis=0))
+                        x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, n_test, test_scale)
+                        clean_size = int(np.size(x_test,axis=0))
                         if not noise:
                             x_test_noise = cp.deepcopy(x_test_clean)
 

@@ -300,7 +300,7 @@ def build_sae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
         z = Dense(latent_dim, name="z", activity_regularizer=regularizers.l1(10e-5))(x)
     else:
         z = Dense(latent_dim, name="z")(x)
-    # z = BatchNormalization()(z)
+    z = BatchNormalization()(z)
     encoder = Model(inputs, z, name="encoder")
 
     # classifier
