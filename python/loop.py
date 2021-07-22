@@ -224,14 +224,16 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
         test_tot = 5
     elif noise_type == 'pos':
         test_tot = 4
+    elif noise_type == 'flat':
+        test_tot = 1
 
     # Initialize accuracy arrays
     if dt == 'cv':
         cv_tot = 4
-        max_cv = 5
     else:
         cv_tot = 1
-        max_cv = 2
+    
+    max_cv = cv_tot + 1
     
     acc_all = np.full([np.max(params[:,0])+1, cv_tot, test_tot, i_tot],np.nan)
     acc_clean = np.full([np.max(params[:,0])+1, cv_tot, test_tot, i_tot],np.nan)
