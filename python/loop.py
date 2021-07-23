@@ -63,7 +63,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 load = True
                 with open(filename + '.p', 'rb') as f:
                     scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_dec_w, vcnn_clf_w, w_svae, c_svae, \
-                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C = pickle.load(f)   
+                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, _, _ = pickle.load(f)   
 
                 with open(filename + '_hist.p', 'rb') as f:
                     svae_hist, sae_hist, cnn_hist, vcnn_hist = pickle.load(f)
@@ -202,11 +202,19 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
             if mod == 'all' or any("lda" in s for s in mod):
                 w,c, mu, C = train_lda(x_train_lda,y_train_lda)
                 w_noise,c_noise, _, _ = train_lda(x_train_lda2,y_train_lda2)
+            
+            # Train QDA
+            if mod == 'all' or any("qda" in s for s in mod):
+                # Train QDA
+                qda = QDA()
+                qda.fit(x_train_lda, np.squeeze(y_train_lda))
+                qda_noise = QDA()
+                qda_noise.fit(x_train_lda2, np.squeeze(y_train_lda2))
 
             # Pickle variables
             with open(filename + '.p', 'wb') as f:
                 pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_dec_w, vcnn_clf_w, \
-                    w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C],f)
+                    w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise],f)
 
             with open(filename + '_hist.p', 'wb') as f:
                 pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist],f)
@@ -273,36 +281,17 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                 # Load saved data
                 with open(filename + '.p', 'rb') as f:
                     scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_dec_w, vcnn_clf_w, w_svae, c_svae, \
-                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C = pickle.load(f)   
+                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)   
 
                 # Add noise to training data
-                y_train = p_train[:,4]
-                
-                x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, n_train, train_scale)
-                x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, n_train, train_scale)
-                if not noise:
-                    x_train_noise = cp.deepcopy(x_train_clean)
-                    x_valid_noise = cp.deepcopy(x_valid_clean)
-
-                x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
+                # y_train = p_train[:,4]
+                y_shape = np.max(p_train[:,4])
 
                 # Build VAE
-                svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
-                sae, sae_enc, sae_clf = dl.build_sae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
-                cnn, cnn_enc, cnn_clf = dl.build_cnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
-                vcnn, vcnn_enc, vcnn_dec, vcnn_clf = dl.build_svae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
-
-                # Training data for LDA/QDA
-                x_train_lda = prd.extract_feats(x_train)
-                y_train_lda = y_train[...,np.newaxis] - 1
-                x_train_lda2 = prd.extract_feats(x_train_noise)
-                y_train_lda2 = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
-
-                # Train QDA
-                qda = QDA()
-                qda.fit(x_train_lda, np.squeeze(y_train_lda))
-                qda_noise = QDA()
-                qda_noise.fit(x_train_lda2, np.squeeze(y_train_lda2))
+                svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
+                sae, sae_enc, sae_clf = dl.build_sae(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
+                cnn, cnn_enc, cnn_clf = dl.build_cnn(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
+                vcnn, vcnn_enc, vcnn_dec, vcnn_clf = dl.build_svae(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
 
                 svae.set_weights(svae_w)
                 svae_enc.set_weights(svae_enc_w)
