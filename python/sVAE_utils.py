@@ -30,23 +30,26 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
     x = BatchNormalization()(x)
     x = Flatten()(x)
     x = Dense(16, activation="relu")(x)
-    clf_input = BatchNormalization()(x)
+    x = BatchNormalization()(x)
 
     if sparse:
-        z_mean = Dense(latent_dim, name="z_mean", activity_regularizer=regularizers.l1(10e-5))(clf_input)
-        z_log_var = Dense(latent_dim, name="z_log_var", activity_regularizer=regularizers.l1(10e-5))(clf_input)
+        z_mean = Dense(latent_dim, name="z_mean", activity_regularizer=regularizers.l1(10e-5))(x)
+        z_log_var = Dense(latent_dim, name="z_log_var", activity_regularizer=regularizers.l1(10e-5))(x)
+        clf_input = Dense(latent_dim, name="clf_input", activity_regularizer=regularizers.l1(10e-5))(x)
     else:
-        z_mean = Dense(latent_dim, name="z_mean")(clf_input)
-        z_log_var = Dense(latent_dim, name="z_log_var")(clf_input)
-        
+        z_mean = Dense(latent_dim, name="z_mean")(x)
+        z_log_var = Dense(latent_dim, name="z_log_var")(x)        
+        clf_input = Dense(latent_dim, name="clf_input")(x)
+
     z_mean = BatchNormalization()(z_mean)
     z_log_var = BatchNormalization()(z_log_var)
+    clf_input = BatchNormalization()(clf_input)
     z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
     encoder = Model(inputs, [z_mean, z_log_var, z, clf_input], name="encoder")
     # encoder.summary()
 
     # New: add a linear classifier
-    clf_latent_inputs = Input(shape=(np.shape(clf_input)[1],), name='z_sampling_clf')
+    clf_latent_inputs = Input(shape=(latent_dim,), name='z_sampling_clf')
     clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
     clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')   
     # clf_supervised.summary()
@@ -209,7 +212,7 @@ def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
-        vae_loss = K.mean((class_loss + kl_loss)/100)
+        vae_loss = class_loss + (K.mean(kl_loss)/100)
         # vae_loss = kl_loss
         return vae_loss
 

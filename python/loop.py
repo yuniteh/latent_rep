@@ -41,16 +41,18 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
 
     # Check if training data exists
     if np.sum(ind):
-        if dt == 'cv':
-            x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
-        else:
-            x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
+        if mod != 'none':
+            if dt == 'cv':
+                x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
+            else:
+                x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
 
         for cv in range(start_cv,max_cv):
             filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_bat_' + str(batch_size) + '_' + n_train + '_' + str(train_scale) + '_lr_' + str(int(lr*10000)) 
             if dt == 'cv':
-                x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
-                x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
+                if mod != 'none':
+                    x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
+                    x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
                 filename += '_cv_' + str(cv)
 
             print('Running sub ' + str(sub) + ', model ' + str(train_grp) + ', latent dim ' + str(latent_dim) + ', cv ' + str(cv))
@@ -62,7 +64,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
             if load:
                 load = True
                 with open(filename + '.p', 'rb') as f:
-                    scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_dec_w, vcnn_clf_w, w_svae, c_svae, \
+                    scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, w_svae, c_svae, \
                         w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)   
 
                 with open(filename + '_hist.p', 'rb') as f:
@@ -71,54 +73,55 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 scaler = MinMaxScaler(feature_range=(-1,1))
                 load = False
 
-            # Add noise to training data
-            y_train = p_train[:,4]
-            
-            x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, n_train, train_scale)
-            x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, n_train, train_scale)
-            if not noise:
-                x_train_noise = cp.deepcopy(x_train_clean)
-                x_valid_noise = cp.deepcopy(x_valid_clean)
-
-            x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
-
-            # Build models
-            svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
-            vcnn, vcnn_enc, vcnn_dec, vcnn_clf = dl.build_svae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
-            sae, sae_enc, sae_clf = dl.build_sae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
-            cnn, cnn_enc, cnn_clf = dl.build_cnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
-            # vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr,dense=dense)
-
-            # Training data for LDA/QDA
-            x_train_lda = prd.extract_feats(x_train)
-            y_train_lda = y_train[...,np.newaxis] - 1
-            x_train_lda2 = prd.extract_feats(x_train_noise)
-            y_train_lda2 = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
-
-            # Shape data based on feature type
-            if feat_type == 'feat':
-                x_train_noise_temp = np.transpose(prd.extract_feats(x_train_noise).reshape((x_train_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
-                x_train_clean_temp = np.transpose(prd.extract_feats(x_train_clean).reshape((x_train_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
-                x_train_noise_vae = scaler.fit_transform(x_train_noise_temp.reshape(x_train_noise_temp.shape[0]*x_train_noise_temp.shape[1],-1)).reshape(x_train_noise_temp.shape)
+            if mod != 'none':
+                # Add noise to training data
+                y_train = p_train[:,4]
                 
-                x_train_vae = scaler.transform(x_train_clean_temp.reshape(x_train_clean_temp.shape[0]*x_train_clean_temp.shape[1],-1)).reshape(x_train_clean_temp.shape)
+                x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, n_train, train_scale)
+                x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, n_train, train_scale)
+                if not noise:
+                    x_train_noise = cp.deepcopy(x_train_clean)
+                    x_valid_noise = cp.deepcopy(x_valid_clean)
 
-                x_valid_noise_temp = np.transpose(prd.extract_feats(x_valid_noise).reshape((x_valid_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
-                x_valid_clean_temp = np.transpose(prd.extract_feats(x_valid_clean).reshape((x_valid_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
-                x_valid_noise_vae = scaler.transform(x_valid_noise_temp.reshape(x_valid_noise_temp.shape[0]*x_valid_noise_temp.shape[1],-1)).reshape(x_valid_noise_temp.shape)
-                
-                x_valid_vae = scaler.transform(x_valid_clean_temp.reshape(x_valid_clean_temp.shape[0]*x_valid_clean_temp.shape[1],-1)).reshape(x_valid_clean_temp.shape)
-            elif feat_type == 'raw':
-                x_train_noise_vae = cp.deepcopy(x_train_noise[:,:,::2,:])/5
-                x_train_vae = cp.deepcopy(x_train_clean[:,:,::2,:])/5
+                x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
 
-                x_valid_noise_vae = cp.deepcopy(x_valid_noise[:,:,::2,:])/5
-                x_valid_vae = cp.deepcopy(x_valid_clean[:,:,::2,:])/5
+                # Build models
+                svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
+                # vcnn, vcnn_enc, vcnn_dec, vcnn_clf = dl.build_svae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
+                sae, sae_enc, sae_clf = dl.build_sae(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
+                cnn, cnn_enc, cnn_clf = dl.build_cnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
+                vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(latent_dim, y_train_clean.shape[1], input_type=feat_type, sparse=sparsity,lr=lr)
 
-            x_train_noise_sae = x_train_noise_vae.reshape(x_train_noise_vae.shape[0],-1)
-            x_train_sae = x_train_vae.reshape(x_train_vae.shape[0],-1)
-            x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
-            x_valid_sae = x_valid_vae.reshape(x_valid_vae.shape[0],-1)
+                # Training data for LDA/QDA
+                x_train_lda = prd.extract_feats(x_train)
+                y_train_lda = y_train[...,np.newaxis] - 1
+                x_train_lda2 = prd.extract_feats(x_train_noise)
+                y_train_lda2 = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
+
+                # Shape data based on feature type
+                if feat_type == 'feat':
+                    x_train_noise_temp = np.transpose(prd.extract_feats(x_train_noise).reshape((x_train_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                    x_train_clean_temp = np.transpose(prd.extract_feats(x_train_clean).reshape((x_train_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                    x_train_noise_vae = scaler.fit_transform(x_train_noise_temp.reshape(x_train_noise_temp.shape[0]*x_train_noise_temp.shape[1],-1)).reshape(x_train_noise_temp.shape)
+                    
+                    x_train_vae = scaler.transform(x_train_clean_temp.reshape(x_train_clean_temp.shape[0]*x_train_clean_temp.shape[1],-1)).reshape(x_train_clean_temp.shape)
+
+                    x_valid_noise_temp = np.transpose(prd.extract_feats(x_valid_noise).reshape((x_valid_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                    x_valid_clean_temp = np.transpose(prd.extract_feats(x_valid_clean).reshape((x_valid_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                    x_valid_noise_vae = scaler.transform(x_valid_noise_temp.reshape(x_valid_noise_temp.shape[0]*x_valid_noise_temp.shape[1],-1)).reshape(x_valid_noise_temp.shape)
+                    
+                    x_valid_vae = scaler.transform(x_valid_clean_temp.reshape(x_valid_clean_temp.shape[0]*x_valid_clean_temp.shape[1],-1)).reshape(x_valid_clean_temp.shape)
+                elif feat_type == 'raw':
+                    x_train_noise_vae = cp.deepcopy(x_train_noise[:,:,::2,:])/5
+                    x_train_vae = cp.deepcopy(x_train_clean[:,:,::2,:])/5
+
+                    x_valid_noise_vae = cp.deepcopy(x_valid_noise[:,:,::2,:])/5
+                    x_valid_vae = cp.deepcopy(x_valid_clean[:,:,::2,:])/5
+
+                x_train_noise_sae = x_train_noise_vae.reshape(x_train_noise_vae.shape[0],-1)
+                x_train_sae = x_train_vae.reshape(x_train_vae.shape[0],-1)
+                x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
+                x_valid_sae = x_valid_vae.reshape(x_valid_vae.shape[0],-1)
             
             if mod == 'all' or any("svae" in s for s in mod):
                 # Train SVAE
@@ -143,7 +146,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                     test_weight = np.array([[1,1] for _ in range(len(x_valid_noise_vae))])
                     svae_hist[ep,:7] = temp_out
                     svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_vae,y_valid_clean,x_valid_vae[:,0,0]])
-                    print(svae_hist[ep,...])
+                    print(svae.metrics_names)
 
                 svae_w = svae.get_weights()
                 svae_enc_w = svae_enc.get_weights()
@@ -152,10 +155,9 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
 
             # Fit NNs and get weights
             if mod == 'all' or any("vcnn" in s for s in mod):
-                vcnn_hist = vcnn.fit(x_train_noise_vae, [x_train_vae,y_train_clean],epochs=30,validation_data = [x_valid_noise_vae,[x_valid_vae, y_valid_clean]],batch_size=batch_size)
+                vcnn_hist = vcnn.fit(x_train_noise_vae, y_train_clean,epochs=30,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=batch_size)                
                 vcnn_w = vcnn.get_weights()
                 vcnn_enc_w = vcnn_enc.get_weights()
-                vcnn_dec_w = vcnn_dec.get_weights()
                 vcnn_clf_w = vcnn_clf.get_weights()
                 vcnn_hist = vcnn_hist.history
 
@@ -210,22 +212,57 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 qda.fit(x_train_lda, np.squeeze(y_train_lda))
                 qda_noise = QDA()
                 qda_noise.fit(x_train_lda2, np.squeeze(y_train_lda2))
+            
+            # Reconstruct training data for data augmentation
+            if mod == 'recon':
+                svae.set_weights(svae_w)
+                svae_enc.set_weights(svae_enc_w)
+                svae_dec.set_weights(svae_dec_w)
+                svae_clf.set_weights(svae_clf_w)
 
-            # Pickle variables
-            with open(filename + '.p', 'wb') as f:
-                pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_dec_w, vcnn_clf_w, \
-                    w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise],f)
+                test_weights = np.array([[1,1] for _ in range(len(x_train_noise_vae))])
+                x_train_recon, _, _ = svae.predict([x_train_noise_vae, test_weights])
 
-            with open(filename + '_hist.p', 'wb') as f:
-                pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist],f)
+                x_train_aug = np.concatenate((x_train_noise_vae, x_train_recon))
+                y_train_all = np.argmax(np.tile(y_train_clean,(2,1)), axis=1)[...,np.newaxis]
+                x_train_aug = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
+                x_train_aug_lda = np.transpose(x_train_aug,(0,2,1,3)).reshape(x_train_aug.shape[0],-1)
+                w_rec,c_rec, _, _ = train_lda(x_train_aug_lda,y_train_all)
 
-            last_acc[cv-1,:] = np.array([svae_hist[5,-1], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['clf_accuracy'][-1]])
-            last_val[cv-1,:] = np.array([svae_hist[12,-1], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_clf_accuracy'][-1]])
+            if mod == 'gen':
+                svae.set_weights(svae_w)
+                svae_enc.set_weights(svae_enc_w)
+                svae_dec.set_weights(svae_dec_w)
+                svae_clf.set_weights(svae_clf_w)
+
+                test_weights = np.array([[1,1] for _ in range(len(x_train_noise_vae))])
+                x_train_recon, _, _ = svae.predict([x_train_noise_vae, test_weights])
+
+                x_train_aug = np.concatenate((x_train_noise_vae, x_train_recon))
+                y_train_all = np.argmax(np.tile(y_train_clean,(2,1)), axis=1)[...,np.newaxis]
+                x_train_aug = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
+                x_train_aug_lda = np.transpose(x_train_aug,(0,2,1,3)).reshape(x_train_aug.shape[0],-1)
+                w_rec,c_rec, _, _ = train_lda(x_train_aug_lda,y_train_all)
+
+            if mod != 'none':
+                # Pickle variables
+                with open(filename + '.p', 'wb') as f:
+                    pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
+                        w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise],f)
+
+                with open(filename + '_aug.p', 'wb') as f:
+                    pickle.dump([w_rec, c_rec],f)
+
+                with open(filename + '_hist.p', 'wb') as f:
+                    pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist],f)
+
+            last_acc[cv-1,:] = np.array([svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1]])
+            last_val[cv-1,:] = np.array([svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1]])
                 
     return last_acc, last_val, filename
 
 def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=10, epochs=100,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001):
-    i_tot = 13
+    i_tot = 14
     noise_type = n_test[4:-1]
 
     if noise_type == 'gauss' or noise_type == '60hz':
@@ -282,6 +319,8 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                 with open(filename + '.p', 'rb') as f:
                     scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_dec_w, vcnn_clf_w, w_svae, c_svae, \
                         w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)   
+                with open(filename + '_aug.p', 'rb') as f:
+                    w_rec, c_rec = pickle.load(f)
 
                 # Add noise to training data
                 y_shape = np.max(p_train[:,4])
@@ -367,10 +406,10 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                         # Compile models and test data into lists
                         dl_mods = 4
                         align_mods = 4
-                        lda_mods = 2
+                        lda_mods = 3
                         qda_mods = 2
-                        mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, n_test]]
-                        x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
+                        mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w,c],[w_noise,c_noise],[w_rec,c_rec],qda,qda_noise,[mu, C, n_test]]
+                        x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_lda', 'x_test_lda', 'x_test_lda','x_test_lda', 'x_test_lda', 'x_test']
                         y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
                         mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
                         if n_test == 0:
@@ -398,6 +437,124 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
         pickle.dump([acc_all, acc_clean, acc_noise],f)
 
     return acc_all, acc_noise, acc_clean, filename
+
+def loop_recon(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=128, latent_dim=4, epochs=30,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001):
+    i_tot = 13
+    noise_type = n_test[4:-1]
+
+    if noise_type == 'gauss' or noise_type == '60hz':
+        test_tot = 5
+    elif noise_type == 'pos':
+        test_tot = 4
+    elif noise_type == 'flat':
+        test_tot = 1
+
+    if not noise:
+        test_tot = 1
+
+    # Initialize accuracy arrays
+    if dt == 'cv':
+        cv_tot = 4
+    else:
+        cv_tot = 1
+    
+    max_cv = cv_tot + 1
+    
+    acc_all = np.full([np.max(params[:,0])+1, cv_tot, test_tot, i_tot],np.nan)
+    acc_clean = np.full([np.max(params[:,0])+1, cv_tot, test_tot, i_tot],np.nan)
+    acc_noise = np.full([np.max(params[:,0])+1, cv_tot, test_tot, i_tot],np.nan)
+
+    filename = 0
+
+    # Set folder
+    if dt == 0:
+        today = date.today()
+        dt = today.strftime("%m%d")
+    foldername = 'models' + '_' + str(train_grp) + '_' + dt
+    if not os.path.exists(foldername):
+        os.makedirs(foldername)
+
+    for sub in range(1,2):#np.max(params[:,0])+1):            
+        ind = (params[:,0] == sub) & (params[:,3] == train_grp)
+
+        # Check if training data exists
+        if np.sum(ind):
+            if dt == 'cv':
+                x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
+            else:
+                x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
+
+            for cv in range(1,2):#start_cv,max_cv):
+                filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_bat_' + str(batch_size) + '_' + n_train + '_' + str(train_scale) + '_lr_' + str(int(lr*10000)) 
+                if dt == 'cv':
+                    x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
+                    x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
+                    filename += '_cv_' + str(cv)
+
+                print('Running sub ' + str(sub) + ', model ' + str(train_grp) + ', latent dim ' + str(latent_dim))
+                if sparsity:
+                    filename += '_sparse'
+                
+                # Load saved data
+                with open(filename + '.p', 'rb') as f:
+                    scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, w_svae, c_svae, \
+                        w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)
+
+                # Add noise to training data
+                y_shape = np.max(p_train[:,4])
+
+                # Build VAE
+                svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
+
+                svae.set_weights(svae_w)
+                svae_enc.set_weights(svae_enc_w)
+                svae_dec.set_weights(svae_dec_w)
+                svae_clf.set_weights(svae_clf_w)
+
+                if dt == 'cv':
+                    x_test, p_test = x_valid, p_valid
+
+                for test_scale in range(1,test_tot + 1):
+                    skip = False
+                    # load test data for diff limb positions
+                    if noise_type == 'pos':
+                        test_grp = int(n_test[-1])
+                        _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,sub_type,dt=dt,train_grp=test_grp)
+                        pos_ind = p_test[:,-1] == test_scale
+                        if pos_ind.any():
+                            x_test_noise = x_test[pos_ind,...]
+                            x_test_clean = x_test[pos_ind,...]
+                            y_test_clean = to_categorical(p_test[pos_ind,4]-1)
+                            clean_size = 0
+                            skip = False
+                        else:
+                            skip = True                    
+                    else:
+                        # Add noise and index EMG data
+                        x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, n_test, test_scale)
+                        clean_size = int(np.size(x_test,axis=0))
+                        if not noise:
+                            x_test_noise = cp.deepcopy(x_test_clean)
+
+                    if not skip:
+                        # Extract features
+                        if feat_type == 'feat':
+                            x_test_noise_temp = np.transpose(prd.extract_feats(x_test_noise).reshape((x_test_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                            x_test_clean_temp = np.transpose(prd.extract_feats(x_test_clean).reshape((x_test_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                            
+                            x_test_vae = scaler.transform(x_test_noise_temp.reshape(x_test_noise_temp.shape[0]*x_test_noise_temp.shape[1],-1)).reshape(x_test_noise_temp.shape)
+                            x_test_clean_vae = scaler.transform(x_test_clean_temp.reshape(x_test_clean_temp.shape[0]*x_test_clean_temp.shape[1],-1)).reshape(x_test_clean_temp.shape)
+                        elif feat_type == 'raw':
+                            x_test_vae = cp.deepcopy(x_test_noise[:,:,::2,:])/5
+                            x_test_clean_vae = cp.deepcopy(x_test_clean[:,:,::2,:])/5
+
+                        # Align test data for ENC-LDA
+                        _,_, _, x_test_svae = svae_enc.predict(x_test_vae)
+                        test_weights = np.array([[1,1] for _ in range(len(x_test_vae))])
+                        dec_out, clf_out, enc_out = svae.predict([x_test_vae, test_weights])
+                    else:
+                        x = 0
+    return dec_out, clf_out, enc_out, x_test_clean, x_test_vae, y_test_clean, filename
 
 def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=4, epochs=30,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5, suf =''):
     i_tot = 13
