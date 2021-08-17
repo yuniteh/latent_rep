@@ -225,9 +225,14 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
 
                 x_train_aug = np.concatenate((x_train_noise_vae, x_train_recon))
                 y_train_all = np.argmax(np.tile(y_train_clean,(2,1)), axis=1)[...,np.newaxis]
-                x_train_aug = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
-                x_train_aug_lda = np.transpose(x_train_aug,(0,2,1,3)).reshape(x_train_aug.shape[0],-1)
+                x_train_aug_lda = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
+                x_train_aug_lda = np.transpose(x_train_aug_lda,(0,2,1,3)).reshape(x_train_aug_lda.shape[0],-1)
                 w_rec,c_rec, _, _ = train_lda(x_train_aug_lda,y_train_all)
+
+                _, _, _, x_train_aug = svae_enc.predict(x_train_aug)
+
+                # Train ENC-LDA
+                w_recal, c_recal,_, _ = train_lda(x_train_aug,y_train_all)
 
             if mod == 'gen':
                 svae.set_weights(svae_w)
@@ -242,7 +247,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 y_train_all = np.argmax(np.tile(y_train_clean,(2,1)), axis=1)[...,np.newaxis]
                 x_train_aug = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
                 x_train_aug_lda = np.transpose(x_train_aug,(0,2,1,3)).reshape(x_train_aug.shape[0],-1)
-                w_rec,c_rec, _, _ = train_lda(x_train_aug_lda,y_train_all)
+                w_gen,c_gen, _, _ = train_lda(x_train_aug_lda,y_train_all)
 
             if mod != 'none':
                 # Pickle variables
@@ -251,7 +256,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                         w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise],f)
 
                 with open(filename + '_aug.p', 'wb') as f:
-                    pickle.dump([w_rec, c_rec],f)
+                    pickle.dump([w_rec, c_rec, w_recal, c_recal],f)
 
                 with open(filename + '_hist.p', 'wb') as f:
                     pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist],f)
@@ -294,7 +299,7 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
     if not os.path.exists(foldername):
         os.makedirs(foldername)
 
-    for sub in range(1,2):#np.max(params[:,0])+1):            
+    for sub in range(1,6):#np.max(params[:,0])+1):            
         ind = (params[:,0] == sub) & (params[:,3] == train_grp)
 
         # Check if training data exists
@@ -317,10 +322,11 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                 
                 # Load saved data
                 with open(filename + '.p', 'rb') as f:
-                    scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_dec_w, vcnn_clf_w, w_svae, c_svae, \
+                    scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, w_svae, c_svae, \
                         w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)   
+
                 with open(filename + '_aug.p', 'rb') as f:
-                    w_rec, c_rec = pickle.load(f)
+                    w_rec, c_rec, w_recal, c_recal = pickle.load(f)
 
                 # Add noise to training data
                 y_shape = np.max(p_train[:,4])
@@ -329,7 +335,7 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                 svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
                 sae, sae_enc, sae_clf = dl.build_sae(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
                 cnn, cnn_enc, cnn_clf = dl.build_cnn(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
-                vcnn, vcnn_enc, vcnn_dec, vcnn_clf = dl.build_svae(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
+                vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
 
                 svae.set_weights(svae_w)
                 svae_enc.set_weights(svae_enc_w)
@@ -346,7 +352,6 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
 
                 vcnn.set_weights(vcnn_w)
                 vcnn_enc.set_weights(vcnn_enc_w)
-                vcnn_dec.set_weights(vcnn_dec_w)
                 vcnn_clf.set_weights(vcnn_clf_w)
 
                 if dt == 'cv':
@@ -405,11 +410,11 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
 
                         # Compile models and test data into lists
                         dl_mods = 4
-                        align_mods = 4
-                        lda_mods = 3
+                        align_mods = 5
+                        lda_mods = 2
                         qda_mods = 2
-                        mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w,c],[w_noise,c_noise],[w_rec,c_rec],qda,qda_noise,[mu, C, n_test]]
-                        x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_lda', 'x_test_lda', 'x_test_lda','x_test_lda', 'x_test_lda', 'x_test']
+                        mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w_recal,c_recal],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, n_test]]
+                        x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_svae', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
                         y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
                         mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
                         if n_test == 0:
