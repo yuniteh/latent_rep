@@ -47,7 +47,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
             else:
                 x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
 
-        for cv in range(start_cv,max_cv):
+        for cv in range(start_cv,2):#max_cv):
             filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_bat_' + str(batch_size) + '_' + n_train + '_' + str(train_scale) + '_lr_' + str(int(lr*10000)) 
             if dt == 'cv':
                 if mod != 'none':
@@ -241,30 +241,37 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 svae_clf.set_weights(svae_clf_w)
 
                 test_weights = np.array([[1,1] for _ in range(len(x_train_noise_vae))])
-                x_train_recon, _, _ = svae.predict([x_train_noise_vae, test_weights])
+                # x_train_recon, _, _ = svae.predict([x_train_noise_vae, test_weights])
 
-                x_train_aug = np.concatenate((x_train_noise_vae, x_train_recon))
-                y_train_all = np.argmax(np.tile(y_train_clean,(2,1)), axis=1)[...,np.newaxis]
-                x_train_aug = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
-                x_train_aug_lda = np.transpose(x_train_aug,(0,2,1,3)).reshape(x_train_aug.shape[0],-1)
-                w_gen,c_gen, _, _ = train_lda(x_train_aug_lda,y_train_all)
+                clf_in = np.argmax(np.tile(np.eye(y_train_clean.shape[-1]),(10,1)),axis=1)
 
-            if mod != 'none':
+                mean_in = np.zeros([clf_in.shape[0],latent_dim],dtype='float32')
+                var_in = np.ones([clf_in.shape[0],latent_dim],dtype='float32')
+                latent_in = dl.sampling([mean_in, var_in])
+                dec_out = svae_dec.predict([latent_in, clf_in])
+
+                # x_train_aug = np.concatenate((x_train_noise_vae, x_train_recon))
+                # y_train_all = np.argmax(np.tile(y_train_clean,(2,1)), axis=1)[...,np.newaxis]
+                # x_train_aug = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
+                # x_train_aug_lda = np.transpose(x_train_aug,(0,2,1,3)).reshape(x_train_aug.shape[0],-1)
+                # w_gen,c_gen, _, _ = train_lda(x_train_aug_lda,y_train_all)
+
+            if mod != 'none' and mod != 'gen':
                 # Pickle variables
                 with open(filename + '.p', 'wb') as f:
                     pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
                         w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise],f)
-
-                with open(filename + '_aug.p', 'wb') as f:
-                    pickle.dump([w_rec, c_rec, w_recal, c_recal],f)
-
                 with open(filename + '_hist.p', 'wb') as f:
                     pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist],f)
+
+                if mod == 'recon':
+                    with open(filename + '_aug.p', 'wb') as f:
+                        pickle.dump([w_rec, c_rec, w_recal, c_recal],f)
 
             last_acc[cv-1,:] = np.array([svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1]])
             last_val[cv-1,:] = np.array([svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1]])
                 
-    return last_acc, last_val, filename
+    return last_acc, last_val, filename, clf_in,x_train_noise_vae, y_train_clean, scaler, dec_out
 
 def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=10, epochs=100,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001):
     i_tot = 14
