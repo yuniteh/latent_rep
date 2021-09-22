@@ -92,7 +92,7 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
         return kl_loss
 
     opt = optimizers.Adam(learning_rate=lr)
-    vae.compile(optimizer=opt, loss=[VAE_loss, 'categorical_crossentropy', VAE_loss],experimental_run_tf_function=False,metrics=['accuracy'])
+    vae.compile(optimizer=opt, loss=[VAE_loss, 'categorical_crossentropy', kloss],experimental_run_tf_function=False,metrics=['accuracy'])
     return vae, encoder, decoder, clf_supervised
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)

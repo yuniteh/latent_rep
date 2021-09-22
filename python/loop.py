@@ -147,6 +147,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                     svae_hist[ep,:7] = temp_out
                     svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_vae,y_valid_clean,x_valid_vae[:,0,0]])
                     print(svae.metrics_names)
+                    print(svae_hist[ep,:])
 
                 svae_w = svae.get_weights()
                 svae_enc_w = svae_enc.get_weights()
