@@ -56,7 +56,8 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
 
     # build decoder model
     latent_inputs = Input(shape=(latent_dim,))
-    clf_in = Input(shape=(1,))
+    # clf_in = Input(shape=(1,))
+    clf_in = Input(shape=(n_class,))
     clf_dec = Dense(latent_dim, activation="relu")(clf_in)
     cat_inputs = concatenate([latent_inputs, clf_dec],axis=-1)
     x = Dense(inter_shape[0]*inter_shape[1]*32, activation="relu")(cat_inputs)
@@ -70,7 +71,8 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
     # decoder.summary()
 
     # instantiate VAE model
-    outputs = [decoder([encoder(inputs)[2],tf.expand_dims(tf.math.argmax(clf_supervised(encoder(inputs)[3]),axis=1),axis=1)]), clf_supervised(encoder(inputs)[3]), encoder(inputs)[2]]
+    # outputs = [decoder([encoder(inputs)[2],tf.expand_dims(tf.math.argmax(clf_supervised(encoder(inputs)[3]),axis=1),axis=1)]), clf_supervised(encoder(inputs)[3]), encoder(inputs)[2]]
+    outputs = [decoder([encoder(inputs)[2],clf_supervised(encoder(inputs)[3])]), clf_supervised(encoder(inputs)[3]), encoder(inputs)[2]]
     # outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]
     vae = Model([inputs,weight], outputs, name='vae_mlp')
 

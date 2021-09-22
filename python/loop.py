@@ -244,7 +244,8 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 test_weights = np.array([[1,1] for _ in range(len(x_train_noise_vae))])
                 # x_train_recon, _, _ = svae.predict([x_train_noise_vae, test_weights])
 
-                clf_in = np.argmax(np.tile(np.eye(y_train_clean.shape[-1]),(10,1)),axis=1)
+                # clf_in = np.argmax(np.tile(np.eye(y_train_clean.shape[-1]),(10,1)),axis=1)
+                clf_in = np.tile(np.eye(y_train_clean.shape[-1]),(10,1))
 
                 mean_in = np.zeros([clf_in.shape[0],latent_dim],dtype='float32')
                 var_in = np.ones([clf_in.shape[0],latent_dim],dtype='float32')
