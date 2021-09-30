@@ -1609,7 +1609,6 @@ def eval_noise_clean(x_test, y_test, clean_size, mod=0, eval_type='dl'):
     elif eval_type == 'lda_ch':
         if clean_size == 0:
             acc_noise = 0
-            print('oops')
         else:
             acc_noise = eval_lda_ch(mod[0], mod[1], mod[2], x_test, y_test)
         acc_all = 0
