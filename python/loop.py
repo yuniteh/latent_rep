@@ -311,7 +311,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
 
                 # concatenate noisy and generated data for augmented training data
                 x_train_aug = np.concatenate((x_train_noise_vae, dec_out))
-                y_train_all = np.concatenate((np.argmax(y_train_clean, axis=1),clf_in))[...,np.newaxis]
+                y_train_all = np.concatenate((np.argmax(y_train_clean, axis=1),gen_clf))[...,np.newaxis]
 
                 # inverse transform augmented training data to train regular LDA
                 x_train_aug_lda = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
@@ -335,9 +335,10 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 with open(filename + '_hist.p', 'wb') as f:
                     pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist],f)
 
-                if mod == 'all' or any("gen" in s for s in mod) or any ("rec" in s for s in mod):
+                if mod == 'all' or any("gen" in s for s in mod) or any ("recon" in s for s in mod):
                     with open(filename + '_aug.p', 'wb') as f:
                         pickle.dump([w_rec, c_rec, w_rec_al, c_rec_al, w_gen, c_gen, w_gen_al, c_gen_al],f)
+                    print('saving aug')
 
             # allocate last accuracies
             last_acc[cv-1,:] = np.array([svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1]])
@@ -512,7 +513,7 @@ def loop_test(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tr
                         align_mods = 5
                         lda_mods = 2
                         qda_mods = 2
-                        mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w_recal,c_recal],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, n_test]]
+                        mods_all = [svae,sae,cnn,vcnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w_gen_al,c_gen_al],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, n_test]]
                         x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_cnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
                         y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
                         mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
