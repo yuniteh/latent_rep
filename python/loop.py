@@ -19,27 +19,7 @@ import copy as cp
 from datetime import date
 import time
 
-def create_foldername(train_grp=2, dt=0):
-    # Set folder
-    if dt == 0:
-        today = date.today()
-        dt = today.strftime("%m%d")
-    foldername = 'models' + '_' + str(train_grp) + '_' + dt
-    if not os.path.exists(foldername):
-        os.makedirs(foldername)
-
-    return foldername
-
-def create_filename(foldername, cv, sub_type, dt=0, sub=1, feat_type='feat', latent_dim=4, epochs=30, batch_size=32, n_train='gauss', train_scale=5, lr=0.001, sparsity=True):
-    filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_bat_' + str(batch_size) + '_' + n_train + '_' + str(train_scale) + '_lr_' + str(int(lr*10000)) 
-    if dt == 'cv':
-        filename += '_cv_' + str(cv)
-    if sparsity:
-        filename += '_sparse'
-    
-    return filename
-    
-def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=4, epochs=30,train_scale=5, n_train='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001, mod = 'all',gens=50):
+def loop_cv(raw, params, sub_type, sub=1, train_grp=2, dt=0, feat_type='feat', load=True, noise=True, start_cv=1, max_cv=5, sparsity=True, batch_size=32, latent_dim=4, epochs=30, lr=0.001, train_scale=5, n_train='gauss', mod = 'all',gens=50):
     np.set_printoptions(precision=3,suppress=True)
     i_tot = 13
     filename = 0
@@ -358,10 +338,11 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 
     return last_acc, last_val, filename, x_train_noise_vae, x_train_vae, y_train_clean, scaler, gen_clf, dec_out
 
-def loop_test(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=10, epochs=100,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001):
+def loop_test(raw, params, sub_type, train_grp=2, dt=0, feat_type='feat', load=True, noise=True, start_cv = 1, max_cv = 5, sparsity=True, batch_size=32, latent_dim=10, epochs=100, lr=0.001, train_scale=5, n_train='gauss', n_test='gauss'):
+
     # set number of models to test
     mod_tot = 14
-
+    print(batch_size)
     # set testing noise type
     noise_type = n_test[4:-1]
 
@@ -549,8 +530,49 @@ def loop_test(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tr
     with open(resultsfile + '_results.p', 'wb') as f:
         pickle.dump([acc_all, acc_clean, acc_noise],f)
 
-    print('test')
     return acc_all, acc_noise, acc_clean, filename
+
+def create_foldername(train_grp=2, dt=0):
+    # Set folder
+    if dt == 0:
+        today = date.today()
+        dt = today.strftime("%m%d")
+    foldername = 'models' + '_' + str(train_grp) + '_' + dt
+    if not os.path.exists(foldername):
+        os.makedirs(foldername)
+
+    return foldername
+
+def create_filename(foldername, cv, sub_type, sub=1, dt=0, feat_type='feat', sparsity=True, latent_dim=4, epochs=30, batch_size=32, lr=0.001, n_train='gauss', train_scale=5):
+    filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_bat_' + str(batch_size) + '_' + n_train + '_' + str(train_scale) + '_lr_' + str(int(lr*10000)) 
+    if dt == 'cv':
+        filename += '_cv_' + str(cv)
+    if sparsity:
+        filename += '_sparse'
+    
+    return filename
+
+def get_params(**kwargs):
+    
+    train_grp = params.get('train_grp',2)
+    dt = params.get('dt',0)
+    feat_type = params.get('feat_type','feat')
+    load = params.get('load',True)
+    noise = params.get('noise',True)
+    start_cv = params.get('start_cv',1)
+    max_cv = params.get('max_cv',5)
+    sparsity = params.get('sparsity',True)
+    batch_size = params.get('batch_size',32)
+    latent_dim = params.get('latent_dim',10)
+    epochs = params.get('epochs',100)
+    lr = params.get('lr',0.001)
+    train_scale = params.get('train_scale',5)
+    n_train = params.get('n_train','gauss')
+    n_test = params.get('n_test','gauss')
+    mod = params.get('mod','all')
+    gens = params.get('gens',50)
+
+    return 0
 
 def load_models(filename, latent_dim, x_train, x_train_noise, y_train, y_train_clean, feat_type, sparsity, lr):
     # Load saved data
