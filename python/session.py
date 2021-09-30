@@ -122,7 +122,7 @@ class Session():
                     x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, self.n_train, self.train_scale)
                     x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, self.n_train, self.train_scale)
                     # if not adding noise, copy clean training data
-                    if not noise:
+                    if not self.noise:
                         x_train_noise = cp.deepcopy(x_train_clean)
                         x_valid_noise = cp.deepcopy(x_valid_clean)
 
@@ -148,7 +148,7 @@ class Session():
                         x_train_clean_temp = np.transpose(prd.extract_feats(x_train_clean).reshape((x_train_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
                         
                         # scale features, only fit new scaler if not loading from old model
-                        if load:
+                        if self.load:
                             x_train_noise_vae = scaler.transform(x_train_noise_temp.reshape(x_train_noise_temp.shape[0]*x_train_noise_temp.shape[1],-1)).reshape(x_train_noise_temp.shape)
                         else:
                             x_train_noise_vae = scaler.fit_transform(x_train_noise_temp.reshape(x_train_noise_temp.shape[0]*x_train_noise_temp.shape[1],-1)).reshape(x_train_noise_temp.shape)
@@ -337,7 +337,7 @@ class Session():
                     # gen_clf = np.tile(np.eye(y_train_clean.shape[-1]),(gens,1))
 
                     # sample from normal distribution, forward pass through decoder
-                    latent_in = np.random.normal(0,1,size=(gen_clf.shape[0],latent_dim))
+                    latent_in = np.random.normal(0,1,size=(gen_clf.shape[0],self.latent_dim))
                     dec_out = svae_dec.predict([latent_in, gen_clf])
 
                     # concatenate noisy and generated data for augmented training data
