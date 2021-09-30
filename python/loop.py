@@ -342,7 +342,6 @@ def loop_test(raw, params, sub_type, train_grp=2, dt=0, feat_type='feat', load=T
 
     # set number of models to test
     mod_tot = 14
-    print(batch_size)
     # set testing noise type
     noise_type = n_test[4:-1]
 
