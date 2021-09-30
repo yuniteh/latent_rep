@@ -330,11 +330,11 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 x_train_aug_lda = np.transpose(x_train_aug_lda,(0,2,1,3)).reshape(x_train_aug_lda.shape[0],-1)
                 w_gen,c_gen, _, _ = train_lda(x_train_aug_lda,y_train_all)
 
-                # align augmented data
-                _, _, _, x_train_aug_align = svae_enc.predict(x_train_aug)
+                ## align augmented data
+                # _, _, _, x_train_aug_align = svae_enc.predict(x_train_aug)
 
                 ## for testing, align using CNN
-                # x_train_aug_align = cnn_enc.predict(x_train_aug)
+                x_train_aug_align = cnn_enc.predict(x_train_aug)
 
                 # Train ENC-LDA with augmented data
                 w_gen_al, c_gen_al,_, _ = train_lda(x_train_aug_align,y_train_all)
@@ -549,6 +549,7 @@ def loop_test(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=Tr
     with open(resultsfile + '_results.p', 'wb') as f:
         pickle.dump([acc_all, acc_clean, acc_noise],f)
 
+    print('test')
     return acc_all, acc_noise, acc_clean, filename
 
 def load_models(filename, latent_dim, x_train, x_train_noise, y_train, y_train_clean, feat_type, sparsity, lr):
