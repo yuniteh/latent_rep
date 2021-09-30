@@ -19,11 +19,9 @@ from datetime import date
 import time
 
 class Session():
-    def __init__(self,raw,params,**settings):
-        self.raw = raw
-        self.params = params
+    def __init__(self,**settings):
         self.train_grp = settings.get('train_grp',2)
-        self.t = settings.get('dt',0)
+        self.dt = settings.get('dt',0)
         self.feat_type = settings.get('feat_type','feat')
         self.load = settings.get('load',True)
         self.noise = settings.get('noise',True)
@@ -39,5 +37,25 @@ class Session():
         self.n_test = settings.get('n_test','gauss')
         self.mod = settings.get('mod','all')
         self.gens = settings.get('gens',50)
+
+    def create_foldername(self):
+        # Set folder
+        if self.dt == 0:
+            today = date.today()
+            self.dt = today.strftime("%m%d")
+        foldername = 'models' + '_' + str(self.train_grp) + '_' + self.dt
+        if not os.path.exists(foldername):
+            os.makedirs(foldername)
+
+        return foldername
+
+    def create_filename(self,foldername,cv,sub_type,sub):
+        filename = foldername + '/' + sub_type + str(sub) + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
+        if self.dt == 'cv':
+            filename += '_cv_' + str(cv)
+        if self.sparsity:
+            filename += '_sparse'
+        
+        return filename
 
     
