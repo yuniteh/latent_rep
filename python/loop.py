@@ -76,7 +76,7 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                     svae_hist, sae_hist, cnn_hist, vcnn_hist = pickle.load(f)
 
                 try:
-                    with open(filename + '_aug.p', 'wb') as f:
+                    with open(filename + '_aug.p', 'rb') as f:
                         w_rec, c_rec, w_rec_al, c_rec_al, w_gen, c_gen, w_gen_al, c_gen_al = pickle.load(f)
                 except:
                     print('no augmented data file')

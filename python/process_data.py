@@ -246,15 +246,20 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
         orig = np.tile(raw,(2,1,1))
         
     out = np.array([]).reshape(0,6,200)
+
+    # repeat twice if adding gauss and flat
     for rep_i in range(rep):   
         # loop through channel noise
         for num_noise in range(start_ch,num_ch):
+            # find all combinations of noisy channels
             ch_all = list(combinations(range(0,6),num_noise))
             temp = cp.deepcopy(raw)
             if full_type == 'full':
                 ch_split = temp.shape[0]//(3*len(ch_all))
             else:
                 ch_split = temp.shape[0]//len(ch_all)
+            
+            # loop through all channel combinations
             for ch in range(0,len(ch_all)):
                 for i in ch_all[ch]:
                     if noise_type == 'gaussflat':
