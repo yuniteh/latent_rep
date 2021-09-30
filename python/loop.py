@@ -345,28 +345,32 @@ def loop_cv(raw, params, sub_type, sub = 1, train_grp = 2, dt=0, sparsity=True, 
                 
     return last_acc, last_val, filename, x_train_noise_vae, x_train_vae, y_train_clean, scaler, gen_clf, dec_out
 
-def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=10, epochs=100,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001):
-    i_tot = 14
+def loop_test(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=10, epochs=100,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5,lr=0.001):
+    # set number of models to test
+    mod_tot = 14
+
+    # set testing noise type
     noise_type = n_test[4:-1]
 
+    # set number of tests for each noise type
     if noise_type == 'gauss' or noise_type == '60hz':
-        test_tot = 5
+        test_tot = 5 # noise amplitude (1-5)
     elif noise_type == 'pos':
-        test_tot = 4
+        test_tot = 4 # number of positions
     elif noise_type == 'flat':
         test_tot = 1
 
-    # Initialize accuracy arrays
+    # set number of cvs
     if dt == 'cv':
         cv_tot = 4
     else:
         cv_tot = 1
-    
     max_cv = cv_tot + 1
     
-    acc_all = np.full([np.max(params[:,0])+1, cv_tot, test_tot, i_tot],np.nan)
-    acc_clean = np.full([np.max(params[:,0])+1, cv_tot, test_tot, i_tot],np.nan)
-    acc_noise = np.full([np.max(params[:,0])+1, cv_tot, test_tot, i_tot],np.nan)
+    # Initialize accuracy arrays
+    acc_all = np.full([np.max(params[:,0])+1, cv_tot, test_tot, mod_tot],np.nan)
+    acc_clean = np.full([np.max(params[:,0])+1, cv_tot, test_tot, mod_tot],np.nan)
+    acc_noise = np.full([np.max(params[:,0])+1, cv_tot, test_tot, mod_tot],np.nan)
 
     filename = 0
 
@@ -378,16 +382,21 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
     if not os.path.exists(foldername):
         os.makedirs(foldername)
 
+    # loop through subjects
     for sub in range(1,2):#6):#np.max(params[:,0])+1):            
+        # index based on training group and subject
         ind = (params[:,0] == sub) & (params[:,3] == train_grp)
 
         # Check if training data exists
         if np.sum(ind):
+
+            # split data into training, testing, validation sets
             if dt == 'cv':
                 x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
             else:
                 x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,sub_type,dt=dt)
 
+            # loop through cvs
             for cv in range(start_cv,max_cv):
                 filename = foldername + '/' + sub_type + str(sub) + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_bat_' + str(batch_size) + '_' + n_train + '_' + str(train_scale) + '_lr_' + str(int(lr*10000)) 
                 if dt == 'cv':
@@ -405,12 +414,12 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                         w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)   
 
                 with open(filename + '_aug.p', 'rb') as f:
-                    w_rec, c_rec, w_recal, c_recal = pickle.load(f)
+                    w_rec, c_rec, w_rec_al, c_rec_al, w_gen, c_gen, w_gen_al, c_gen_al = pickle.load(f)
 
                 # Add noise to training data
                 y_shape = np.max(p_train[:,4])
 
-                # Build VAE
+                # Build models and set weights
                 svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
                 sae, sae_enc, sae_clf = dl.build_sae(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
                 cnn, cnn_enc, cnn_clf = dl.build_cnn(latent_dim, y_shape, input_type=feat_type, sparse=sparsity,lr=lr)
@@ -432,9 +441,12 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                 vcnn.set_weights(vcnn_w)
                 vcnn_enc.set_weights(vcnn_enc_w)
                 vcnn_clf.set_weights(vcnn_clf_w)
-
+                
+                # set test on validation data for cv mode
                 if dt == 'cv':
                     x_test, p_test = x_valid, p_valid
+
+                # loop through test levels
                 for test_scale in range(1,test_tot + 1):
                     skip = False
                     # load test data for diff limb positions
@@ -448,27 +460,31 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                             y_test_clean = to_categorical(p_test[pos_ind,4]-1)
                             clean_size = 0
                             skip = False
-                        else:
+                        elif x_test.size > 0:
                             x_test_noise = x_test
                             x_test_clean = x_test
                             y_test_clean = to_categorical(p_test[:,4]-1)
                             clean_size = 0
-                            skip = False                    
+                            skip = False
+                        else: 
+                            skip = True                    
                     else:
-                        # Add noise and index EMG data
+                        # Add noise and index testing data
                         x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, n_test, test_scale)
                         clean_size = int(np.size(x_test,axis=0))
+                        # copy clean data if not using noise
                         if not noise:
                             x_test_noise = cp.deepcopy(x_test_clean)
 
                     if not skip:
-                        # Extract features
+                        # extract and scale features
                         if feat_type == 'feat':
                             x_test_noise_temp = np.transpose(prd.extract_feats(x_test_noise).reshape((x_test_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
                             x_test_clean_temp = np.transpose(prd.extract_feats(x_test_clean).reshape((x_test_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
                             
                             x_test_vae = scaler.transform(x_test_noise_temp.reshape(x_test_noise_temp.shape[0]*x_test_noise_temp.shape[1],-1)).reshape(x_test_noise_temp.shape)
                             x_test_clean_vae = scaler.transform(x_test_clean_temp.reshape(x_test_clean_temp.shape[0]*x_test_clean_temp.shape[1],-1)).reshape(x_test_clean_temp.shape)
+                        # not finalized, scale raw data
                         elif feat_type == 'raw':
                             x_test_vae = cp.deepcopy(x_test_noise[:,:,::2,:])/5
                             x_test_clean_vae = cp.deepcopy(x_test_clean[:,:,::2,:])/5
@@ -500,6 +516,8 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                         x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_cnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
                         y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
                         mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
+                        
+                        # need to figure out what n_test = 0 is
                         if n_test == 0:
                             max_i = len(mods_all) - 1
                         else:
@@ -510,10 +528,11 @@ def loop_noise_new(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, lo
                     else:
                         acc_all[sub-1,cv-1,test_scale - 1,:], acc_noise[sub-1,cv-1,test_scale - 1,:], acc_clean[sub-1,cv-1,test_scale - 1,:] = np.nan, np.nan, np.nan
             
-            # Save sub cv results
+            # Save subject specific cv results
             with open(filename + '_cvresults.p', 'wb') as f:
                 pickle.dump([acc_all[sub-1,...], acc_noise[sub-1,...], acc_clean[sub-1,...]],f)
     
+    # save results for all subjects, need to figure out n_test = 0
     if n_test != 0:
         resultsfile = foldername + '/' + sub_type + '_' + feat_type + '_dim_' + str(latent_dim) + '_ep_' + str(epochs) + '_' + n_train + '_' + str(train_scale) + '_' + n_test
         if sparsity:
@@ -644,7 +663,7 @@ def loop_recon(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=T
                         x = 0
     return dec_out, clf_out, enc_out, x_test_clean, x_test_vae, y_test_clean, filename
 
-def loop_noise(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=4, epochs=30,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5, suf =''):
+def loop_noise_old(raw, params, sub_type, train_grp = 2, dt=0, sparsity=True, load=True, batch_size=32, latent_dim=4, epochs=30,train_scale=5, n_train='gauss', n_test='gauss',feat_type='feat', noise=True, start_cv = 1, max_cv = 5, suf =''):
     i_tot = 13
     if n_test == 0:
         noise_type = 'none'
@@ -1589,6 +1608,7 @@ def eval_noise_clean(x_test, y_test, clean_size, mod=0, eval_type='dl'):
     elif eval_type == 'lda_ch':
         if clean_size == 0:
             acc_noise = 0
+            print('oops')
         else:
             acc_noise = eval_lda_ch(mod[0], mod[1], mod[2], x_test, y_test)
         acc_all = 0
