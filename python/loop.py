@@ -552,28 +552,6 @@ def create_filename(foldername, cv, sub_type, sub=1, dt=0, feat_type='feat', spa
     
     return filename
 
-def get_params(**kwargs):
-    
-    train_grp = params.get('train_grp',2)
-    dt = params.get('dt',0)
-    feat_type = params.get('feat_type','feat')
-    load = params.get('load',True)
-    noise = params.get('noise',True)
-    start_cv = params.get('start_cv',1)
-    max_cv = params.get('max_cv',5)
-    sparsity = params.get('sparsity',True)
-    batch_size = params.get('batch_size',32)
-    latent_dim = params.get('latent_dim',10)
-    epochs = params.get('epochs',100)
-    lr = params.get('lr',0.001)
-    train_scale = params.get('train_scale',5)
-    n_train = params.get('n_train','gauss')
-    n_test = params.get('n_test','gauss')
-    mod = params.get('mod','all')
-    gens = params.get('gens',50)
-
-    return 0
-
 def load_models(filename, latent_dim, x_train, x_train_noise, y_train, y_train_clean, feat_type, sparsity, lr):
     # Load saved data
     with open(filename + '.p', 'rb') as f:
