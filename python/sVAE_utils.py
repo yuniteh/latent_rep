@@ -56,8 +56,8 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
 
     # build decoder model
     latent_inputs = Input(shape=(latent_dim,))
-    # clf_in = Input(shape=(1,))
-    clf_in = Input(shape=(n_class,))
+    clf_in = Input(shape=(1,))
+    # clf_in = Input(shape=(n_class,))
     clf_dec = Dense(latent_dim, activation="relu")(clf_in)
     cat_inputs = concatenate([latent_inputs, clf_dec],axis=-1)
     x = Dense(inter_shape[0]*inter_shape[1]*32, activation="relu")(cat_inputs)
@@ -66,13 +66,13 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
     x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     # x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
-    decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
+    decoder_outputs = Conv2DTranspose(1, 3, activation="relu", padding="same")(x)
     decoder = Model([latent_inputs,clf_in], decoder_outputs, name="decoder")
     # decoder.summary()
 
     # instantiate VAE model
-    # outputs = [decoder([encoder(inputs)[2],tf.expand_dims(tf.math.argmax(clf_supervised(encoder(inputs)[3]),axis=1),axis=1)]), clf_supervised(encoder(inputs)[3]), encoder(inputs)[2]]
-    outputs = [decoder([encoder(inputs)[2],clf_supervised(encoder(inputs)[3])]), clf_supervised(encoder(inputs)[3]), encoder(inputs)[2]]
+    outputs = [decoder([encoder(inputs)[2],tf.expand_dims(tf.math.argmax(clf_supervised(encoder(inputs)[3]),axis=1),axis=1)]), clf_supervised(encoder(inputs)[3]), encoder(inputs)[2]]
+    # outputs = [decoder([encoder(inputs)[2],clf_supervised(encoder(inputs)[3])]), clf_supervised(encoder(inputs)[3]), encoder(inputs)[2]]
     # outputs = [decoder(encoder(inputs)[2]), clf_supervised(encoder(inputs)[2])]
     vae = Model([inputs,weight], outputs, name='vae_mlp')
 
@@ -90,7 +90,7 @@ def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
-        kl_loss = K.mean(kl_loss)
+        kl_loss = weight[1]*K.mean(kl_loss)
         return kl_loss
 
     opt = optimizers.Adam(learning_rate=lr)
@@ -103,8 +103,8 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
         input_shape = (6,4,1)
         inter_shape = (3,2,1)
     elif input_type == 'raw':
-        input_shape = (6,100,1)
-        inter_shape = (3,50,1)
+        input_shape = (6,50,1)
+        inter_shape = (3,25,1)
 
     # build encoder model
     inputs = Input(shape=input_shape)
@@ -137,7 +137,7 @@ def build_svae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     # x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
-    decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
+    decoder_outputs = Conv2DTranspose(1, 3, activation="relu", padding="same")(x)
     decoder = Model(latent_inputs, decoder_outputs, name="decoder")
     # decoder.summary()
 
@@ -173,7 +173,7 @@ def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
     if input_type == 'feat':
         input_shape = (6,4,1)
     elif input_type == 'raw':
-        input_shape = (6,100,1)
+        input_shape = (6,50,1)
 
     # build encoder model
     inputs = Input(shape=input_shape)
@@ -227,7 +227,7 @@ def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
     if input_type == 'feat':
         input_shape = (6,4,1)
     elif input_type == 'raw':
-        input_shape = (6,100,1)
+        input_shape = (6,50,1)
 
     # build encoder model
     inputs = Input(shape=input_shape)
@@ -291,7 +291,7 @@ def build_sae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     if input_type == 'feat':
         input_shape = (24,)
     elif input_type == 'raw':
-        input_shape = (600,)
+        input_shape = (300,)
 
     # build encoder model
     inputs = Input(shape=input_shape)
@@ -348,7 +348,7 @@ def build_vae(latent_dim, input_type='feat'):
     x = Reshape((inter_shape[0], inter_shape[1], 32))(x)
     # x = Conv2DTranspose(32, 3, activation="relu", strides=1, padding="same")(x)
     x = Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
-    decoder_outputs = Conv2DTranspose(1, 3, activation="tanh", padding="same")(x)
+    decoder_outputs = Conv2DTranspose(1, 3, activation="relu", padding="same")(x)
     decoder = Model(latent_inputs, decoder_outputs, name="decoder")
     # decoder.summary()
 
