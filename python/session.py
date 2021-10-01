@@ -12,6 +12,7 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from lda import train_lda, predict, eval_lda, eval_lda_ch
 from sklearn.utils import shuffle
+from numpy.linalg import eig, inv
 import sVAE_utils as dl
 import process_data as prd
 import copy as cp
@@ -277,15 +278,15 @@ class Session():
                     y_train_aligned = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
                     # Train ENC-LDA
-                    w_svae, c_svae,_, _ = train_lda(x_train_svae,y_train_aligned)
-                    w_sae, c_sae,_, _ = train_lda(x_train_sae,y_train_aligned)
-                    w_cnn, c_cnn,_, _ = train_lda(x_train_cnn,y_train_aligned)
-                    w_vcnn, c_vcnn, _, _ = train_lda(x_train_vcnn,y_train_aligned)
+                    w_svae, c_svae,_, _, _, _ = train_lda(x_train_svae,y_train_aligned)
+                    w_sae, c_sae,_, _, _, _ = train_lda(x_train_sae,y_train_aligned)
+                    w_cnn, c_cnn,_, _, _, _ = train_lda(x_train_cnn,y_train_aligned)
+                    w_vcnn, c_vcnn, _, _, _, _ = train_lda(x_train_vcnn,y_train_aligned)
 
                 # Train LDA
                 if mod == 'all' or any("lda" in s for s in mod):
-                    w,c, mu, C = train_lda(x_train_lda,y_train_lda)
-                    w_noise,c_noise, _, _ = train_lda(x_train_lda2,y_train_lda2)
+                    w,c, mu, C, _, _ = train_lda(x_train_lda,y_train_lda)
+                    w_noise,c_noise, _, _, _, _ = train_lda(x_train_lda2,y_train_lda2)
                 
                 # Train QDA
                 if mod == 'all' or any("qda" in s for s in mod):
@@ -314,13 +315,13 @@ class Session():
                     # inverse transform augmented training data to train regular LDA
                     x_train_aug_lda = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
                     x_train_aug_lda = np.transpose(x_train_aug_lda,(0,2,1,3)).reshape(x_train_aug_lda.shape[0],-1)
-                    w_rec,c_rec, _, _ = train_lda(x_train_aug_lda,y_train_all)
+                    w_rec,c_rec, _, _, _, _ = train_lda(x_train_aug_lda,y_train_all)
 
                     # align augmented training data
                     _, _, _, x_train_aug_align = svae_enc.predict(x_train_aug)
 
                     # Train ENC-LDA with augmented data
-                    w_rec_al, c_rec_al,_, _ = train_lda(x_train_aug_align,y_train_all)
+                    w_rec_al, c_rec_al,_, _, _, _ = train_lda(x_train_aug_align,y_train_all)
 
                 if mod == 'all' or any("gen" in s for s in mod):
                     # set weights from trained svae
@@ -351,7 +352,7 @@ class Session():
                     # inverse transform augmented training data to train regular LDA
                     x_train_aug_lda = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
                     x_train_aug_lda = np.transpose(x_train_aug_lda,(0,2,1,3)).reshape(x_train_aug_lda.shape[0],-1)
-                    w_gen,c_gen, _, _ = train_lda(x_train_aug_lda,y_train_all)
+                    w_gen,c_gen, _, _, _, _ = train_lda(x_train_aug_lda,y_train_all)
 
                     ## align augmented data
                     # _, _, _, x_train_aug_align = svae_enc.predict(x_train_aug)
@@ -360,7 +361,7 @@ class Session():
                     x_train_aug_align = cnn_enc.predict(x_train_aug)
 
                     # Train ENC-LDA with augmented data
-                    w_gen_al, c_gen_al,_, _ = train_lda(x_train_aug_align,y_train_all)
+                    w_gen_al, c_gen_al, _, _, _, _ = train_lda(x_train_aug_align,y_train_all)
 
                 # Pickle variables
                 if mod != 'none':
@@ -383,7 +384,7 @@ class Session():
         in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_vae,'y_in':y_train_clean,'scaler':scaler}        
         out = dict(hist_dict,**in_dict)
         
-        if mod == 'all' or any("align" in s for s in mod):
+        if mod == 'all' or any("aligned" in s for s in mod):
             align_dict = {'x_svae_al':x_train_svae, 'x_sae_al':x_train_sae, 'x_cnn_al':x_train_cnn, 'x_vcnn_al':x_train_vcnn}
             out.update(align_dict)
 
@@ -564,6 +565,11 @@ class Session():
 
                             for i in range(max_i):
                                 acc_all[sub-1,cv-1,test_scale - 1,i], acc_noise[sub-1,cv-1,test_scale - 1,i], acc_clean[sub-1,cv-1,test_scale - 1,i] = self.eval_mod(eval(x_test_all[i]), eval(y_test_all[i]), clean_size, mods_all[i], mods_type[i])
+
+                            x_svae_align[sub_1,cv_1,test_scale-1,...] = x_test_svae
+                            x_sae_align[sub_1,cv_1,test_scale-1,...] = x_test_sae
+                            x_cnn_align[sub_1,cv_1,test_scale-1,...] = x_test_cnn
+                            x_vcnn_align[sub_1,cv_1,test_scale-1,...] = x_test_vcnn
                         else:
                             acc_all[sub-1,cv-1,test_scale - 1,:], acc_noise[sub-1,cv-1,test_scale - 1,:], acc_clean[sub-1,cv-1,test_scale - 1,:] = np.nan, np.nan, np.nan
                 
@@ -612,3 +618,25 @@ class Session():
             acc_clean = 0
 
         return acc_all, acc_noise, acc_clean
+    
+    def reduce_latent(self, raw, params, sub, clf=0):
+
+        x_raw, x_test, _, p, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt)
+
+        y_raw = p[:,4]
+        x = prd.extract_feats(x_raw)
+        y = y_raw[...,np.newaxis] - 1
+
+        if clf == 0:
+            clf = LDA()
+            clf.fit(x,np.squeeze(y))
+        x_red = clf.transform(x)
+
+        w, c, _, _, Sw, Sb = train_lda(x,y)
+        u,v = eig(inv(Sw).dot(Sb))
+        
+        v = v[:,np.flip(np.argsort(np.abs(u)))]
+        x_red1 = np.matmul(x,v[:,:6]).real
+
+        return x_red, x_red1, y
+
