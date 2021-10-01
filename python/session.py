@@ -374,8 +374,14 @@ class Session():
                 # allocate last accuracies
                 last_acc[cv-1,:] = np.array([svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1]])
                 last_val[cv-1,:] = np.array([svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1]])
-                    
-        return last_acc, last_val, filename, x_train_noise_vae, x_train_vae, y_train_clean, scaler, gen_clf, dec_out
+
+        hist_dict = {'last_acc':last_acc,'last_val':last_val}
+        in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_vae,'y_in':y_train_clean,'scaler':scaler}
+        out_dict = {'gen_clf':gen_clf,'x_out':dec_out}
+
+        out = dict(hist_dict,**in_dict)
+        out.update(out_dict)
+        return out
 
     def loop_test(self, raw, params):
         # set number of models to test
