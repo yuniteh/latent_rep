@@ -77,6 +77,9 @@ class Session():
         # index training group and subject
         ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
 
+        # initialize x out matrix
+        dec_cv = np.full([self.max_cv-1,self.gens*np.max(params[ind,4]),raw.shape[1],4,1], np.nan)
+
         # Check if training data exists
         if np.sum(ind):
             if mod != 'none':
@@ -339,6 +342,7 @@ class Session():
                     # sample from normal distribution, forward pass through decoder
                     latent_in = np.random.normal(0,1,size=(gen_clf.shape[0],self.latent_dim))
                     dec_out = svae_dec.predict([latent_in, gen_clf])
+                    dec_cv[cv-1,...] = dec_out
 
                     # concatenate noisy and generated data for augmented training data
                     x_train_aug = np.concatenate((x_train_noise_vae, dec_out))
@@ -376,11 +380,17 @@ class Session():
                 last_val[cv-1,:] = np.array([svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1]])
 
         hist_dict = {'last_acc':last_acc,'last_val':last_val}
-        in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_vae,'y_in':y_train_clean,'scaler':scaler}
-        out_dict = {'gen_clf':gen_clf,'x_out':dec_out}
-
+        in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_vae,'y_in':y_train_clean,'scaler':scaler}        
         out = dict(hist_dict,**in_dict)
-        out.update(out_dict)
+        
+        if mod == 'all' or any("align" in s for s in mod):
+            align_dict = {'x_svae_al':x_train_svae, 'x_sae_al':x_train_sae, 'x_cnn_al':x_train_cnn, 'x_vcnn_al':x_train_vcnn}
+            out.update(align_dict)
+
+        if mod =='all' or any("gen" in s for s in mod) or any("recon" in s for s in mod):
+            out_dict = {'gen_clf':gen_clf,'x_out':dec_cv} 
+            out.update(out_dict)
+        
         return out
 
     def loop_test(self, raw, params):
