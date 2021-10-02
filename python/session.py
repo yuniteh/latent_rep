@@ -17,6 +17,7 @@ import process_data as prd
 import copy as cp
 from datetime import date
 import time
+from numpy.linalg import eig, inv
 
 class Session():
     def __init__(self,**settings):
@@ -77,6 +78,9 @@ class Session():
         # index training group and subject
         ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
 
+        # initialize x out matrix
+        dec_cv = np.full([self.max_cv-1,self.gens*np.max(params[ind,4]),raw.shape[1],4,1], np.nan)
+
         # Check if training data exists
         if np.sum(ind):
             if mod != 'none':
@@ -111,6 +115,12 @@ class Session():
                             w_rec, c_rec, w_rec_al, c_rec_al, w_gen, c_gen, w_gen_al, c_gen_al = pickle.load(f)
                     except:
                         print('no augmented data file')
+
+                    try:
+                        with open(filename + '_red.p', 'rb') as f:
+                            v_svae, v_sae, v_cnn, v_vcnn, v, v_noise = pickle.load(f)
+                    except:
+                        print('no transformation matrix file')
                 else:
                     scaler = MinMaxScaler(feature_range=(0,1))
                     load = False
@@ -274,15 +284,15 @@ class Session():
                     y_train_aligned = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
                     # Train ENC-LDA
-                    w_svae, c_svae,_, _ = train_lda(x_train_svae,y_train_aligned)
-                    w_sae, c_sae,_, _ = train_lda(x_train_sae,y_train_aligned)
-                    w_cnn, c_cnn,_, _ = train_lda(x_train_cnn,y_train_aligned)
-                    w_vcnn, c_vcnn, _, _ = train_lda(x_train_vcnn,y_train_aligned)
+                    w_svae, c_svae,_, _, v_svae = train_lda(x_train_svae,y_train_aligned)
+                    w_sae, c_sae,_, _, v_sae = train_lda(x_train_sae,y_train_aligned)
+                    w_cnn, c_cnn,_, _, v_cnn = train_lda(x_train_cnn,y_train_aligned)
+                    w_vcnn, c_vcnn, _, _, v_vcnn = train_lda(x_train_vcnn,y_train_aligned)
 
                 # Train LDA
                 if mod == 'all' or any("lda" in s for s in mod):
-                    w,c, mu, C = train_lda(x_train_lda,y_train_lda)
-                    w_noise,c_noise, _, _ = train_lda(x_train_lda2,y_train_lda2)
+                    w,c, mu, C, v = train_lda(x_train_lda,y_train_lda)
+                    w_noise,c_noise, _, _, v_noise = train_lda(x_train_lda2,y_train_lda2)
                 
                 # Train QDA
                 if mod == 'all' or any("qda" in s for s in mod):
@@ -311,13 +321,13 @@ class Session():
                     # inverse transform augmented training data to train regular LDA
                     x_train_aug_lda = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
                     x_train_aug_lda = np.transpose(x_train_aug_lda,(0,2,1,3)).reshape(x_train_aug_lda.shape[0],-1)
-                    w_rec,c_rec, _, _ = train_lda(x_train_aug_lda,y_train_all)
+                    w_rec,c_rec, _, _, _ = train_lda(x_train_aug_lda,y_train_all)
 
                     # align augmented training data
                     _, _, _, x_train_aug_align = svae_enc.predict(x_train_aug)
 
                     # Train ENC-LDA with augmented data
-                    w_rec_al, c_rec_al,_, _ = train_lda(x_train_aug_align,y_train_all)
+                    w_rec_al, c_rec_al,_, _, _ = train_lda(x_train_aug_align,y_train_all)
 
                 if mod == 'all' or any("gen" in s for s in mod):
                     # set weights from trained svae
@@ -339,6 +349,7 @@ class Session():
                     # sample from normal distribution, forward pass through decoder
                     latent_in = np.random.normal(0,1,size=(gen_clf.shape[0],self.latent_dim))
                     dec_out = svae_dec.predict([latent_in, gen_clf])
+                    dec_cv[cv-1,...] = dec_out
 
                     # concatenate noisy and generated data for augmented training data
                     x_train_aug = np.concatenate((x_train_noise_vae, dec_out))
@@ -347,7 +358,7 @@ class Session():
                     # inverse transform augmented training data to train regular LDA
                     x_train_aug_lda = scaler.inverse_transform(x_train_aug.reshape(x_train_aug.shape[0]*x_train_aug.shape[1],-1)).reshape(x_train_aug.shape)
                     x_train_aug_lda = np.transpose(x_train_aug_lda,(0,2,1,3)).reshape(x_train_aug_lda.shape[0],-1)
-                    w_gen,c_gen, _, _ = train_lda(x_train_aug_lda,y_train_all)
+                    w_gen,c_gen, _, _, _ = train_lda(x_train_aug_lda,y_train_all)
 
                     ## align augmented data
                     # _, _, _, x_train_aug_align = svae_enc.predict(x_train_aug)
@@ -356,7 +367,7 @@ class Session():
                     x_train_aug_align = cnn_enc.predict(x_train_aug)
 
                     # Train ENC-LDA with augmented data
-                    w_gen_al, c_gen_al,_, _ = train_lda(x_train_aug_align,y_train_all)
+                    w_gen_al, c_gen_al, _, _, _ = train_lda(x_train_aug_align,y_train_all)
 
                 # Pickle variables
                 if mod != 'none':
@@ -369,13 +380,28 @@ class Session():
                     if mod == 'all' or any("gen" in s for s in mod) or any ("recon" in s for s in mod):
                         with open(filename + '_aug.p', 'wb') as f:
                             pickle.dump([w_rec, c_rec, w_rec_al, c_rec_al, w_gen, c_gen, w_gen_al, c_gen_al],f)
-                        print('saving aug')
+                    
+                    if mod == 'all' or any("aligned" in s for s in mod) or any("lda" in s for s in mod):
+                        with open(filename + '_red.p', 'wb') as f:
+                            pickle.dump([v_svae, v_sae, v_cnn, v_vcnn, v, v_noise],f)
 
                 # allocate last accuracies
                 last_acc[cv-1,:] = np.array([svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1]])
                 last_val[cv-1,:] = np.array([svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1]])
-                    
-        return last_acc, last_val, filename, x_train_noise_vae, x_train_vae, y_train_clean, scaler, gen_clf, dec_out
+
+        hist_dict = {'last_acc':last_acc,'last_val':last_val}
+        in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_vae,'y_in':y_train_clean,'scaler':scaler}        
+        out = dict(hist_dict,**in_dict)
+        
+        if mod == 'all' or any("aligned" in s for s in mod):
+            align_dict = {'x_svae_al':x_train_svae, 'x_sae_al':x_train_sae, 'x_cnn_al':x_train_cnn, 'x_vcnn_al':x_train_vcnn}
+            out.update(align_dict)
+
+        if mod =='all' or any("gen" in s for s in mod) or any("recon" in s for s in mod):
+            out_dict = {'gen_clf':gen_clf,'x_out':dec_cv} 
+            out.update(out_dict)
+        
+        return out
 
     def loop_test(self, raw, params):
         # set number of models to test
@@ -566,7 +592,8 @@ class Session():
         with open(resultsfile + '_results.p', 'wb') as f:
             pickle.dump([acc_all, acc_clean, acc_noise],f)
 
-        return acc_all, acc_noise, acc_clean, filename
+        out = {'acc_all':acc_all, 'acc_noise':acc_noise, 'acc_clean':acc_clean}
+        return out
 
     def eval_mod(self, x_test, y_test, clean_size, mod, eval_type):
         if clean_size == 0:
@@ -595,3 +622,125 @@ class Session():
             acc_clean = 0
 
         return acc_all, acc_noise, acc_clean
+    
+    def reduce_latent(self, raw, params, sub, cv=0):
+        # Load training and testing data
+        x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt)
+        
+        # Load cross-validation parameters
+        if cv > 0:
+            # get folder and file names
+            foldername = self.create_foldername()
+            filename = self.create_filename(foldername, cv, sub)
+
+            # Load saved data
+            with open(filename + '.p', 'rb') as f:
+                scaler, _, svae_enc_w, _, _, _, sae_enc_w, _, _, cnn_enc_w, _, _, vcnn_enc_w, _, _, _, \
+                    _, _, _, _, _, _, _, _, _, _, _, _, _, _ = pickle.load(f)
+            with open(filename + '_red.p', 'rb') as f:
+                v_svae, v_sae, v_cnn, v_vcnn, v, v_noise = pickle.load(f)
+            
+            # Index training and validation data
+            x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
+            x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
+
+            # Add noise to data
+            y_train = p_train[:,4]
+            y_valid = p_valid[:,4]
+            x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, self.n_train, self.train_scale)
+            x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, self.n_train, self.train_scale)
+
+            # Build models
+            _, svae_enc, _, _ = dl.build_svae_manual(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+            _, sae_enc, _ = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+            _, cnn_enc, _ = dl.build_cnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+            _, vcnn_enc, _ = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+
+            # extract features from training data
+            x_train_clean_vae = prd.extract_scale(x_train_clean,scaler)           
+            x_valid_clean_vae = prd.extract_scale(x_valid_clean,scaler)
+
+            if self.noise:
+                x_train_noise_vae = prd.extract_scale(x_train_noise,scaler)
+                x_valid_noise_vae = prd.extract_scale(x_valid_noise,scaler)
+            else:
+                x_train_noise = cp.deepcopy(x_train_clean)
+                x_valid_noise = cp.deepcopy(x_valid_clean)
+                x_train_noise_vae = cp.deepcopy(x_train_clean_vae)
+                x_valid_noise_vae = cp.deepcopy(x_valid_clean_vae)
+            
+            # reshape data for nonconvolutional network
+            x_train_noise_sae = x_train_noise_vae.reshape(x_train_noise_vae.shape[0],-1)
+            x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
+            
+            # Training data for LDA/QDA
+            x_train_feats = prd.extract_feats(x_train)
+            x_train_noise_feats = prd.extract_feats(x_train_noise)
+            y_train_lda = y_train[...,np.newaxis] - 1
+            y_train_noise = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
+
+            # Validation data for LDA/QDA
+            x_valid_feats = prd.extract_feats(x_valid)
+            x_valid_noise_feats = prd.extract_feats(x_valid_noise)
+            y_valid_lda = y_valid[...,np.newaxis] - 1
+            y_valid_noise = np.argmax(y_valid_clean, axis=1)[...,np.newaxis]
+
+            # set weights from trained models
+            svae_enc.set_weights(svae_enc_w)
+            sae_enc.set_weights(sae_enc_w)
+            cnn_enc.set_weights(cnn_enc_w)
+            vcnn_enc.set_weights(vcnn_enc_w)
+
+            # align training data
+            _, _, _, x_train_svae = svae_enc.predict(x_train_noise_vae)
+            x_train_sae = sae_enc.predict(x_train_noise_sae)
+            x_train_cnn = cnn_enc.predict(x_train_noise_vae)
+            _, _, x_train_vcnn = vcnn_enc.predict(x_train_noise_vae)
+
+            # reduce training data
+            x_train_svae_red = np.matmul(x_train_svae,v_svae)
+            x_train_sae_red = np.matmul(x_train_sae,v_sae)
+            x_train_cnn_red = np.matmul(x_train_cnn,v_cnn)
+            x_train_vcnn_red = np.matmul(x_train_vcnn,v_vcnn)
+
+            x_train_lda_red = np.matmul(x_train_feats,v)
+            x_train_noise_red = np.matmul(x_train_noise_feats, v_noise)
+            
+            # align validation data
+            _, _, _, x_valid_svae = svae_enc.predict(x_valid_noise_vae)
+            x_valid_sae = sae_enc.predict(x_valid_noise_sae)
+            x_valid_cnn = cnn_enc.predict(x_valid_noise_vae)
+            _, _, x_valid_vcnn = vcnn_enc.predict(x_valid_noise_vae)
+
+            # reduce training data
+            x_valid_svae_red = np.matmul(x_valid_svae,v_svae)
+            x_valid_sae_red = np.matmul(x_valid_sae,v_sae)
+            x_valid_cnn_red = np.matmul(x_valid_cnn,v_cnn)
+            x_valid_vcnn_red = np.matmul(x_valid_vcnn,v_vcnn)
+
+            x_valid_lda_red = np.matmul(x_valid_noise_feats,v)
+            x_valid_noise_red = np.matmul(x_valid_noise_feats,v_noise)
+
+            # compile results
+            out_dict = {'x_train_svae_red':x_train_svae_red,'x_train_sae_red':x_train_sae_red,'x_train_cnn_red':x_train_cnn_red,'x_train_vcnn_red':x_train_vcnn_red, 'x_train_lda_red':x_train_lda_red, 'x_train_noise_red':x_train_noise_red, 'x_valid_svae_red':x_valid_svae_red,'xvalid_sae_red':x_valid_sae_red,'x_valid_cnn_red':x_valid_cnn_red,'x_valid_vcnn_red':x_valid_vcnn_red,\
+                'x_valid_lda_red':x_valid_lda_red,'x_valid_noise_red':x_valid_noise_red,'y_train_lda':y_train_lda,'y_train_noise':y_train_noise,'y_valid_lda':y_valid_lda,'y_valid_noise':y_valid_noise}
+        else: # unfinished
+            x_train, p_train = x_full, p_full
+
+            y_train = p_train[:,4]
+            x_train_feat = prd.extract_feats(x_train)
+            y_train = y_train[...,np.newaxis] - 1
+
+            y_test = p_test[:,4]
+            x_test_feat = prd.extract_feats(x_test)
+            y_test = y_test[...,np.newaxis] - 1
+
+            w, c, _, _, v = train_lda(x_train_feat,y_train)
+        
+            x_train_red = np.matmul(x_train_feat,v)
+            x_test_red = np.matmul(x_test_feat,v)
+
+            out_dict = 0
+
+        return out_dict
+
