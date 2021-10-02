@@ -624,8 +624,12 @@ class Session():
         return acc_all, acc_noise, acc_clean
     
     def reduce_latent(self, raw, params, sub, cv=0):
+        # Load training and testing data
+        x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt)
+        
         # Load cross-validation parameters
         if cv > 0:
+            # get folder and file names
             foldername = self.create_foldername()
             filename = self.create_filename(foldername, cv, sub)
 
@@ -633,15 +637,14 @@ class Session():
             with open(filename + '.p', 'rb') as f:
                 scaler, _, svae_enc_w, _, _, _, sae_enc_w, _, _, cnn_enc_w, _, _, vcnn_enc_w, _, _, _, \
                     _, _, _, _, _, _, _, _, _, _, _, _, _, _ = pickle.load(f)
-
             with open(filename + '_red.p', 'rb') as f:
                 v_svae, v_sae, v_cnn, v_vcnn, v, v_noise = pickle.load(f)
             
-            x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt)
+            # Index training and validation data
             x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
             x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
 
-            # Add noise to training data
+            # Add noise to data
             y_train = p_train[:,4]
             y_valid = p_valid[:,4]
             x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, self.n_train, self.train_scale)
@@ -654,36 +657,32 @@ class Session():
             _, vcnn_enc, _ = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
 
             # extract features from training data
-            x_train_clean_temp, x_train_clean_vae = prd.extract_scale(x_train_clean,scaler)           
-            x_valid_clean_temp, x_valid_clean_vae = prd.extract_scale(x_valid_clean,scaler)
+            x_train_clean_vae = prd.extract_scale(x_train_clean,scaler)           
+            x_valid_clean_vae = prd.extract_scale(x_valid_clean,scaler)
 
             if self.noise:
-                x_train_noise_temp, x_train_noise_vae = prd.extract_scale(x_train_noise,scaler)
-                x_valid_noise_temp, x_valid_noise_vae = prd.extract_scale(x_valid_noise,scaler)
+                x_train_noise_vae = prd.extract_scale(x_train_noise,scaler)
+                x_valid_noise_vae = prd.extract_scale(x_valid_noise,scaler)
             else:
                 x_train_noise = cp.deepcopy(x_train_clean)
                 x_valid_noise = cp.deepcopy(x_valid_clean)
-                x_train_noise_temp = cp.deepcopy(x_train_clean_temp)
                 x_train_noise_vae = cp.deepcopy(x_train_clean_vae)
-                x_valid_noise_temp = cp.deepcopy(x_valid_clean_temp)
                 x_valid_noise_vae = cp.deepcopy(x_valid_clean_vae)
             
             # reshape data for nonconvolutional network
             x_train_noise_sae = x_train_noise_vae.reshape(x_train_noise_vae.shape[0],-1)
-            x_train_clean_sae = x_train_clean_vae.reshape(x_train_clean_vae.shape[0],-1)
             x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
-            x_valid_clean_sae = x_valid_clean_vae.reshape(x_valid_clean_vae.shape[0],-1)
             
             # Training data for LDA/QDA
-            x_train_lda = prd.extract_feats(x_train)
+            x_train_feats = prd.extract_feats(x_train)
+            x_train_noise_feats = prd.extract_feats(x_train_noise)
             y_train_lda = y_train[...,np.newaxis] - 1
-            x_train_lda2 = prd.extract_feats(x_train_noise)
             y_train_noise = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
             # Validation data for LDA/QDA
-            x_valid_lda = prd.extract_feats(x_valid)
+            x_valid_feats = prd.extract_feats(x_valid)
+            x_valid_noise_feats = prd.extract_feats(x_valid_noise)
             y_valid_lda = y_valid[...,np.newaxis] - 1
-            x_valid_lda2 = prd.extract_feats(x_valid_noise)
             y_valid_noise = np.argmax(y_valid_clean, axis=1)[...,np.newaxis]
 
             # set weights from trained models
@@ -692,38 +691,41 @@ class Session():
             cnn_enc.set_weights(cnn_enc_w)
             vcnn_enc.set_weights(vcnn_enc_w)
 
-            # align input data
+            # align training data
             _, _, _, x_train_svae = svae_enc.predict(x_train_noise_vae)
             x_train_sae = sae_enc.predict(x_train_noise_sae)
             x_train_cnn = cnn_enc.predict(x_train_noise_vae)
             _, _, x_train_vcnn = vcnn_enc.predict(x_train_noise_vae)
 
+            # reduce training data
             x_train_svae_red = np.matmul(x_train_svae,v_svae)
             x_train_sae_red = np.matmul(x_train_sae,v_sae)
             x_train_cnn_red = np.matmul(x_train_cnn,v_cnn)
             x_train_vcnn_red = np.matmul(x_train_vcnn,v_vcnn)
 
-            x_train_lda_red = np.matmul(x_train_lda,v)
-            x_train_noise_red = np.matmul(x_train_lda2, v_noise)
+            x_train_lda_red = np.matmul(x_train_feats,v)
+            x_train_noise_red = np.matmul(x_train_noise_feats, v_noise)
             
-            # align input data
+            # align validation data
             _, _, _, x_valid_svae = svae_enc.predict(x_valid_noise_vae)
             x_valid_sae = sae_enc.predict(x_valid_noise_sae)
             x_valid_cnn = cnn_enc.predict(x_valid_noise_vae)
             _, _, x_valid_vcnn = vcnn_enc.predict(x_valid_noise_vae)
 
+            # reduce training data
             x_valid_svae_red = np.matmul(x_valid_svae,v_svae)
             x_valid_sae_red = np.matmul(x_valid_sae,v_sae)
             x_valid_cnn_red = np.matmul(x_valid_cnn,v_cnn)
             x_valid_vcnn_red = np.matmul(x_valid_vcnn,v_vcnn)
 
-            x_valid_lda_red = np.matmul(x_valid_lda2,v)
-            x_valid_noise_red = np.matmul(x_valid_lda2,v_noise)
+            x_valid_lda_red = np.matmul(x_valid_noise_feats,v)
+            x_valid_noise_red = np.matmul(x_valid_noise_feats,v_noise)
 
+            # compile results
             out_dict = {'x_train_svae_red':x_train_svae_red,'x_train_sae_red':x_train_sae_red,'x_train_cnn_red':x_train_cnn_red,'x_train_vcnn_red':x_train_vcnn_red, 'x_train_lda_red':x_train_lda_red, 'x_train_noise_red':x_train_noise_red, 'x_valid_svae_red':x_valid_svae_red,'xvalid_sae_red':x_valid_sae_red,'x_valid_cnn_red':x_valid_cnn_red,'x_valid_vcnn_red':x_valid_vcnn_red,\
                 'x_valid_lda_red':x_valid_lda_red,'x_valid_noise_red':x_valid_noise_red,'y_train_lda':y_train_lda,'y_train_noise':y_train_noise,'y_valid_lda':y_valid_lda,'y_valid_noise':y_valid_noise}
-        else:
-            x_train, x_test, _, p_train, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt)
+        else: # unfinished
+            x_train, p_train = x_full, p_full
 
             y_train = p_train[:,4]
             x_train_feat = prd.extract_feats(x_train)
