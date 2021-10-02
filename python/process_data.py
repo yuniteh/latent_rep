@@ -448,3 +448,9 @@ def extract_feats(raw,th=0.01):
     # feat_out = 0
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     return feat_out
+
+def extract_scale(x,scaler):
+    x_temp = np.transpose(extract_feats(x).reshape((x.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+    x_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
+
+    return x_temp, x_vae

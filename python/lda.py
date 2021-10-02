@@ -3,6 +3,8 @@ import scipy.io
 import pandas as pd
 from itertools import combinations
 import process_data as prd
+from numpy.linalg import eig, inv
+
 
 # train and predict for data: (samples,feat), label: (samples, 1)
 def eval_lda(w, c, x_test, y_test):
@@ -66,8 +68,6 @@ def train_lda(data,label,mu_bool=False, mu_class = 0, C = 0):
 
             Sw_temp = np.zeros([mu.shape[1],mu.shape[1]])
             for row in data[ind[:,0],:]:
-                # print(np.shape((row[:,np.newaxis] - mu_class[i,:,np.newaxis])))
-                print(np.shape(np.dot((row[:,np.newaxis] - mu_class[i,:,np.newaxis]), (row[:,np.newaxis] - mu_class[i,:,np.newaxis]).T)))
                 Sw_temp += np.dot((row[:,np.newaxis] - mu_class[i,:,np.newaxis]), (row[:,np.newaxis] - mu_class[i,:,np.newaxis]).T)
             Sw += Sw_temp
 
@@ -82,8 +82,13 @@ def train_lda(data,label,mu_bool=False, mu_class = 0, C = 0):
         w[i,:] = np.dot(mu_class[np.newaxis,i,:],np.linalg.pinv(C))
         c[i,:] = np.dot(-.5 * np.dot(mu_class[np.newaxis,i,:], np.linalg.pinv(C)),mu_class[np.newaxis,i,:].T) + np.log(prior)
 
+
+    u,v = eig(inv(Sw).dot(Sb))    
+    v = v[:,np.flip(np.argsort(np.abs(u)))]
+    v = v[:,:6].real
+
     if not mu_bool:
-        return w, c, mu_class, C, Sw, Sb
+        return w, c, mu_class, C, v
     else:
         return w, c
 
