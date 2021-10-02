@@ -458,5 +458,7 @@ def extract_scale(x,scaler,load=True):
         x_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
     else:
         x_vae = scaler.fit_transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
+    
+    return x_vae, scaler
 
-    return x_vae
+    

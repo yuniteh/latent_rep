@@ -153,36 +153,23 @@ class Session():
 
                     # Shape data based on feature type
                     if self.feat_type == 'feat':
-                        # extract features from training data
-                        x_train_noise_temp = np.transpose(prd.extract_feats(x_train_noise).reshape((x_train_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
-                        x_train_clean_temp = np.transpose(prd.extract_feats(x_train_clean).reshape((x_train_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
-                        
-                        # scale features, only fit new scaler if not loading from old model
-                        if self.load:
-                            x_train_noise_vae = scaler.transform(x_train_noise_temp.reshape(x_train_noise_temp.shape[0]*x_train_noise_temp.shape[1],-1)).reshape(x_train_noise_temp.shape)
-                        else:
-                            x_train_noise_vae = scaler.fit_transform(x_train_noise_temp.reshape(x_train_noise_temp.shape[0]*x_train_noise_temp.shape[1],-1)).reshape(x_train_noise_temp.shape)
-                        
-                        x_train_vae = scaler.transform(x_train_clean_temp.reshape(x_train_clean_temp.shape[0]*x_train_clean_temp.shape[1],-1)).reshape(x_train_clean_temp.shape)
+                        # extract and scale features from training and validation data
+                        x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load) 
+                        x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler)
+                        x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler)
+                        x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler)
 
-                        # repeat for validation data
-                        x_valid_noise_temp = np.transpose(prd.extract_feats(x_valid_noise).reshape((x_valid_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
-                        x_valid_clean_temp = np.transpose(prd.extract_feats(x_valid_clean).reshape((x_valid_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
-                        x_valid_noise_vae = scaler.transform(x_valid_noise_temp.reshape(x_valid_noise_temp.shape[0]*x_valid_noise_temp.shape[1],-1)).reshape(x_valid_noise_temp.shape)
-                        x_valid_vae = scaler.transform(x_valid_clean_temp.reshape(x_valid_clean_temp.shape[0]*x_valid_clean_temp.shape[1],-1)).reshape(x_valid_clean_temp.shape)
                     elif self.feat_type == 'raw': # not finalized
                         x_train_noise_vae = scaler.fit_transform(x_train_noise_temp.reshape(x_train_noise_temp.shape[0]*x_train_noise_temp.shape[1],-1)).reshape(x_train_noise_temp.shape)
                         x_train_noise_vae = 0.5+cp.deepcopy(x_train_noise[:,:,::4,:])/10
-                        x_train_vae = 0.5+cp.deepcopy(x_train_clean[:,:,::4,:])/10
+                        x_train_clean_vae = 0.5+cp.deepcopy(x_train_clean[:,:,::4,:])/10
 
                         x_valid_noise_vae = 0.5+cp.deepcopy(x_valid_noise[:,:,::4,:])/10
-                        x_valid_vae = 0.5+cp.deepcopy(x_valid_clean[:,:,::4,:])/10
+                        x_valid_clean_vae = 0.5+cp.deepcopy(x_valid_clean[:,:,::4,:])/10
 
                     # reshape data for nonconvolutional network
                     x_train_noise_sae = x_train_noise_vae.reshape(x_train_noise_vae.shape[0],-1)
-                    x_train_sae = x_train_vae.reshape(x_train_vae.shape[0],-1)
                     x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
-                    x_valid_sae = x_valid_vae.reshape(x_valid_vae.shape[0],-1)
                 
                 # Train SVAE
                 if mod == 'all' or any("svae" in s for s in mod):
@@ -200,18 +187,18 @@ class Session():
                         
                         # get batches for inputs
                         x_train_noise_ep = dl.get_batches(x_train_noise_vae, self.batch_size)
-                        x_train_vae_ep = dl.get_batches(x_train_vae, self.batch_size)
+                        x_train_clean_ep = dl.get_batches(x_train_clean_vae, self.batch_size)
                         y_train_ep = dl.get_batches(y_train_clean, self.batch_size)
                         # loop through batches
                         for ii in range(n_batches):
                             x_train_noise_bat = next(x_train_noise_ep)
-                            x_train_vae_bat = next(x_train_vae_ep)
+                            x_train_clean_bat = next(x_train_clean_ep)
                             y_train_bat = next(y_train_ep)
 
                             # train to reconstruct clean data
-                            temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_vae_bat,y_train_bat,x_train_vae_bat[:,0,0]])
+                            temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_clean_bat,y_train_bat,x_train_clean_bat[:,0,0]])
                             ## train to reconstruct noisy data
-                            # temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_noise_bat,y_train_bat,x_train_vae_bat[:,0,0]])
+                            # temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_noise_bat,y_train_bat,x_train_clean_bat[:,0,0]])
                         
                         ## currently unused - divide previous losses to create subsequent loss weights
                         # if temp_out[1]/temp_out[2] > 1:
@@ -228,10 +215,10 @@ class Session():
                         svae_hist[ep,:7] = temp_out
 
                         ## validation testing to reconstruct clean features
-                        # svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_vae,y_valid_clean,x_valid_vae[:,0,0]])
+                        # svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_clean_vae,y_valid_clean,x_valid_clean_vae[:,0,0]])
 
                         # validation testing to reconstruct noisy features
-                        svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_noise_vae,y_valid_clean,x_valid_vae[:,0,0]])
+                        svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_noise_vae,y_valid_clean,x_valid_clean_vae[:,0,0]])
 
                         # print training losses as we train
                         if ep == 0:
@@ -390,7 +377,7 @@ class Session():
                 last_val[cv-1,:] = np.array([svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1]])
 
         hist_dict = {'last_acc':last_acc,'last_val':last_val}
-        in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_vae,'y_in':y_train_clean,'scaler':scaler}        
+        in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_clean_vae,'y_in':y_train_clean,'scaler':scaler}        
         out = dict(hist_dict,**in_dict)
         
         if mod == 'all' or any("aligned" in s for s in mod):
@@ -528,11 +515,8 @@ class Session():
                         if not skip:
                             # extract and scale features
                             if self.feat_type == 'feat':
-                                x_test_noise_temp = np.transpose(prd.extract_feats(x_test_noise).reshape((x_test_noise.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
-                                x_test_clean_temp = np.transpose(prd.extract_feats(x_test_clean).reshape((x_test_clean.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
-                                
-                                x_test_vae = scaler.transform(x_test_noise_temp.reshape(x_test_noise_temp.shape[0]*x_test_noise_temp.shape[1],-1)).reshape(x_test_noise_temp.shape)
-                                x_test_clean_vae = scaler.transform(x_test_clean_temp.reshape(x_test_clean_temp.shape[0]*x_test_clean_temp.shape[1],-1)).reshape(x_test_clean_temp.shape)
+                                x_test_vae, _ = prd.extract_scale(x_test_noise,scaler)
+                                x_test_clean_vae = prd.extract_scale(x_test_clean,scaler)
                             # not finalized, scale raw data
                             elif self.feat_type == 'raw':
                                 x_test_vae = cp.deepcopy(x_test_noise[:,:,::2,:])/5
@@ -657,12 +641,12 @@ class Session():
             _, vcnn_enc, _ = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
 
             # extract features from training data
-            x_train_clean_vae = prd.extract_scale(x_train_clean,scaler)           
-            x_valid_clean_vae = prd.extract_scale(x_valid_clean,scaler)
+            x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler)           
+            x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler)
 
             if self.noise:
-                x_train_noise_vae = prd.extract_scale(x_train_noise,scaler)
-                x_valid_noise_vae = prd.extract_scale(x_valid_noise,scaler)
+                x_train_noise_vae, _ = prd.extract_scale(x_train_noise,scaler)
+                x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler)
             else:
                 x_train_noise = cp.deepcopy(x_train_clean)
                 x_valid_noise = cp.deepcopy(x_valid_clean)
