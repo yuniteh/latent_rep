@@ -70,8 +70,10 @@ def train_lda(data,label,mu_bool=False, mu_class = 0, C = 0):
             for row in data[ind[:,0],:]:
                 Sw_temp += np.dot((row[:,np.newaxis] - mu_class[i,:,np.newaxis]), (row[:,np.newaxis] - mu_class[i,:,np.newaxis]).T)
             Sw += Sw_temp
-
         C /= n_class
+        u,v = eig(inv(Sw).dot(Sb))    
+        v = v[:,np.flip(np.argsort(np.abs(u)))]
+        v = v[:,:6].real
 
     prior = 1/n_class
 
@@ -80,12 +82,7 @@ def train_lda(data,label,mu_bool=False, mu_class = 0, C = 0):
 
     for i in range(0, n_class):
         w[i,:] = np.dot(mu_class[np.newaxis,i,:],np.linalg.pinv(C))
-        c[i,:] = np.dot(-.5 * np.dot(mu_class[np.newaxis,i,:], np.linalg.pinv(C)),mu_class[np.newaxis,i,:].T) + np.log(prior)
-
-
-    u,v = eig(inv(Sw).dot(Sb))    
-    v = v[:,np.flip(np.argsort(np.abs(u)))]
-    v = v[:,:6].real
+        c[i,:] = np.dot(-.5 * np.dot(mu_class[np.newaxis,i,:], np.linalg.pinv(C)),mu_class[np.newaxis,i,:].T) + np.log(prior)    
 
     if not mu_bool:
         return w, c, mu_class, C, v

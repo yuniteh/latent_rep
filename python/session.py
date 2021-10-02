@@ -516,7 +516,7 @@ class Session():
                             # extract and scale features
                             if self.feat_type == 'feat':
                                 x_test_vae, _ = prd.extract_scale(x_test_noise,scaler)
-                                x_test_clean_vae = prd.extract_scale(x_test_clean,scaler)
+                                x_test_clean_vae, _ = prd.extract_scale(x_test_clean,scaler)
                             # not finalized, scale raw data
                             elif self.feat_type == 'raw':
                                 x_test_vae = cp.deepcopy(x_test_noise[:,:,::2,:])/5
