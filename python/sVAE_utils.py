@@ -258,6 +258,42 @@ def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
     vae.compile(optimizer=opt, loss='categorical_crossentropy',experimental_run_tf_function=False,metrics=['accuracy'])
     return vae, encoder, clf_supervised
 
+def build_cnn_ext(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
+    
+    if input_type == 'feat':
+        input_shape = (8,4,1)
+    elif input_type == 'raw':
+        input_shape = (8,50,1)
+
+    # build encoder model
+    inputs = Input(shape=input_shape)
+    x = Conv2D(32, 3, activation="relu", strides=1, padding="same")(inputs)
+    x = BatchNormalization()(x)
+    x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
+    x = BatchNormalization()(x)
+    x = Flatten()(x)
+    x = Dense(16, activation="relu")(x)
+    x = BatchNormalization()(x)
+    if sparse:
+        z = Dense(latent_dim, name="z", activity_regularizer=regularizers.l1(10e-5))(x)
+    else:
+        z = Dense(latent_dim, name="z")(x)
+    z = BatchNormalization()(z)
+    encoder = Model(inputs, z, name="encoder")
+
+    # classifier
+    clf_latent_inputs = Input(shape=(latent_dim,), name='z_clf')
+    clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
+    clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
+
+    # instantiate VAE model
+    outputs = clf_supervised(encoder(inputs))
+    vae = Model(inputs, outputs, name='vae_mlp')
+
+    opt = optimizers.Adam(learning_rate=lr)
+    vae.compile(optimizer=opt, loss='categorical_crossentropy',experimental_run_tf_function=False,metrics=['accuracy'])
+    return vae, encoder, clf_supervised
+
 def build_cnn_old(latent_dim, n_class, input_type='feat',sparse='True'):
     
     if input_type == 'feat':
