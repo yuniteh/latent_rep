@@ -92,21 +92,13 @@ class Session():
         if np.sum(ind):
             if mod != 'none':
                 if self.dt == 'cv':
-                    x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
+                    x_train, x_valid, _, p_train, p_valid, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
                 else:
                     x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,load=False,train_grp=self.train_grp)
-                # if np.size(x_train):
-                #     skip = False
-                # else:
-                #     skip = True
 
             # loop through cross validation
             for cv in range(self.start_cv,self.max_cv):
                 filename = self.create_filename(foldername, cv, sub)
-                if self.dt == 'cv':
-                    if mod != 'none':
-                        x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
-                        x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
 
                 print('Running sub ' + str(sub) + ', model ' + str(self.train_grp) + ', latent dim ' + str(self.latent_dim) + ', cv ' + str(cv))
 
@@ -136,12 +128,10 @@ class Session():
                     scaler = MinMaxScaler(feature_range=(0,1))
                     load = False
                     
-                # prepare training data if training models
+                # prepare training data if training models    
                 if mod != 'none':
                     # Add noise to training data
-                    y_train = p_train[:,4]
-                    x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, self.n_train, self.train_scale)
-                    x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, self.n_train, self.train_scale)
+                    x_train_noise, x_train_clean, y_train_clean, x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise_new(x_train,x_valid,p_train,p_valid,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp,cv=cv)
                     # if not adding noise, copy clean training data
                     if not self.noise:
                         x_train_noise = cp.deepcopy(x_train_clean)
@@ -386,6 +376,7 @@ class Session():
                     with open(filename + '.p', 'wb') as f:
                         pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
                             ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise],f)
+
                     with open(filename + '_hist.p', 'wb') as f:
                         pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist, ecnn_hist],f)
 

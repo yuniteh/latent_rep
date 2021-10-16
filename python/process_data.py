@@ -219,7 +219,7 @@ def remove_ch(raw, params, sub, n_type='flat', scale=5):
     noisy = noisy[...,np.newaxis]
     return noisy,clean,y
 
-def add_noise_all(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, cv=1,n_type='flat',scale=5):
+def add_noise_all(x_train,x_test,p_train,p_test, sub, sub_type, dt=0, train_grp=2, load=True, cv=1,n_type='fullgaussflat4',scale=5):
 
     if dt == 0:
         today = date.today()
@@ -233,11 +233,12 @@ def add_noise_all(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, cv=1
         noisefile += '_cv_' + str(cv)
 
     if load:
-        with open(noisefile + '.p','rb') as f:
-            x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean = pickle.load(f)
+        if os.path.isfile(filename):
+            with open(noisefile + '.p','rb') as f:
+                x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean = pickle.load(f)
+        else:
+            load = False
     else:    
-        x_train, x_test, _, p_train, p_test, _ = train_data_split(raw, params, sub, sub_type, dt, train_grp)
-
         if dt == 'cv':
             x_full = cp.deepcopy(x_train)
             p_full = cp.deepcopy(p_train)
@@ -251,7 +252,7 @@ def add_noise_all(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, cv=1
         with open(noisefile + '.p','wb') as f:
             pickle.dump([x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean],f)
     
-    return x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean, x_train, p_train
+    return x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean
 
 def add_noise(raw, params, sub, sub_type, n_type='flat', scale=5):
     # Index subject and training group
