@@ -92,7 +92,7 @@ class Session():
         if np.sum(ind):
             if mod != 'none':
                 if self.dt == 'cv':
-                    x_train, x_valid, _, p_train, p_valid, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
+                    x_full, x_valid, _, p_full, p_valid, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
                 else:
                     x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,load=False,train_grp=self.train_grp)
 
@@ -130,45 +130,62 @@ class Session():
                     
                 # prepare training data if training models    
                 if mod != 'none':
-                    # Add noise to training data
-                    x_train_noise, x_train_clean, y_train_clean, x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise_all(x_train,x_valid,p_train,p_valid,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp,cv=cv)
+                    noisefolder = 'noisedata_' + self.dt
+                    noisefile = noisefolder + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_train) + '_' + str(self.train_scale)
+                    if not os.path.isdir(noisefolder):
+                        os.mkdir(noisefolder) 
+                    if self.dt == 'cv':
+                        noisefile += '_cv_' + str(cv)
                     
-                    y_train = p_train[:,4]
-                    # if not adding noise, copy clean training data
-                    if not self.noise:
-                        x_train_noise = cp.deepcopy(x_train_clean)
-                        x_valid_noise = cp.deepcopy(x_valid_clean)
+                    if os.path.isfile(noisefile + '.p'):
+                        with open(noisefile + '.p','rb') as f:
+                            data = pickle.load(f)
+                        for key,val in data.items():
+                            exec(key + '=val')
+                    else:
+                        # Add noise to training data
+                        # x_train_noise, x_train_clean, y_train_clean, x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise_all(x_train,x_valid,p_train,p_valid,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp,cv=cv)
+                        
+                        if self.dt == 'cv':
+                            x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
+                            x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
+                
+                        x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, self.sub_type, self.n_train, self.train_scale)
+                        x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, self.sub_type, self.n_train, self.train_scale)
+                        # if not adding noise, copy clean training data
+                        if not self.noise:
+                            x_train_noise = cp.deepcopy(x_train_clean)
+                            x_valid_noise = cp.deepcopy(x_valid_clean)
 
-                    # shuffle data to make even batches
-                    x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
+                        # shuffle data to make even batches
+                        x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
 
-                    # Build models
-                    svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    ecnn, ecnn_enc, ecnn_clf = dl.build_cnn_ext(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                        # Training data for LDA/QDA
+                        y_train = p_train[:,4]
+                        x_train_lda = prd.extract_feats(x_train)
+                        y_train_lda = y_train[...,np.newaxis] - 1
+                        x_train_noise_lda = prd.extract_feats(x_train_noise)
+                        y_train_noise_lda = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
-                    # Training data for LDA/QDA
-                    x_train_lda = prd.extract_feats(x_train)
-                    y_train_lda = y_train[...,np.newaxis] - 1
-                    x_train_lda2 = prd.extract_feats(x_train_noise)
-                    y_train_lda2 = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
+                        # Shape data based on feature type
+                        if self.feat_type == 'feat':
+                            # extract and scale features from training and validation data
+                            x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load) 
+                            x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler)
+                            x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler)
+                            x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler)
 
-                    # Shape data based on feature type
-                    if self.feat_type == 'feat':
-                        # extract and scale features from training and validation data
-                        x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load) 
-                        x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler)
-                        x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler)
-                        x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler)
+                        elif self.feat_type == 'raw': # not finalized
+                            x_train_noise_vae = 0.5+cp.deepcopy(x_train_noise[:,:,::4,:])/10
+                            x_train_clean_vae = 0.5+cp.deepcopy(x_train_clean[:,:,::4,:])/10
 
-                    elif self.feat_type == 'raw': # not finalized
-                        x_train_noise_vae = 0.5+cp.deepcopy(x_train_noise[:,:,::4,:])/10
-                        x_train_clean_vae = 0.5+cp.deepcopy(x_train_clean[:,:,::4,:])/10
+                            x_valid_noise_vae = 0.5+cp.deepcopy(x_valid_noise[:,:,::4,:])/10
+                            x_valid_clean_vae = 0.5+cp.deepcopy(x_valid_clean[:,:,::4,:])/10
+                        
+                        data_dict = {'scaler':scaler, 'x_train_noise_vae': x_train_noise_vae, 'x_train_clean_vae': x_train_clean_vae, 'x_valid_noise_vae': x_valid_noise_vae, 'x_valid_clean_vae': x_valid_clean_vae, 'y_train_clean':y_train_clean, 'x_train_lda':x_train_lda, 'y_train_lda':y_train_lda, 'x_train_noise_lda': x_train_noise_lda, 'y_train_noise_lda': y_train_noise_lda}
 
-                        x_valid_noise_vae = 0.5+cp.deepcopy(x_valid_noise[:,:,::4,:])/10
-                        x_valid_clean_vae = 0.5+cp.deepcopy(x_valid_clean[:,:,::4,:])/10
+                        with open(noisefile + '.p', 'wb') as f:
+                            pickle.dump(data_dict,f)
 
                     # reshape data for nonconvolutional network
                     x_train_noise_sae = x_train_noise_vae.reshape(x_train_noise_vae.shape[0],-1)
@@ -177,9 +194,14 @@ class Session():
                     # TEMP - CNN extended
                     x_train_noise_ext = np.concatenate((x_train_noise_vae,x_train_noise_vae[:,:2,...]),axis=1)
                     x_valid_noise_ext = np.concatenate((x_valid_noise_vae,x_valid_noise_vae[:,:2,...]),axis=1)
-                    
 
-                
+                    # Build models
+                    svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    ecnn, ecnn_enc, ecnn_clf = dl.build_cnn_ext(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    
                 # Train SVAE
                 if mod == 'all' or any("svae" in s for s in mod):
                     # get number of batches
@@ -298,7 +320,7 @@ class Session():
                 # Train LDA
                 if mod == 'all' or any("lda" in s for s in mod):
                     w,c, mu, C, v = train_lda(x_train_lda,y_train_lda)
-                    w_noise,c_noise, _, _, v_noise = train_lda(x_train_lda2,y_train_lda2)
+                    w_noise,c_noise, _, _, v_noise = train_lda(x_train_noise_lda,y_train_noise_lda)
                 
                 # Train QDA
                 if mod == 'all' or any("qda" in s for s in mod):
@@ -306,7 +328,7 @@ class Session():
                     qda = QDA()
                     qda.fit(x_train_lda, np.squeeze(y_train_lda))
                     qda_noise = QDA()
-                    qda_noise.fit(x_train_lda2, np.squeeze(y_train_lda2))
+                    qda_noise.fit(x_train_noise_lda, np.squeeze(y_train_noise_lda))
                 
                 # Reconstruct training data for data augmentation
                 if mod == 'all' or any("recon" in s for s in mod):
