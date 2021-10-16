@@ -131,7 +131,9 @@ class Session():
                 # prepare training data if training models    
                 if mod != 'none':
                     # Add noise to training data
-                    x_train_noise, x_train_clean, y_train_clean, x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise_new(x_train,x_valid,p_train,p_valid,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp,cv=cv)
+                    x_train_noise, x_train_clean, y_train_clean, x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise_all(x_train,x_valid,p_train,p_valid,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp,cv=cv)
+                    
+                    y_train = p_train[:,4]
                     # if not adding noise, copy clean training data
                     if not self.noise:
                         x_train_noise = cp.deepcopy(x_train_clean)
@@ -175,6 +177,8 @@ class Session():
                     # TEMP - CNN extended
                     x_train_noise_ext = np.concatenate((x_train_noise_vae,x_train_noise_vae[:,:2,...]),axis=1)
                     x_valid_noise_ext = np.concatenate((x_valid_noise_vae,x_valid_noise_vae[:,:2,...]),axis=1)
+                    
+
                 
                 # Train SVAE
                 if mod == 'all' or any("svae" in s for s in mod):
@@ -371,40 +375,41 @@ class Session():
                     # Train ENC-LDA with augmented data
                     w_gen_al, c_gen_al, _, _, _ = train_lda(x_train_aug_align,y_train_all)
 
-                # Pickle variables
-                if mod != 'none':
-                    with open(filename + '.p', 'wb') as f:
-                        pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
-                            ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise],f)
+        #         # Pickle variables
+        #         if mod != 'none':
+        #             with open(filename + '.p', 'wb') as f:
+        #                 pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
+        #                     ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise],f)
 
-                    with open(filename + '_hist.p', 'wb') as f:
-                        pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist, ecnn_hist],f)
+        #             with open(filename + '_hist.p', 'wb') as f:
+        #                 pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist, ecnn_hist],f)
 
-                    if mod == 'all' or any("gen" in s for s in mod) or any ("recon" in s for s in mod):
-                        with open(filename + '_aug.p', 'wb') as f:
-                            pickle.dump([w_rec, c_rec, w_rec_al, c_rec_al, w_gen, c_gen, w_gen_al, c_gen_al],f)
+        #             if mod == 'all' or any("gen" in s for s in mod) or any ("recon" in s for s in mod):
+        #                 with open(filename + '_aug.p', 'wb') as f:
+        #                     pickle.dump([w_rec, c_rec, w_rec_al, c_rec_al, w_gen, c_gen, w_gen_al, c_gen_al],f)
                     
-                    if mod == 'all' or any("aligned" in s for s in mod) or any("lda" in s for s in mod):
-                        with open(filename + '_red.p', 'wb') as f:
-                            pickle.dump([v_svae, v_sae, v_cnn, v_vcnn, v_ecnn, v, v_noise],f)
+        #             if mod == 'all' or any("aligned" in s for s in mod) or any("lda" in s for s in mod):
+        #                 with open(filename + '_red.p', 'wb') as f:
+        #                     pickle.dump([v_svae, v_sae, v_cnn, v_vcnn, v_ecnn, v, v_noise],f)
 
-                # allocate last accuracies
-                last_acc[cv-1,:] = np.array([svae_hist[-1,1],svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1], ecnn_hist['accuracy'][-1]])
-                last_val[cv-1,:] = np.array([svae_hist[-1,8],svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1], ecnn_hist['val_accuracy'][-1]])
+        #         # allocate last accuracies
+        #         last_acc[cv-1,:] = np.array([svae_hist[-1,1],svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1], ecnn_hist['accuracy'][-1]])
+        #         last_val[cv-1,:] = np.array([svae_hist[-1,8],svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1], ecnn_hist['val_accuracy'][-1]])
 
-        out = {'last_acc':last_acc,'last_val':last_val}
+        # out = {'last_acc':last_acc,'last_val':last_val}
         
-        if mod != 'none':
-            in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_clean_vae,'y_in':y_train_clean,'scaler':scaler}        
-            out.update(in_dict)
+        # if mod != 'none':
+        #     in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_clean_vae,'y_in':y_train_clean,'scaler':scaler}        
+        #     out.update(in_dict)
             
-            if mod == 'all' or any("aligned" in s for s in mod):
-                align_dict = {'x_svae_al':x_train_svae, 'x_sae_al':x_train_sae, 'x_cnn_al':x_train_cnn, 'x_vcnn_al':x_train_vcnn, 'x_ecnn_al':x_train_ecnn}
-                out.update(align_dict)
+        #     if mod == 'all' or any("aligned" in s for s in mod):
+        #         align_dict = {'x_svae_al':x_train_svae, 'x_sae_al':x_train_sae, 'x_cnn_al':x_train_cnn, 'x_vcnn_al':x_train_vcnn, 'x_ecnn_al':x_train_ecnn}
+        #         out.update(align_dict)
 
-            if mod =='all' or any("gen" in s for s in mod) or any("recon" in s for s in mod):
-                out_dict = {'gen_clf':gen_clf,'x_out':dec_cv} 
-                out.update(out_dict)
+        #     if mod =='all' or any("gen" in s for s in mod) or any("recon" in s for s in mod):
+        #         out_dict = {'gen_clf':gen_clf,'x_out':dec_cv} 
+        #         out.update(out_dict)
+        out = 0
         
         return out
 

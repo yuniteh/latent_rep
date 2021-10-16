@@ -12,6 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 from collections import deque
 from itertools import combinations
 import time
+import json
 
 def load_raw(filename):
     struct = scipy.io.loadmat(filename)
@@ -220,7 +221,6 @@ def remove_ch(raw, params, sub, n_type='flat', scale=5):
     return noisy,clean,y
 
 def add_noise_all(x_train,x_test,p_train,p_test, sub, sub_type, dt=0, train_grp=2, load=True, cv=1,n_type='fullgaussflat4',scale=5):
-
     if dt == 0:
         today = date.today()
         dt = today.strftime("%m%d")
@@ -233,21 +233,23 @@ def add_noise_all(x_train,x_test,p_train,p_test, sub, sub_type, dt=0, train_grp=
         noisefile += '_cv_' + str(cv)
 
     if load:
-        if os.path.isfile(filename):
+        if os.path.isfile(noisefile + '.p'):
             with open(noisefile + '.p','rb') as f:
                 x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean = pickle.load(f)
         else:
             load = False
-    else:    
+            print('here')
+    
+    if not load:
+        print('hi')
         if dt == 'cv':
             x_full = cp.deepcopy(x_train)
             p_full = cp.deepcopy(p_train)
             x_test, p_test = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
             x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
             
-        y_train = p_train[:,4]
-        x_train_noise, x_train_clean, y_train_clean = add_noise(x_train, p_train, sub, n_type, scale)
-        x_test_noise, x_test_clean, y_test_clean = add_noise(x_test, p_test, sub, n_type, scale)
+        x_train_noise, x_train_clean, y_train_clean = add_noise(x_train, p_train, sub, sub_type, n_type, scale)
+        x_test_noise, x_test_clean, y_test_clean = add_noise(x_test, p_test, sub, sub_type, n_type, scale)
 
         with open(noisefile + '.p','wb') as f:
             pickle.dump([x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean],f)
