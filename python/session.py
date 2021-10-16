@@ -92,9 +92,13 @@ class Session():
         if np.sum(ind):
             if mod != 'none':
                 if self.dt == 'cv':
-                    x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt)
+                    x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
                 else:
-                    x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,load=False)
+                    x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,load=False,train_grp=self.train_grp)
+                # if np.size(x_train):
+                #     skip = False
+                # else:
+                #     skip = True
 
             # loop through cross validation
             for cv in range(self.start_cv,self.max_cv):
@@ -435,9 +439,9 @@ class Session():
         self.max_cv = cv_tot + 1
         
         # Initialize accuracy arrays
-        acc_all = np.full([np.max(params[:,0])+1, cv_tot, test_tot, mod_tot],np.nan)
-        acc_clean = np.full([np.max(params[:,0])+1, cv_tot, test_tot, mod_tot],np.nan)
-        acc_noise = np.full([np.max(params[:,0])+1, cv_tot, test_tot, mod_tot],np.nan)
+        acc_all = np.full([np.max(params[:,0]), cv_tot, test_tot, mod_tot],np.nan)
+        acc_clean = np.full([np.max(params[:,0]), cv_tot, test_tot, mod_tot],np.nan)
+        acc_noise = np.full([np.max(params[:,0]), cv_tot, test_tot, mod_tot],np.nan)
 
         filename = 0
 
@@ -448,14 +452,15 @@ class Session():
         for sub in range(1,np.max(params[:,0])+1):            
             # index based on training group and subject
             ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
+            print(np.sum(ind))
 
             # Check if training data exists
             if np.sum(ind):
                 # split data into training, testing, validation sets
                 if self.dt == 'cv':
-                    x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt)
+                    x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
                 else:
-                    x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt)
+                    x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
 
                 # loop through cvs
                 for cv in range(self.start_cv,self.max_cv):
@@ -508,14 +513,15 @@ class Session():
                     # set test on validation data for cv mode
                     if self.dt == 'cv':
                         x_test, p_test = x_valid, p_valid
+                    if noise_type == 'pos':
+                        test_grp = int(self.n_test[-1])
+                        _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=test_grp)
 
                     # loop through test levels
                     for test_scale in range(1,test_tot + 1):
                         skip = False
                         # load test data for diff limb positions
                         if noise_type == 'pos':
-                            test_grp = int(self.n_test[-1])
-                            _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=test_grp)
                             pos_ind = p_test[:,-1] == test_scale
                             if pos_ind.any():
                                 x_test_noise = x_test[pos_ind,...]
