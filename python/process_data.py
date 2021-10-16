@@ -110,11 +110,9 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, t
     if not os.path.isdir(foldername):
         os.mkdir(foldername)
     
-    print(filename)
     if load:
-        print('load')
         if os.path.isfile(filename):
-            print('Loading training data...')
+            print('Loading training data: ' + filename)
             with open(filename,'rb') as f:
                 x_train, x_test, x_valid, p_train, p_test, p_valid = pickle.load(f)
                 

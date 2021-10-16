@@ -657,9 +657,9 @@ class Session():
             # Load saved data
             with open(filename + '.p', 'rb') as f:
                 scaler, _, svae_enc_w, _, _, _, sae_enc_w, _, _, cnn_enc_w, _, _, vcnn_enc_w, _, _, _, \
-                    _, _, _, _, _, _, _, _, _, _, _, _, _, _ = pickle.load(f)
+                    _, _, _, _,_,_,_,_, _, _, _, _, _, _, _, _, _, _, _ = pickle.load(f)
             with open(filename + '_red.p', 'rb') as f:
-                v_svae, v_sae, v_cnn, v_vcnn, v, v_noise = pickle.load(f)
+                v_svae, v_sae, v_cnn, v_vcnn, _, v, v_noise = pickle.load(f)
             
             # Index training and validation data
             x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
