@@ -18,6 +18,7 @@ import copy as cp
 from datetime import date
 import time
 from numpy.linalg import eig, inv
+from types import SimpleNamespace 
 
 class Session():
     def __init__(self,**settings):
@@ -138,10 +139,10 @@ class Session():
                         noisefile += '_cv_' + str(cv)
                     
                     if os.path.isfile(noisefile + '.p'):
+                        print('loading data')
                         with open(noisefile + '.p','rb') as f:
-                            data = pickle.load(f)
-                        for key,val in data.items():
-                            exec(key + '=val')
+                            scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda = pickle.load(f)
+                        
                     else:
                         # Add noise to training data
                         # x_train_noise, x_train_clean, y_train_clean, x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise_all(x_train,x_valid,p_train,p_valid,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp,cv=cv)
@@ -181,11 +182,9 @@ class Session():
 
                             x_valid_noise_vae = 0.5+cp.deepcopy(x_valid_noise[:,:,::4,:])/10
                             x_valid_clean_vae = 0.5+cp.deepcopy(x_valid_clean[:,:,::4,:])/10
-                        
-                        data_dict = {'scaler':scaler, 'x_train_noise_vae': x_train_noise_vae, 'x_train_clean_vae': x_train_clean_vae, 'x_valid_noise_vae': x_valid_noise_vae, 'x_valid_clean_vae': x_valid_clean_vae, 'y_train_clean':y_train_clean, 'x_train_lda':x_train_lda, 'y_train_lda':y_train_lda, 'x_train_noise_lda': x_train_noise_lda, 'y_train_noise_lda': y_train_noise_lda}
 
                         with open(noisefile + '.p', 'wb') as f:
-                            pickle.dump(data_dict,f)
+                            pickle.dump([scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda],f)
 
                     # reshape data for nonconvolutional network
                     x_train_noise_sae = x_train_noise_vae.reshape(x_train_noise_vae.shape[0],-1)
