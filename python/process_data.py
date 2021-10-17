@@ -12,6 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 from collections import deque
 from itertools import combinations
 import time
+import json
 
 def load_raw(filename):
     struct = scipy.io.loadmat(filename)
@@ -115,11 +116,6 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, t
             print('Loading training data: ' + filename)
             with open(filename,'rb') as f:
                 x_train, x_test, x_valid, p_train, p_test, p_valid = pickle.load(f)
-                
-                if train_grp < 3:
-                    x_train, p_train = shuffle(x_train, p_train, random_state = 0)
-                    x_test, p_test = shuffle(x_test, p_test, random_state = 0)
-                    x_valid, p_valid = shuffle(x_valid, p_valid, random_state = 0)
         else:
             load=False
     if not load:
@@ -149,10 +145,10 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, t
         with open(filename, 'wb') as f:
             pickle.dump([x_train, x_test, x_valid, p_train, p_test, p_valid],f)
 
-        if train_grp < 3:
-            x_train, p_train = shuffle(x_train, p_train, random_state = 0)
-            x_test, p_test = shuffle(x_test, p_test, random_state = 0)
-            x_valid, p_valid = shuffle(x_valid, p_valid, random_state = 0)
+    if train_grp < 3:
+        x_train, p_train = shuffle(x_train, p_train, random_state = 0)
+        x_test, p_test = shuffle(x_test, p_test, random_state = 0)
+        x_valid, p_valid = shuffle(x_valid, p_valid, random_state = 0)
     return x_train, x_test, x_valid, p_train, p_test, p_valid
 
 def norm_sub(feat, params):
@@ -224,7 +220,43 @@ def remove_ch(raw, params, sub, n_type='flat', scale=5):
     noisy = noisy[...,np.newaxis]
     return noisy,clean,y
 
-def add_noise(raw, params, sub, n_type='flat', scale=5):
+def add_noise_all(x_train,x_test,p_train,p_test, sub, sub_type, dt=0, train_grp=2, load=True, cv=1,n_type='fullgaussflat4',scale=5):
+    if dt == 0:
+        today = date.today()
+        dt = today.strftime("%m%d")
+
+    noisefolder = 'noisedata_' + dt
+    noisefile = noisefolder + '/' + sub_type + str(sub) + '_grp_' + str(train_grp) + '_' + str(n_type) + '_' + str(scale)
+    if not os.path.isdir(noisefolder):
+        os.mkdir(noisefolder) 
+    if dt == 'cv':
+        noisefile += '_cv_' + str(cv)
+
+    if load:
+        if os.path.isfile(noisefile + '.p'):
+            with open(noisefile + '.p','rb') as f:
+                x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean = pickle.load(f)
+        else:
+            load = False
+            print('here')
+    
+    if not load:
+        print('hi')
+        if dt == 'cv':
+            x_full = cp.deepcopy(x_train)
+            p_full = cp.deepcopy(p_train)
+            x_test, p_test = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
+            x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
+            
+        x_train_noise, x_train_clean, y_train_clean = add_noise(x_train, p_train, sub, sub_type, n_type, scale)
+        x_test_noise, x_test_clean, y_test_clean = add_noise(x_test, p_test, sub, sub_type, n_type, scale)
+
+        with open(noisefile + '.p','wb') as f:
+            pickle.dump([x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean],f)
+    
+    return x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean
+
+def add_noise(raw, params, sub, sub_type, n_type='flat', scale=5):
     # Index subject and training group
     max_ch = raw.shape[1] + 1
     num_ch = int(n_type[-1]) + 1
@@ -235,7 +267,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
         rep = 2
     else:
         rep = 1
-    
+
     # tile data once for each channel
     if full_type == 'full':
         start_ch = 1
