@@ -40,6 +40,7 @@ class Session():
         self.n_train = settings.get('n_train','gauss')
         self.n_test = settings.get('n_test','gauss')
         self.gens = settings.get('gens',50)
+        self.train_load = settings.get('train_load',True)
 
     def create_foldername(self):
         # Set folder
@@ -86,11 +87,11 @@ class Session():
         # index training group and subject
         ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
 
-        # initialize x out matrix
-        dec_cv = np.full([self.max_cv-1,self.gens*np.max(params[ind,4]),raw.shape[1],4,1], np.nan)
-
         # Check if training data exists
         if np.sum(ind):
+            # initialize x out matrix
+            dec_cv = np.full([self.max_cv-1,self.gens*np.max(params[ind,4]),raw.shape[1],4,1], np.nan)
+            
             if mod != 'none':
                 if self.dt == 'cv':
                     x_full, x_valid, _, p_full, p_valid, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
@@ -138,15 +139,12 @@ class Session():
                     if self.dt == 'cv':
                         noisefile += '_cv_' + str(cv)
                     
-                    if os.path.isfile(noisefile + '.p'):
+                    if os.path.isfile(noisefile + '.p') and self.train_load:
                         print('loading data')
                         with open(noisefile + '.p','rb') as f:
-                            scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda = pickle.load(f)
-                        
+                            scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda = pickle.load(f)                       
                     else:
-                        # Add noise to training data
-                        # x_train_noise, x_train_clean, y_train_clean, x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise_all(x_train,x_valid,p_train,p_valid,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp,cv=cv)
-                        
+                        # Add noise to training data                        
                         if self.dt == 'cv':
                             x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
                             x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
