@@ -660,10 +660,7 @@ class Session():
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    if sub != 0:
-                        vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn_manual(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    else:
-                        vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn_manual(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
 
                     svae.set_weights(svae_w)
                     svae_enc.set_weights(svae_enc_w)
@@ -764,10 +761,7 @@ class Session():
                             x_test_sae = sae_enc.predict(x_test_dlsae)
                             x_test_cnn = cnn_enc.predict(x_test_vae)
                             _,_,_,x_test_ecnn = ecnn_enc.predict(x_test_vae)
-                            if sub != 0:
-                                _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
-                            else:
-                                _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
+                            _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
 
                             y_test_aligned = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
 
@@ -861,10 +855,8 @@ class Session():
         noisefolder = 'testdata_' + self.dt
 
         noisefile = noisefolder + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_test) + '_' + str(test_scale)
-        if not os.path.isdir(noisefolder):
-            os.mkdir(noisefolder) 
         if os.path.isfile(noisefile + '.p'):
-            print('loading data')
+            print('loading test data')
             with open(noisefile + '.p','rb') as f:
                 x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean = pickle.load(f) 
         
@@ -882,7 +874,8 @@ class Session():
         cnn_enc.set_weights(cnn_enc_w)
         vcnn_enc.set_weights(vcnn_enc_w)
         svae_clf.set_weights(svae_clf_w)
-
+        
+        # align to latent space
         _, x_test_svae = svae_clf.predict(x_test_vae)
         x_test_sae = sae_enc.predict(x_test_dlsae)
         x_test_cnn = cnn_enc.predict(x_test_vae)
