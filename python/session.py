@@ -62,14 +62,16 @@ class Session():
 
         return foldername
 
-    def create_filename(self,foldername,cv=0,sub=0,ftype=''):
+    def create_filename(self,foldername,cv=0,sub=0,ftype='',test_scale=0):
         # full results file
         if ftype == 'results':
             filename = foldername + '/' + self.sub_type + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_' + self.n_train + '_' + str(self.train_scale) + '_' + self.n_test
         else:
             # train noise file
             if ftype == 'trainnoise':
-                noisefile = foldername + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_train) + '_' + str(self.train_scale)
+                filename = foldername + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_train) + '_' + str(self.train_scale)
+            elif ftype == 'testnoise':
+                filename = foldername + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_test) + '_' + str(test_scale)
             # model file
             else:
                 filename = foldername + '/' + self.sub_type + str(sub) + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
@@ -645,12 +647,8 @@ class Session():
                     clean_size = int(np.size(x_test,axis=0))
                     # loop through test levels
                     for test_scale in range(1,test_tot + 1):
-                        noisefolder = 'testdata_' + self.dt
-                        noisefile = noisefolder + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_test) + '_' + str(test_scale)
-                        if not os.path.isdir(noisefolder):
-                            os.mkdir(noisefolder) 
-                        if self.dt == 'cv':
-                            noisefile += '_cv_' + str(cv)
+                        noisefolder = self.create_foldername(ftype='testnoise')
+                        noisefile = self.create_filename(foldername,cv, sub, ftype='testnoise', test_scale=test_scale)
                         
                         if os.path.isfile(noisefile + '.p'):
                             print('loading data')
@@ -804,9 +802,9 @@ class Session():
         with open(filename + '_red.p', 'rb') as f:
             v_svae, v_sae, v_cnn, v_vcnn, _, v, v_noise = pickle.load(f)
 
-        noisefolder = 'testdata_' + self.dt
-
-        noisefile = noisefolder + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_test) + '_' + str(test_scale)
+        noisefolder = self.create_foldername(ftype='testnoise')
+        noisefile = self.create_filename(noisefolder,sub=sub,ftype='testnoise',test_scale=test_scale)
+        
         if os.path.isfile(noisefile + '.p'):
             print('loading test data')
             with open(noisefile + '.p','rb') as f:
