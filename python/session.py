@@ -568,26 +568,7 @@ class Session():
                         with open(filename + '_red.p', 'wb') as f:
                             pickle.dump([v_svae, v_sae, v_cnn, v_vcnn, v_ecnn, v, v_noise],f)
 
-                # allocate last accuracies
-        #         last_acc[cv-1,:] = np.array([svae_hist[-1,1],svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1], ecnn_hist['accuracy'][-1]])
-        #         last_val[cv-1,:] = np.array([svae_hist[-1,8],svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1], ecnn_hist['val_accuracy'][-1]])
-
-        # out = {'last_acc':last_acc,'last_val':last_val}
-        
-        # if mod != 'none':
-        #     in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_clean_vae,'y_in':y_train_clean,'scaler':scaler}        
-        #     out.update(in_dict)
-            
-        #     if mod == 'all' or any("aligned" in s for s in mod):
-        #         align_dict = {'x_svae_al':x_train_svae, 'x_sae_al':x_train_sae, 'x_cnn_al':x_train_cnn, 'x_vcnn_al':x_train_vcnn, 'x_ecnn_al':x_train_ecnn}
-        #         out.update(align_dict)
-
-        #     if mod =='all' or any("gen" in s for s in mod) or any("recon" in s for s in mod):
-        #         out_dict = {'gen_clf':gen_clf,'x_out':dec_cv} 
-        #         out.update(out_dict)
-        out = 1
-
-        return out
+        return
 
     def loop_test(self, raw, params):
         # set number of models to test
@@ -658,9 +639,8 @@ class Session():
                     svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    
-                    ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn_manual(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
 
                     svae.set_weights(svae_w)
                     svae_enc.set_weights(svae_enc_w)
