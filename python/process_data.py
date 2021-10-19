@@ -248,15 +248,15 @@ def add_noise_all(x_train,x_test,p_train,p_test, sub, sub_type, dt=0, train_grp=
             x_test, p_test = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
             x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
             
-        x_train_noise, x_train_clean, y_train_clean = add_noise(x_train, p_train, sub, sub_type, n_type, scale)
-        x_test_noise, x_test_clean, y_test_clean = add_noise(x_test, p_test, sub, sub_type, n_type, scale)
+        x_train_noise, x_train_clean, y_train_clean = add_noise(x_train, p_train, sub, n_type, scale)
+        x_test_noise, x_test_clean, y_test_clean = add_noise(x_test, p_test, sub, n_type, scale)
 
         with open(noisefile + '.p','wb') as f:
             pickle.dump([x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean],f)
     
     return x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean
 
-def add_noise(raw, params, sub, sub_type, n_type='flat', scale=5):
+def add_noise(raw, params, sub, n_type='flat', scale=5):
     # Index subject and training group
     max_ch = raw.shape[1] + 1
     num_ch = int(n_type[-1]) + 1
