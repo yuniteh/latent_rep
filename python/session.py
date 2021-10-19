@@ -19,6 +19,7 @@ from datetime import date
 import time
 from numpy.linalg import eig, inv
 from types import SimpleNamespace 
+import keras.backend as K
 
 class Session():
     def __init__(self,**settings):
@@ -109,11 +110,11 @@ class Session():
                 if self.load:
                     self.load = True
                     with open(filename + '.p', 'rb') as f:
-                        scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, w_svae, c_svae, \
-                            w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)   
+                        scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
+                            ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)   
 
                     with open(filename + '_hist.p', 'rb') as f:
-                        svae_hist, sae_hist, cnn_hist, vcnn_hist = pickle.load(f)
+                        svae_hist, sae_hist, cnn_hist, vcnn_hist, ecnn_hist = pickle.load(f)
 
                     try:
                         with open(filename + '_aug.p', 'rb') as f:
@@ -123,7 +124,7 @@ class Session():
 
                     try:
                         with open(filename + '_red.p', 'rb') as f:
-                            v_svae, v_sae, v_cnn, v_vcnn, v, v_noise = pickle.load(f)
+                            v_svae, v_sae, v_cnn, v_vcnn, v_ecnn, v, v_noise = pickle.load(f)
                     except:
                         print('no transformation matrix file')
                 else:
@@ -149,8 +150,8 @@ class Session():
                             x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
                             x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
                 
-                        x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, self.sub_type, self.n_train, self.train_scale)
-                        x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, self.sub_type, self.n_train, self.train_scale)
+                        x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, self.n_train, self.train_scale)
+                        x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, self.n_train, self.train_scale)
                         # if not adding noise, copy clean training data
                         if not self.noise:
                             x_train_noise = cp.deepcopy(x_train_clean)
@@ -193,25 +194,41 @@ class Session():
                     x_valid_noise_ext = np.concatenate((x_valid_noise_vae,x_valid_noise_vae[:,:2,...]),axis=1)
 
                     # Build models
-                    svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    K.clear_session()
+                    svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    ecnn, ecnn_enc, ecnn_clf = dl.build_cnn_ext(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     
                 # Train SVAE
                 if mod == 'all' or any("svae" in s for s in mod):
                     # get number of batches
                     n_batches = len(x_train_noise_vae) // self.batch_size
                     # initialize history array
-                    svae_hist = np.zeros((self.epochs,14))
+                    temp_epochs = 50
+                    svae_hist = np.zeros((temp_epochs,14))
                     # loop through epochs
-                    for ep in range(self.epochs):
+                    for ep in range(temp_epochs):
                         # set loss weight vector, not finalized
-                        if ep < self.epochs/2: 
-                            weight = np.array([[0,2**((ep-(self.epochs/2))/2)] for _ in range(self.batch_size)])
+                        # if ep < self.epochs/2: 
+                        #     weight = np.array([[0,2**((ep-(self.epochs/2))/2)] for _ in range(self.batch_size)])
+                        # else:
+                        #     weight = np.array([[1,.5] for _ in range(self.batch_size)])
+                        
+                        if ep < 15: #temp_epochs//3: 
+                            # weight = np.array([[0,(2**(ep-(temp_epochs//3)))/10] for _ in range(self.batch_size)])
+                            weight = np.array([[0,(2**(ep-(20)))/100] for _ in range(self.batch_size)])
+                        # elif ep < 40:
+                        #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
+                        # elif ep < 60:
+                        #     weight = np.array([[0,(2**(ep-(60)))/100] for _ in range(self.batch_size)])
+                        # elif ep < 80:
+                        #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
+                        # elif ep < 100:
+                        #     weight = np.array([[0,(2**(ep-(100)))/100] for _ in range(self.batch_size)])
                         else:
-                            weight = np.array([[1,.5] for _ in range(self.batch_size)])
+                            weight = np.array([[1,.01] for _ in range(self.batch_size)])
                         
                         # get batches for inputs
                         x_train_noise_ep = dl.get_batches(x_train_noise_vae, self.batch_size)
@@ -224,7 +241,7 @@ class Session():
                             y_train_bat = next(y_train_ep)
 
                             # train to reconstruct clean data
-                            temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_clean_bat,y_train_bat,x_train_clean_bat[:,0,0]])
+                            temp_out = svae.train_on_batch([x_train_noise_bat,y_train_bat,weight],[x_train_noise_bat,y_train_bat,x_train_clean_bat[:,0,0]])
                             ## train to reconstruct noisy data
                             # temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_noise_bat,y_train_bat,x_train_clean_bat[:,0,0]])
                         
@@ -243,7 +260,7 @@ class Session():
                         svae_hist[ep,:7] = temp_out
 
                         ## validation testing to reconstruct clean features
-                        svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_clean_vae,y_valid_clean,x_valid_clean_vae[:,0,0]])
+                        svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,y_valid_clean,test_weight],[x_valid_noise_vae,y_valid_clean,x_valid_clean_vae[:,0,0]])
 
                         # validation testing to reconstruct noisy features
                         # svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_noise_vae,y_valid_clean,x_valid_clean_vae[:,0,0]])
@@ -251,7 +268,7 @@ class Session():
                         # print training losses as we train
                         if ep == 0:
                             print(svae.metrics_names)
-                        print(svae_hist[ep,:7])
+                        print(svae_hist[ep,7:])
 
                     # get weights
                     svae_w = svae.get_weights()
@@ -261,11 +278,75 @@ class Session():
 
                 # Fit NNs and get weights
                 if mod == 'all' or any("var_c" in s for s in mod):
-                    vcnn_hist = vcnn.fit(x_train_noise_vae, y_train_clean,epochs=30,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=self.batch_size)                
+                    # vcnn_hist = vcnn.fit(x_train_noise_vae, y_train_clean,epochs=30,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=self.batch_size)                
+                    # vcnn_w = vcnn.get_weights()
+                    # vcnn_enc_w = vcnn_enc.get_weights()
+                    # vcnn_clf_w = vcnn_clf.get_weights()
+                    # vcnn_hist = vcnn_hist.history
+                    temp_epochs = 50
+
+                    # get number of batches
+                    n_batches = len(x_train_noise_vae) // self.batch_size
+                    # initialize history array
+                    vcnn_hist = np.zeros((temp_epochs,4))
+                    # loop through epochs
+                    for ep in range(temp_epochs):
+                        # set loss weight vector, not finalized
+                        if ep < 15: #temp_epochs//3: 
+                            # weight = np.array([[0,(2**(ep-(temp_epochs//3)))/10] for _ in range(self.batch_size)])
+                            weight = np.array([[0,(2**(ep-(15)))/100] for _ in range(self.batch_size)])
+                        # elif ep < 40:
+                        #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
+                        # elif ep < 60:
+                        #     weight = np.array([[0,(2**(ep-(60)))/100] for _ in range(self.batch_size)])
+                        # elif ep < 80:
+                        #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
+                        # elif ep < 100:
+                        #     weight = np.array([[0,(2**(ep-(100)))/100] for _ in range(self.batch_size)])
+                        else:
+                            weight = np.array([[1,.01] for _ in range(self.batch_size)])
+                        
+                        # print(weight[0,1])
+                        
+                        # get batches for inputs
+                        x_train_noise_ep = dl.get_batches(x_train_noise_vae, self.batch_size)
+                        x_train_clean_ep = dl.get_batches(x_train_clean_vae, self.batch_size)
+                        y_train_ep = dl.get_batches(y_train_clean, self.batch_size)
+                        # loop through batches
+                        for ii in range(n_batches):
+                            x_train_noise_bat = next(x_train_noise_ep)
+                            x_train_clean_bat = next(x_train_clean_ep)
+                            y_train_bat = next(y_train_ep)
+
+                            # train
+                            temp_out = vcnn.train_on_batch([x_train_noise_bat,weight],y_train_bat)
+                        
+                        ## currently unused - divide previous losses to create subsequent loss weights
+                        # if temp_out[1]/temp_out[2] > 1:
+                        #     rat = temp_out[1]/temp_out[2]
+                        # else:
+                        #     rat = 1
+                        # weight = np.array([[rat, (temp_out[2])/temp_out[3]] for _ in range(self.batch_size)])
+                        # weight = np.array([1 for _ in range(len(x_valid_noise_vae))])
+
+                        # dummy loss weight for testing
+                        test_weight = np.array([[1,1] for _ in range(len(x_valid_noise_vae))])
+
+                        # save training metrics in history array
+                        vcnn_hist[ep,:2] = temp_out
+
+                        ## validation testing
+                        vcnn_hist[ep,2:] = vcnn.test_on_batch([x_valid_noise_vae,test_weight],y_valid_clean)
+
+                        # print training losses as we train
+                        if ep == 0:
+                            print(vcnn.metrics_names)
+                        print(vcnn_hist[ep,:])
+
+                    # get weights
                     vcnn_w = vcnn.get_weights()
                     vcnn_enc_w = vcnn_enc.get_weights()
                     vcnn_clf_w = vcnn_clf.get_weights()
-                    vcnn_hist = vcnn_hist.history
 
                 if mod == 'all' or any("sae" in s for s in mod):
                     sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=self.batch_size)
@@ -282,27 +363,103 @@ class Session():
                     cnn_hist = cnn_hist.history
                 
                 if mod == 'all' or any("ext_c" in s for s in mod):
-                    ecnn_hist = ecnn.fit(x_train_noise_ext, y_train_clean,epochs=30,validation_data = [x_valid_noise_ext, y_valid_clean],batch_size=self.batch_size)
+                    # get number of batches
+                    n_batches = len(x_train_noise_vae) // self.batch_size
+                    # initialize history array
+                    temp_epochs = 50
+                    ecnn_hist = np.zeros((temp_epochs,10))
+                    # loop through epochs
+                    for ep in range(temp_epochs):
+                        # set loss weight vector, not finalized
+                        # if ep < self.epochs/2: 
+                        #     weight = np.array([[0,2**((ep-(self.epochs/2))/2)] for _ in range(self.batch_size)])
+                        # else:
+                        #     weight = np.array([[1,.5] for _ in range(self.batch_size)])
+                        
+                        if ep < 15: #temp_epochs//3: 
+                            # weight = np.array([[0,(2**(ep-(temp_epochs//3)))/10] for _ in range(self.batch_size)])
+                            weight = np.array([[0,(2**(ep-(20)))/100] for _ in range(self.batch_size)])
+                        # elif ep < 40:
+                        #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
+                        # elif ep < 60:
+                        #     weight = np.array([[0,(2**(ep-(60)))/100] for _ in range(self.batch_size)])
+                        # elif ep < 80:
+                        #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
+                        # elif ep < 100:
+                        #     weight = np.array([[0,(2**(ep-(100)))/100] for _ in range(self.batch_size)])
+                        else:
+                            weight = np.array([[1,.01] for _ in range(self.batch_size)])
+                        
+                        # get batches for inputs
+                        x_train_noise_ep = dl.get_batches(x_train_noise_vae, self.batch_size)
+                        x_train_clean_ep = dl.get_batches(x_train_clean_vae, self.batch_size)
+                        y_train_ep = dl.get_batches(y_train_clean, self.batch_size)
+                        # loop through batches
+                        for ii in range(n_batches):
+                            x_train_noise_bat = next(x_train_noise_ep)
+                            x_train_clean_bat = next(x_train_clean_ep)
+                            y_train_bat = next(y_train_ep)
+
+                            # train to reconstruct clean data
+                            temp_out = ecnn.train_on_batch([x_train_noise_bat,y_train_bat,weight],[x_train_clean_bat,y_train_bat])
+                            ## train to reconstruct noisy data
+                            # temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_noise_bat,y_train_bat,x_train_clean_bat[:,0,0]])
+                        
+                        ## currently unused - divide previous losses to create subsequent loss weights
+                        # if temp_out[1]/temp_out[2] > 1:
+                        #     rat = temp_out[1]/temp_out[2]
+                        # else:
+                        #     rat = 1
+                        # weight = np.array([[rat, (temp_out[2])/temp_out[3]] for _ in range(self.batch_size)])
+                        # weight = np.array([1 for _ in range(len(x_valid_noise_vae))])
+
+                        # dummy loss weight for testing
+                        test_weight = np.array([[1,1] for _ in range(len(x_valid_noise_vae))])
+
+                        # save training metrics in history array
+                        ecnn_hist[ep,:5] = temp_out
+
+                        ## validation testing to reconstruct clean features
+                        ecnn_hist[ep,5:] = ecnn.test_on_batch([x_valid_noise_vae,y_valid_clean,test_weight],[x_valid_noise_vae,y_valid_clean])
+
+                        # validation testing to reconstruct noisy features
+                        # svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_noise_vae,y_valid_clean,x_valid_clean_vae[:,0,0]])
+
+                        # print training losses as we train
+                        if ep == 0:
+                            print(ecnn.metrics_names)
+                        print(ecnn_hist[ep,5:])
+
+                    # get weights
                     ecnn_w = ecnn.get_weights()
                     ecnn_enc_w = ecnn_enc.get_weights()
+                    ecnn_dec_w = ecnn_dec.get_weights()
                     ecnn_clf_w = ecnn_clf.get_weights()
-                    ecnn_hist = ecnn_hist.history
+
+                    # ecnn_hist = ecnn.fit(x_train_noise_ext, y_train_clean,epochs=30,validation_data = [x_valid_noise_ext, y_valid_clean],batch_size=self.batch_size)
+                    # ecnn_w = ecnn.get_weights()
+                    # ecnn_enc_w = ecnn_enc.get_weights()
+                    # ecnn_clf_w = ecnn_clf.get_weights()
+                    # ecnn_hist = ecnn_hist.history
 
                 # Align training data for ENC-LDA
                 if mod == 'all' or any("aligned" in s for s in mod):
                     # set weights from trained models
-                    svae_enc.set_weights(svae_enc_w)
+                    # svae_enc.set_weights(svae_enc_w)
                     sae_enc.set_weights(sae_enc_w)
                     cnn_enc.set_weights(cnn_enc_w)
                     vcnn_enc.set_weights(vcnn_enc_w)
                     ecnn_enc.set_weights(ecnn_enc_w)
+                    svae_clf.set_weights(svae_clf_w)
 
                     # align input data
-                    _, _, _, x_train_svae = svae_enc.predict(x_train_noise_vae)
+                    # _, _, x_train_svae = svae_enc.predict(x_train_noise_vae)
+                    _, x_train_svae = svae_clf.predict(x_train_noise_vae)
                     x_train_sae = sae_enc.predict(x_train_noise_sae)
                     x_train_cnn = cnn_enc.predict(x_train_noise_vae)
                     _, _, x_train_vcnn = vcnn_enc.predict(x_train_noise_vae)
-                    x_train_ecnn = ecnn_enc.predict(x_train_noise_ext)
+                    # x_train_ecnn = ecnn_enc.predict(x_train_noise_ext)
+                    _,_,_, x_train_ecnn = ecnn_enc.predict(x_train_noise_vae)
 
                     # prepare class labels
                     y_train_aligned = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
@@ -412,23 +569,23 @@ class Session():
                             pickle.dump([v_svae, v_sae, v_cnn, v_vcnn, v_ecnn, v, v_noise],f)
 
                 # allocate last accuracies
-                last_acc[cv-1,:] = np.array([svae_hist[-1,1],svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1], ecnn_hist['accuracy'][-1]])
-                last_val[cv-1,:] = np.array([svae_hist[-1,8],svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1], ecnn_hist['val_accuracy'][-1]])
+        #         last_acc[cv-1,:] = np.array([svae_hist[-1,1],svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1], ecnn_hist['accuracy'][-1]])
+        #         last_val[cv-1,:] = np.array([svae_hist[-1,8],svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1], ecnn_hist['val_accuracy'][-1]])
 
-        out = {'last_acc':last_acc,'last_val':last_val}
+        # out = {'last_acc':last_acc,'last_val':last_val}
         
-        if mod != 'none':
-            in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_clean_vae,'y_in':y_train_clean,'scaler':scaler}        
-            out.update(in_dict)
+        # if mod != 'none':
+        #     in_dict = {'x_noisy':x_train_noise_vae,'x_clean':x_train_clean_vae,'y_in':y_train_clean,'scaler':scaler}        
+        #     out.update(in_dict)
             
-            if mod == 'all' or any("aligned" in s for s in mod):
-                align_dict = {'x_svae_al':x_train_svae, 'x_sae_al':x_train_sae, 'x_cnn_al':x_train_cnn, 'x_vcnn_al':x_train_vcnn, 'x_ecnn_al':x_train_ecnn}
-                out.update(align_dict)
+        #     if mod == 'all' or any("aligned" in s for s in mod):
+        #         align_dict = {'x_svae_al':x_train_svae, 'x_sae_al':x_train_sae, 'x_cnn_al':x_train_cnn, 'x_vcnn_al':x_train_vcnn, 'x_ecnn_al':x_train_ecnn}
+        #         out.update(align_dict)
 
-            if mod =='all' or any("gen" in s for s in mod) or any("recon" in s for s in mod):
-                out_dict = {'gen_clf':gen_clf,'x_out':dec_cv} 
-                out.update(out_dict)
-        # out = 1
+        #     if mod =='all' or any("gen" in s for s in mod) or any("recon" in s for s in mod):
+        #         out_dict = {'gen_clf':gen_clf,'x_out':dec_cv} 
+        #         out.update(out_dict)
+        out = 1
 
         return out
 
@@ -467,7 +624,6 @@ class Session():
         for sub in range(1,np.max(params[:,0])+1):            
             # index based on training group and subject
             ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
-            print(np.sum(ind))
 
             # Check if training data exists
             if np.sum(ind):
@@ -498,11 +654,16 @@ class Session():
                     y_shape = np.max(p_train[:,4])
 
                     # Build models and set weights
-                    svae, svae_enc, svae_dec, svae_clf = dl.build_svae_manual(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    K.clear_session()
+                    svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    ecnn, ecnn_enc, ecnn_clf = dl.build_cnn_ext(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    
+                    ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    if sub != 0:
+                        vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn_manual(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    else:
+                        vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
 
                     svae.set_weights(svae_w)
                     svae_enc.set_weights(svae_enc_w)
@@ -532,43 +693,63 @@ class Session():
                         test_grp = int(self.n_test[-1])
                         _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=test_grp)
 
+                    clean_size = int(np.size(x_test,axis=0))
                     # loop through test levels
                     for test_scale in range(1,test_tot + 1):
-                        skip = False
-                        # load test data for diff limb positions
-                        if noise_type == 'pos':
-                            pos_ind = p_test[:,-1] == test_scale
-                            if pos_ind.any():
-                                x_test_noise = x_test[pos_ind,...]
-                                x_test_clean = x_test[pos_ind,...]
-                                y_test_clean = to_categorical(p_test[pos_ind,4]-1)
-                                clean_size = 0
-                                skip = False
-                            elif x_test.size > 0:
-                                x_test_noise = x_test
-                                x_test_clean = x_test
-                                y_test_clean = to_categorical(p_test[:,4]-1)
-                                clean_size = 0
-                                skip = False
-                            else: 
-                                skip = True                    
-                        else:
-                            # Add noise and index testing data
-                            x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale)
-                            clean_size = int(np.size(x_test,axis=0))
-                            # copy clean data if not using noise
-                            if not self.noise:
-                                x_test_noise = cp.deepcopy(x_test_clean)
+                        noisefolder = 'testdata_' + self.dt
+                        noisefile = noisefolder + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_test) + '_' + str(test_scale)
+                        if not os.path.isdir(noisefolder):
+                            os.mkdir(noisefolder) 
+                        if self.dt == 'cv':
+                            noisefile += '_cv_' + str(cv)
+                        
+                        if os.path.isfile(noisefile + '.p'):
+                            print('loading data')
+                            with open(noisefile + '.p','rb') as f:
+                                x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean = pickle.load(f) 
+                            test_load = True
+                            skip = False
+                        else:                    
+                            skip = False
+                            test_load = False
+                            # load test data for diff limb positions
+                            if noise_type == 'pos':
+                                pos_ind = p_test[:,-1] == test_scale
+                                if pos_ind.any():
+                                    x_test_noise = x_test[pos_ind,...]
+                                    x_test_clean = x_test[pos_ind,...]
+                                    y_test_clean = to_categorical(p_test[pos_ind,4]-1)
+                                    clean_size = 0
+                                elif x_test.size > 0:
+                                    x_test_noise = x_test
+                                    x_test_clean = x_test
+                                    y_test_clean = to_categorical(p_test[:,4]-1)
+                                    clean_size = 0
+                                else: 
+                                    skip = True                    
+                            else:
+                                # Add noise and index testing data
+                                x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale)
+                                # copy clean data if not using noise
+                                if not self.noise:
+                                    x_test_noise = cp.deepcopy(x_test_clean)
 
                         if not skip:
-                            # extract and scale features
-                            if self.feat_type == 'feat':
-                                x_test_vae, _ = prd.extract_scale(x_test_noise,scaler)
-                                x_test_clean_vae, _ = prd.extract_scale(x_test_clean,scaler)
-                            # not finalized, scale raw data
-                            elif self.feat_type == 'raw':
-                                x_test_vae = cp.deepcopy(x_test_noise[:,:,::2,:])/5
-                                x_test_clean_vae = cp.deepcopy(x_test_clean[:,:,::2,:])/5
+                            if not test_load:
+                                # extract and scale features
+                                if self.feat_type == 'feat':
+                                    x_test_vae, _ = prd.extract_scale(x_test_noise,scaler)
+                                    x_test_clean_vae, _ = prd.extract_scale(x_test_clean,scaler)
+                                # not finalized, scale raw data
+                                elif self.feat_type == 'raw':
+                                    x_test_vae = cp.deepcopy(x_test_noise[:,:,::2,:])/5
+                                    x_test_clean_vae = cp.deepcopy(x_test_clean[:,:,::2,:])/5
+                                
+                                x_test_lda = prd.extract_feats(x_test_noise)
+                                with open(noisefile + '.p','wb') as f:
+                                    pickle.dump([x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean],f) 
+                            if noise_type == 'pos':
+                                clean_size = 0
 
                             # Reshape for nonconvolutional SAE
                             x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
@@ -578,16 +759,19 @@ class Session():
                             x_test_ext = np.concatenate((x_test_vae,x_test_vae[:,:2,...]),axis=1)
 
                             # Align test data for ENC-LDA
-                            _,_, _, x_test_svae = svae_enc.predict(x_test_vae)
+                            # _,_, x_test_svae = svae_enc.predict(x_test_vae)
+                            _, x_test_svae = svae_clf.predict(x_test_vae)
                             x_test_sae = sae_enc.predict(x_test_dlsae)
                             x_test_cnn = cnn_enc.predict(x_test_vae)
-                            _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
-                            x_test_ecnn = ecnn_enc.predict(x_test_ext)
+                            _,_,_,x_test_ecnn = ecnn_enc.predict(x_test_vae)
+                            if sub != 0:
+                                _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
+                            else:
+                                _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
 
                             y_test_aligned = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
 
                             # Non NN methods
-                            x_test_lda = prd.extract_feats(x_test_noise)
                             y_test_lda = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
 
                             y_test_ch = y_test_lda[:y_test_lda.shape[0]//2,...]
@@ -598,7 +782,7 @@ class Session():
                             lda_mods = 2
                             qda_mods = 2
                             mods_all = [svae,sae,cnn,vcnn,ecnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w_ecnn,c_ecnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, self.n_test]]
-                            x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_ext','x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_ecnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
+                            x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_vae','x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_ecnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
                             y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
                             mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
                             
@@ -614,7 +798,8 @@ class Session():
                             acc_all[sub-1,cv-1,test_scale - 1,:], acc_noise[sub-1,cv-1,test_scale - 1,:], acc_clean[sub-1,cv-1,test_scale - 1,:] = np.nan, np.nan, np.nan
                 
                 # Save subject specific cv results
-                with open(filename + '_cvresults.p', 'wb') as f:
+                print('saving ' + filename + '_' + self.n_test + '_cvresults.p')
+                with open(filename + '_' + self.n_test + '_cvresults.p', 'wb') as f:
                     pickle.dump([acc_all[sub-1,...], acc_noise[sub-1,...], acc_clean[sub-1,...]],f)
         
         # save results for all subjects, need to figure out n_test = 0
@@ -659,12 +844,10 @@ class Session():
 
         return acc_all, acc_noise, acc_clean
     
-    def reduce_latent(self, raw, params, sub, cv=0):
+    def reduce_latent(self, raw, params, sub, cv=0, test_scale=1):
         # Load training and testing data
-        x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt)
-        
-        # Load cross-validation parameters
-        if cv > 0:
+        if self.dt == 'cv':
+            x_full, x_test, _, p_full, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt)        
             # get folder and file names
             foldername = self.create_foldername()
             filename = self.create_filename(foldername, cv, sub)
@@ -758,25 +941,65 @@ class Session():
             x_valid_noise_red = np.matmul(x_valid_noise_feats,v_noise)
 
             # compile results
-            out_dict = {'x_train_svae_red':x_train_svae_red,'x_train_sae_red':x_train_sae_red,'x_train_cnn_red':x_train_cnn_red,'x_train_vcnn_red':x_train_vcnn_red, 'x_train_lda_red':x_train_lda_red, 'x_train_noise_red':x_train_noise_red, 'x_valid_svae_red':x_valid_svae_red,'xvalid_sae_red':x_valid_sae_red,'x_valid_cnn_red':x_valid_cnn_red,'x_valid_vcnn_red':x_valid_vcnn_red,\
+            out_dict = {'x_train_svae_red':x_train_svae_red,'x_train_sae_red':x_train_sae_red,'x_train_cnn_red':x_train_cnn_red,'x_train_vcnn_red':x_train_vcnn_red, 'x_train_lda_red':x_train_lda_red, 'x_train_noise_red':x_train_noise_red, 'x_valid_svae_red':x_valid_svae_red,'x_valid_sae_red':x_valid_sae_red,'x_valid_cnn_red':x_valid_cnn_red,'x_valid_vcnn_red':x_valid_vcnn_red,\
                 'x_valid_lda_red':x_valid_lda_red,'x_valid_noise_red':x_valid_noise_red,'y_train_lda':y_train_lda,'y_train_noise':y_train_noise,'y_valid_lda':y_valid_lda,'y_valid_noise':y_valid_noise}
-        else: # unfinished
-            x_train, p_train = x_full, p_full
+        else:
+            x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
+            # get folder and file names
+            foldername = self.create_foldername()
+            filename = self.create_filename(foldername, cv, sub)
 
-            y_train = p_train[:,4]
-            x_train_feat = prd.extract_feats(x_train)
-            y_train = y_train[...,np.newaxis] - 1
+            # Load saved data
+            with open(filename + '.p', 'rb') as f:
+                scaler, _, svae_enc_w, _, svae_clf_w, _, sae_enc_w, _, _, cnn_enc_w, _, _, vcnn_enc_w, _, \
+                    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = pickle.load(f)
+            with open(filename + '_red.p', 'rb') as f:
+                v_svae, v_sae, v_cnn, v_vcnn, _, v, v_noise = pickle.load(f)
 
-            y_test = p_test[:,4]
-            x_test_feat = prd.extract_feats(x_test)
-            y_test = y_test[...,np.newaxis] - 1
+            noisefolder = 'testdata_' + self.dt
 
-            w, c, _, _, v = train_lda(x_train_feat,y_train)
-        
-            x_train_red = np.matmul(x_train_feat,v)
-            x_test_red = np.matmul(x_test_feat,v)
+            noisefile = noisefolder + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_test) + '_' + str(test_scale)
+            if not os.path.isdir(noisefolder):
+                os.mkdir(noisefolder) 
+            if os.path.isfile(noisefile + '.p'):
+                print('loading data')
+                with open(noisefile + '.p','rb') as f:
+                    x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean = pickle.load(f) 
+            
+            x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
+            
+            K.clear_session()
+            _, svae_enc, _, svae_clf = dl.build_M2(self.latent_dim, y_test_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+            _, sae_enc, _ = dl.build_sae(self.latent_dim, y_test_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+            _, cnn_enc, _ = dl.build_cnn(self.latent_dim, y_test_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+            _, vcnn_enc, _ = dl.build_vcnn_manual(self.latent_dim, y_test_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
 
-            out_dict = 0
+            # set weights from trained models
+            svae_enc.set_weights(svae_enc_w)
+            sae_enc.set_weights(sae_enc_w)
+            cnn_enc.set_weights(cnn_enc_w)
+            vcnn_enc.set_weights(vcnn_enc_w)
+            svae_clf.set_weights(svae_clf_w)
+
+            _, x_test_svae = svae_clf.predict(x_test_vae)
+            x_test_sae = sae_enc.predict(x_test_dlsae)
+            x_test_cnn = cnn_enc.predict(x_test_vae)
+            _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
+
+            # reduce training data
+            x_test_svae_red = np.matmul(x_test_svae,v_svae)
+            x_test_sae_red = np.matmul(x_test_sae,v_sae)
+            x_test_cnn_red = np.matmul(x_test_cnn,v_cnn)
+            x_test_vcnn_red = np.matmul(x_test_vcnn,v_vcnn)
+
+            x_test_lda_red = np.matmul(x_test_lda,v)
+            x_test_noise_red = np.matmul(x_test_lda,v_noise)
+
+            clean_size = int(np.size(x_test,axis=0))
+            y_test_clean = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
+
+            # compile results
+            out_dict = {'x_test_svae_red':x_test_svae_red,'x_test_sae_red':x_test_sae_red,'x_test_cnn_red':x_test_cnn_red,'x_test_vcnn_red':x_test_vcnn_red, 'x_test_lda_red':x_test_lda_red, 'x_test_noise_red':x_test_noise_red, 'y_test':y_test_clean,'clean_size':clean_size}
 
         return out_dict
 

@@ -12,7 +12,7 @@ def plot_latent_dim(params,sess):
     # Loop through subs
     for sub_i in range(1,2):#np.max(params[:,0])+1):
         # Loop through dimensions
-        for lat in range(1,6):
+        for lat in range(1,11):
             sess.latent_dim = lat
             # Loop through cross validation sets
             for cv in range(1,5):
@@ -27,14 +27,14 @@ def plot_latent_dim(params,sess):
 
     fig = plt.figure()
     ax = fig.add_subplot()
-    for i in range(1,5):
+    for i in range(1,6):
         ax.plot(mean_val[:,i],'-o')
     ax.set_ylabel('Validation Accuracy')
     fig.text(0.5, 0.04, 'Latent Dimension', ha='center')
     ax.set_ylim(0,1)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['1','2','3','4','5'])
-    ax.legend(['VCAE','NN','CNN','VCNN'])
+    ax.legend(['VCAE','NN','CNN','VCNN','ECNN'])
 
     return all_acc, all_val
 
@@ -44,12 +44,13 @@ def plot_latent_rep(x_red, y):
     ax = fig.add_subplot(projection='3d')
     plt.tight_layout
     col = ['k','b','r','g','c','y','m']
+    y = y.astype(int)
     # Loop through classes
     for cl in np.unique(y):
         ind = np.squeeze(y) == cl
         ax.plot3D(x_red[ind,0], x_red[ind,1], x_red[ind,2],'.', c=col[cl])
     
-    return 0
+    return 
 
 def plot_noise_ch(params, sess):
     if 'pos' in sess.ntest:
@@ -103,4 +104,51 @@ def plot_noise_ch(params, sess):
 
     fig.set_tight_layout(True)
 
-    return 0
+    return 
+
+def plot_summary(acc_clean,acc_gauss,acc_60hz, acc_flat):
+    lda_ind = 10
+    cor_ind = 11
+    sae_ind = 1
+    cnn_ind = 2
+    vcnn_ind = 3
+    all_ind = [11, 1, 2, 3]
+    labels = ['LDA-corrupt', 'SAE', 'CNN', 'VCNN']
+
+    lda_gauss = np.tile(acc_gauss[...,lda_ind,np.newaxis],(1,1,4))
+    lda_60hz = np.tile(acc_60hz[...,lda_ind,np.newaxis],(1,1,4))
+    lda_flat = np.tile(acc_flat[...,lda_ind,np.newaxis],(1,1,4))
+    lda_clean = np.tile(acc_clean[...,lda_ind,np.newaxis],(1,1,4))
+
+    all_gauss_diff = acc_gauss[...,all_ind] - lda_gauss
+    all_60hz_diff = acc_60hz[...,all_ind] - lda_60hz
+    all_flat_diff = acc_flat[...,all_ind] - lda_flat
+    all_clean_diff = acc_clean[...,all_ind] - lda_clean
+
+    # averaged over noise levels, then noise channels, then subject
+    ave_diff_gauss = np.nanmean(np.nanmean(all_gauss_diff,axis=1),axis=0)
+    ave_diff_60hz = np.nanmean(np.nanmean(all_60hz_diff,axis=1),axis=0)
+    ave_diff_flat = np.nanmean(np.nanmean(all_flat_diff,axis=1),axis=0)
+    ave_diff_clean = np.nanmean(np.nanmean(all_clean_diff,axis=1),axis=0)
+
+    # separated by channels
+    diff_gauss = np.nanmean(all_gauss_diff,axis=0)
+    diff_clean = np.nanmean(all_clean_diff,axis=0)
+
+    fig, ax = plt.subplots()
+
+    x = np.arange(4)  # the label locations
+    width = 0.175 
+    rects1 = ax.bar(x - 3*width/2, 100*ave_diff_clean, width, label='clean')
+    rects2 = ax.bar(x - width/2, 100*ave_diff_gauss, width, label='gauss')
+    rects3 = ax.bar(x + width/2, 100*ave_diff_flat, width, label='flat')
+    rects4 = ax.bar(x + 3*width/2, 100*ave_diff_60hz, width, label='60hz')
+
+    ax.set_ylabel('Difference from Baseline LDA (%)')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.axhline(linewidth=.5,color='k')
+    ax.set_ylim([-20,60])
+    ax.legend()
+
+    return 
