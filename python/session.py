@@ -1,5 +1,6 @@
 from numpy.core.defchararray import lower
 import tensorflow as tf
+from loop import create_foldername
 import tensorflow.keras
 import numpy as np
 import os
@@ -43,29 +44,39 @@ class Session():
         self.gens = settings.get('gens',50)
         self.train_load = settings.get('train_load',True)
 
-    def create_foldername(self):
+    def create_foldername(self,ftype=''):
         # Set folder
-        if self.dt == 0:
-            today = date.today()
-            self.dt = today.strftime("%m%d")
-        foldername = 'models' + '_' + str(self.train_grp) + '_' + self.dt
-        if self.mod_dt != 0:
-            foldername += '_' + self.mod_dt
+        if ftype == 'trainnoise':
+            foldername = 'noisedata_' + self.dt
+        elif ftype == 'testnoise':
+            foldername = 'testdata_' + self.dt
+        else:
+            if self.dt == 0:
+                today = date.today()
+                self.dt = today.strftime("%m%d")
+            foldername = 'models' + '_' + str(self.train_grp) + '_' + self.dt
+            if self.mod_dt != 0:
+                foldername += '_' + self.mod_dt
         if not os.path.exists(foldername):
             os.makedirs(foldername)
 
         return foldername
 
-    def create_filename(self,foldername,cv=0,sub=0,results=False):
-        if results:
+    def create_filename(self,foldername,cv=0,sub=0,ftype=''):
+        # full results file
+        if ftype == 'results':
             filename = foldername + '/' + self.sub_type + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_' + self.n_train + '_' + str(self.train_scale) + '_' + self.n_test
         else:
-            filename = foldername + '/' + self.sub_type + str(sub) + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
+            # train noise file
+            if ftype == 'trainnoise':
+                noisefile = foldername + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_train) + '_' + str(self.train_scale)
+            # model file
+            else:
+                filename = foldername + '/' + self.sub_type + str(sub) + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
             if self.dt == 'cv':
                 filename += '_cv_' + str(cv)
-
-        if self.sparsity:
-            filename += '_sparse'
+            if self.sparsity and ftype == '':
+                filename += '_sparse'
         
         return filename
 
@@ -133,12 +144,8 @@ class Session():
                     
                 # prepare training data if training models    
                 if mod != 'none':
-                    noisefolder = 'noisedata_' + self.dt
-                    noisefile = noisefolder + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_train) + '_' + str(self.train_scale)
-                    if not os.path.isdir(noisefolder):
-                        os.mkdir(noisefolder) 
-                    if self.dt == 'cv':
-                        noisefile += '_cv_' + str(cv)
+                    noisefolder = self.create_foldername(ftype='trainnoise')
+                    noisefile = self.create_filename(noisefolder, cv, sub, ftype='trainnoise')
                     
                     if os.path.isfile(noisefile + '.p') and self.train_load:
                         print('loading data')
