@@ -242,16 +242,6 @@ class Session():
 
                             # train to reconstruct clean data
                             temp_out = svae.train_on_batch([x_train_noise_bat,y_train_bat,weight],[x_train_noise_bat,y_train_bat,x_train_clean_bat[:,0,0]])
-                            ## train to reconstruct noisy data
-                            # temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_noise_bat,y_train_bat,x_train_clean_bat[:,0,0]])
-                        
-                        ## currently unused - divide previous losses to create subsequent loss weights
-                        # if temp_out[1]/temp_out[2] > 1:
-                        #     rat = temp_out[1]/temp_out[2]
-                        # else:
-                        #     rat = 1
-                        # weight = np.array([[rat, (temp_out[2])/temp_out[3]] for _ in range(self.batch_size)])
-                        # weight = np.array([1 for _ in range(len(x_valid_noise_vae))])
 
                         # dummy loss weight for testing
                         test_weight = np.array([[1,1] for _ in range(len(x_valid_noise_vae))])
@@ -261,9 +251,6 @@ class Session():
 
                         ## validation testing to reconstruct clean features
                         svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,y_valid_clean,test_weight],[x_valid_noise_vae,y_valid_clean,x_valid_clean_vae[:,0,0]])
-
-                        # validation testing to reconstruct noisy features
-                        # svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_noise_vae,y_valid_clean,x_valid_clean_vae[:,0,0]])
 
                         # print training losses as we train
                         if ep == 0:
@@ -320,14 +307,6 @@ class Session():
 
                             # train
                             temp_out = vcnn.train_on_batch([x_train_noise_bat,weight],y_train_bat)
-                        
-                        ## currently unused - divide previous losses to create subsequent loss weights
-                        # if temp_out[1]/temp_out[2] > 1:
-                        #     rat = temp_out[1]/temp_out[2]
-                        # else:
-                        #     rat = 1
-                        # weight = np.array([[rat, (temp_out[2])/temp_out[3]] for _ in range(self.batch_size)])
-                        # weight = np.array([1 for _ in range(len(x_valid_noise_vae))])
 
                         # dummy loss weight for testing
                         test_weight = np.array([[1,1] for _ in range(len(x_valid_noise_vae))])
@@ -402,16 +381,6 @@ class Session():
 
                             # train to reconstruct clean data
                             temp_out = ecnn.train_on_batch([x_train_noise_bat,y_train_bat,weight],[x_train_clean_bat,y_train_bat])
-                            ## train to reconstruct noisy data
-                            # temp_out = svae.train_on_batch([x_train_noise_bat,weight],[x_train_noise_bat,y_train_bat,x_train_clean_bat[:,0,0]])
-                        
-                        ## currently unused - divide previous losses to create subsequent loss weights
-                        # if temp_out[1]/temp_out[2] > 1:
-                        #     rat = temp_out[1]/temp_out[2]
-                        # else:
-                        #     rat = 1
-                        # weight = np.array([[rat, (temp_out[2])/temp_out[3]] for _ in range(self.batch_size)])
-                        # weight = np.array([1 for _ in range(len(x_valid_noise_vae))])
 
                         # dummy loss weight for testing
                         test_weight = np.array([[1,1] for _ in range(len(x_valid_noise_vae))])
@@ -421,9 +390,6 @@ class Session():
 
                         ## validation testing to reconstruct clean features
                         ecnn_hist[ep,5:] = ecnn.test_on_batch([x_valid_noise_vae,y_valid_clean,test_weight],[x_valid_noise_vae,y_valid_clean])
-
-                        # validation testing to reconstruct noisy features
-                        # svae_hist[ep,7:] = svae.test_on_batch([x_valid_noise_vae,test_weight],[x_valid_noise_vae,y_valid_clean,x_valid_clean_vae[:,0,0]])
 
                         # print training losses as we train
                         if ep == 0:
@@ -458,7 +424,6 @@ class Session():
                     x_train_sae = sae_enc.predict(x_train_noise_sae)
                     x_train_cnn = cnn_enc.predict(x_train_noise_vae)
                     _, _, x_train_vcnn = vcnn_enc.predict(x_train_noise_vae)
-                    # x_train_ecnn = ecnn_enc.predict(x_train_noise_ext)
                     _,_,_, x_train_ecnn = ecnn_enc.predict(x_train_noise_vae)
 
                     # prepare class labels
