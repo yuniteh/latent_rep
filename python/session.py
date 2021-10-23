@@ -638,11 +638,14 @@ class Session():
                     ecnn_clf.set_weights(ecnn_clf_w)
                     
                     # set test on validation data for cv mode
+                    skip = False
                     if self.dt == 'cv':
                         x_test, p_test = x_valid, p_valid
                     if noise_type[:3] == 'pos':
                         test_grp = int(self.n_test[-1])
                         _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=test_grp)
+                        if x_test.size == 0:
+                            skip = True
 
                     clean_size = int(np.size(x_test,axis=0))
                     # loop through test levels
@@ -650,36 +653,35 @@ class Session():
                         noisefolder = self.create_foldername(ftype='testnoise')
                         noisefile = self.create_filename(foldername,cv, sub, ftype='testnoise', test_scale=test_scale)
                         
-                        if os.path.isfile(noisefile + '.p'):
-                            print('loading data')
-                            with open(noisefile + '.p','rb') as f:
-                                x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean = pickle.load(f) 
-                            test_load = True
-                            skip = False
-                        else:                    
-                            skip = False
-                            test_load = False
-                            # load test data for diff limb positions
-                            if noise_type == 'pos':
-                                pos_ind = p_test[:,-1] == test_scale
-                                if pos_ind.any():
-                                    x_test_noise = x_test[pos_ind,...]
-                                    x_test_clean = x_test[pos_ind,...]
-                                    y_test_clean = to_categorical(p_test[pos_ind,4]-1)
-                                    clean_size = 0
-                                elif x_test.size > 0:
-                                    x_test_noise = x_test
-                                    x_test_clean = x_test
-                                    y_test_clean = to_categorical(p_test[:,4]-1)
-                                    clean_size = 0
-                                else: 
-                                    skip = True                    
-                            else:
-                                # Add noise and index testing data
-                                x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale)
-                                # copy clean data if not using noise
-                                if not self.noise:
-                                    x_test_noise = cp.deepcopy(x_test_clean)
+                        if not skip:
+                            if os.path.isfile(noisefile + '.p'):
+                                print('loading data')
+                                with open(noisefile + '.p','rb') as f:
+                                    x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean = pickle.load(f) 
+                                test_load = True
+                            else:                    
+                                test_load = False
+                                # load test data for diff limb positions
+                                if noise_type == 'pos':
+                                    pos_ind = p_test[:,-1] == test_scale
+                                    if pos_ind.any():
+                                        x_test_noise = x_test[pos_ind,...]
+                                        x_test_clean = x_test[pos_ind,...]
+                                        y_test_clean = to_categorical(p_test[pos_ind,4]-1)
+                                        clean_size = 0
+                                    elif x_test.size > 0:
+                                        x_test_noise = x_test
+                                        x_test_clean = x_test
+                                        y_test_clean = to_categorical(p_test[:,4]-1)
+                                        clean_size = 0
+                                    else: 
+                                        skip = True                    
+                                else:
+                                    # Add noise and index testing data
+                                    x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale)
+                                    # copy clean data if not using noise
+                                    if not self.noise:
+                                        x_test_noise = cp.deepcopy(x_test_clean)
 
                         if not skip:
                             if not test_load:
