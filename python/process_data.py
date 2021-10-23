@@ -263,6 +263,10 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
     full_type = n_type[0:4]
     noise_type = n_type[4:-1]
 
+    if noise_type[:3] == 'pos':
+        num_ch = int(noise_type[-1]) + 1
+        noise_type = noise_type[3:-1]
+
     if noise_type == 'gaussflat':
         rep = 2
     else:

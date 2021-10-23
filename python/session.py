@@ -117,8 +117,6 @@ class Session():
                 filename = self.create_filename(foldername, cv, sub)
 
                 print('Running sub ' + str(sub) + ', model ' + str(self.train_grp) + ', latent dim ' + str(self.latent_dim) + ', cv ' + str(cv))
-                ## test 
-                # test edit 2
 
                 ## TRAIN ##
                 # Load saved data
@@ -552,13 +550,13 @@ class Session():
         # set testing noise type
         noise_type = self.n_test[4:-1]
 
-        # set number of tests for each noise type
-        if noise_type == 'gauss' or noise_type == '60hz':
-            test_tot = 5 # noise amplitude (1-5)
-        elif noise_type == 'pos':
+        # set number of tests for each noise types
+        if noise_type == 'pos':
             test_tot = 4 # number of positions
-        elif noise_type == 'flat':
+        elif noise_type[-4:] == 'flat':
             test_tot = 1
+        else:
+            test_tot = 5 # noise amplitude (1-5)
 
         # set number of cvs
         if self.dt == 'cv':
@@ -642,7 +640,7 @@ class Session():
                     # set test on validation data for cv mode
                     if self.dt == 'cv':
                         x_test, p_test = x_valid, p_valid
-                    if noise_type == 'pos':
+                    if noise_type[:3] == 'pos':
                         test_grp = int(self.n_test[-1])
                         _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=test_grp)
 
