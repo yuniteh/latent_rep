@@ -118,6 +118,7 @@ class Session():
 
                 print('Running sub ' + str(sub) + ', model ' + str(self.train_grp) + ', latent dim ' + str(self.latent_dim) + ', cv ' + str(cv))
                 ## test 
+                # test edit 2
 
                 ## TRAIN ##
                 # Load saved data
