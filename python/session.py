@@ -117,6 +117,7 @@ class Session():
                 filename = self.create_filename(foldername, cv, sub)
 
                 print('Running sub ' + str(sub) + ', model ' + str(self.train_grp) + ', latent dim ' + str(self.latent_dim) + ', cv ' + str(cv))
+                ## test 
 
                 ## TRAIN ##
                 # Load saved data
