@@ -553,7 +553,7 @@ class Session():
         # set number of tests for each noise types
         if noise_type == 'pos':
             test_tot = 4 # number of positions
-        elif noise_type[-4:] == 'flat':
+        elif 'flat' in noise_type or 'mix' in noise_type:
             test_tot = 1
         else:
             test_tot = 5 # noise amplitude (1-5)
