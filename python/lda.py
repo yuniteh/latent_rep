@@ -18,6 +18,10 @@ def eval_lda_ch(mu_class, C, n_type, x, y):
     full_type = n_type[0:4]
     noise_type = n_type[4:-1]
 
+    if noise_type[:3] == 'pos':
+        num_ch = int(noise_type[-1]) + 1
+        noise_type = noise_type[3:-1]
+
     # sub_params = np.tile(params,(rep*(num_ch-1)+1,1))
     # tile data once for each channel
     if full_type == 'full':
@@ -25,7 +29,7 @@ def eval_lda_ch(mu_class, C, n_type, x, y):
     # tile data twice, once for clean and once for noise
     elif full_type == 'part':
         start_ch = num_ch - 1
-
+    
     acc = np.zeros(num_ch-start_ch)
     # loop through channel noise
     for num_noise in range(start_ch,num_ch):
@@ -44,6 +48,7 @@ def eval_lda_ch(mu_class, C, n_type, x, y):
             C_in = C_temp[:,maskmu]
             w_temp, c_temp = train_lda(test_data,y_test,mu_bool = True, mu_class = mu_class[:,maskmu], C = C_in)
             acc_ch[ch] = eval_lda(w_temp, c_temp, test_data, y_test)
+
         acc[num_noise-start_ch] = np.mean(acc_ch)
     return acc
 

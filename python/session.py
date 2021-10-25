@@ -117,8 +117,6 @@ class Session():
                 filename = self.create_filename(foldername, cv, sub)
 
                 print('Running sub ' + str(sub) + ', model ' + str(self.train_grp) + ', latent dim ' + str(self.latent_dim) + ', cv ' + str(cv))
-                ## test 
-                # test edit 2
 
                 ## TRAIN ##
                 # Load saved data
@@ -552,13 +550,13 @@ class Session():
         # set testing noise type
         noise_type = self.n_test[4:-1]
 
-        # set number of tests for each noise type
-        if noise_type == 'gauss' or noise_type == '60hz':
-            test_tot = 5 # noise amplitude (1-5)
-        elif noise_type == 'pos':
+        # set number of tests for each noise types
+        if noise_type == 'pos':
             test_tot = 4 # number of positions
-        elif noise_type == 'flat':
+        elif 'flat' in noise_type or 'mix' in noise_type:
             test_tot = 1
+        else:
+            test_tot = 5 # noise amplitude (1-5)
 
         # set number of cvs
         if self.dt == 'cv':
@@ -640,48 +638,50 @@ class Session():
                     ecnn_clf.set_weights(ecnn_clf_w)
                     
                     # set test on validation data for cv mode
+                    skip = False
                     if self.dt == 'cv':
                         x_test, p_test = x_valid, p_valid
-                    if noise_type == 'pos':
+                    if noise_type[:3] == 'pos':
                         test_grp = int(self.n_test[-1])
                         _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=test_grp)
-
+                        if x_test.size == 0:
+                            skip = True
+                    # clean_size = 0
                     clean_size = int(np.size(x_test,axis=0))
                     # loop through test levels
                     for test_scale in range(1,test_tot + 1):
                         noisefolder = self.create_foldername(ftype='testnoise')
-                        noisefile = self.create_filename(foldername,cv, sub, ftype='testnoise', test_scale=test_scale)
+                        noisefile = self.create_filename(noisefolder,cv, sub, ftype='testnoise', test_scale=test_scale)
                         
-                        if os.path.isfile(noisefile + '.p'):
-                            print('loading data')
-                            with open(noisefile + '.p','rb') as f:
-                                x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean = pickle.load(f) 
-                            test_load = True
-                            skip = False
-                        else:                    
-                            skip = False
-                            test_load = False
-                            # load test data for diff limb positions
-                            if noise_type == 'pos':
-                                pos_ind = p_test[:,-1] == test_scale
-                                if pos_ind.any():
-                                    x_test_noise = x_test[pos_ind,...]
-                                    x_test_clean = x_test[pos_ind,...]
-                                    y_test_clean = to_categorical(p_test[pos_ind,4]-1)
-                                    clean_size = 0
-                                elif x_test.size > 0:
-                                    x_test_noise = x_test
-                                    x_test_clean = x_test
-                                    y_test_clean = to_categorical(p_test[:,4]-1)
-                                    clean_size = 0
-                                else: 
-                                    skip = True                    
-                            else:
-                                # Add noise and index testing data
-                                x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale)
-                                # copy clean data if not using noise
-                                if not self.noise:
-                                    x_test_noise = cp.deepcopy(x_test_clean)
+                        if not skip:
+                            if os.path.isfile(noisefile + '.p'):
+                                print('loading data')
+                                with open(noisefile + '.p','rb') as f:
+                                    x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean = pickle.load(f) 
+                                test_load = True
+                            else:                    
+                                test_load = False
+                                # load test data for diff limb positions
+                                if noise_type == 'pos':
+                                    pos_ind = p_test[:,-1] == test_scale
+                                    if pos_ind.any():
+                                        x_test_noise = x_test[pos_ind,...]
+                                        x_test_clean = x_test[pos_ind,...]
+                                        y_test_clean = to_categorical(p_test[pos_ind,4]-1)
+                                        clean_size = 0
+                                    elif x_test.size > 0:
+                                        x_test_noise = x_test
+                                        x_test_clean = x_test
+                                        y_test_clean = to_categorical(p_test[:,4]-1)
+                                        clean_size = 0
+                                    else: 
+                                        skip = True                    
+                                else:
+                                    # Add noise and index testing data
+                                    x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale)
+                                    # copy clean data if not using noise
+                                    if not self.noise:
+                                        x_test_noise = cp.deepcopy(x_test_clean)
 
                         if not skip:
                             if not test_load:
@@ -697,8 +697,6 @@ class Session():
                                 x_test_lda = prd.extract_feats(x_test_noise)
                                 with open(noisefile + '.p','wb') as f:
                                     pickle.dump([x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean],f) 
-                            if noise_type == 'pos':
-                                clean_size = 0
 
                             # Reshape for nonconvolutional SAE
                             x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
@@ -721,6 +719,9 @@ class Session():
                             y_test_lda = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
 
                             y_test_ch = y_test_lda[:y_test_lda.shape[0]//2,...]
+                            # y_test_ch = np.argmax(to_categorical(p_test[:,4]-1),axis=1)[...,np.newaxis]
+                            # y_test_ch = y_test_lda
+                            
 
                             # Compile models and test data into lists
                             dl_mods = 5
