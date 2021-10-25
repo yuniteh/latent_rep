@@ -82,29 +82,85 @@ def plot_noise_ch(params, sess):
     ave_noise = np.nanmean(ch_noise,axis=0)
     ave_clean = np.nanmean(ch_clean,axis=0)
 
-    # Plot accuracy vs. # noisy electrodes
+    plot_electrode_results(ave_noise,ave_clean)
+
+    return 
+
+def plot_electrode_results(ave_noise,ave_clean):
+        # Plot accuracy vs. # noisy electrodes
     fig,ax = plt.subplots(1,3)
-    for i in range(0,4):
-        ax[0].plot(ave_noise[:,i],'-o')
-    for i in range(5,9):    
-        ax[1].plot(ave_noise[:,i],'-o')
+    c = ['k','r','m']
+    c_i = 0
+    for i in range(1,5):
+        ax[0].plot(100*ave_noise[:,i],'-o')
+    for i in range(6,10):    
+        ax[1].plot(100*ave_noise[:,i],'-o')
     for i in [10,11,14]:
-        ax[2].plot(ave_noise[:,i],'-o')    
-    ax[0].set_ylabel('Accuracy')
+        ax[2].plot(100*ave_noise[:,i],'-o',color=c[c_i])
+        c_i+=1    
+
+    ax[0].set_ylabel('Accuracy (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
-    ax[0].legend(['VCAE','NN','CNN','VCNN'])
-    ax[1].legend(['VCAE-LDA','NN-LDA','CNN-LDA','VCNN-LDA'])
-    ax[2].legend(['LDA','LDA-corrupt','ch'])
+    ax[0].legend(['sae','cnn','vcnn','ecnn'])
+    ax[1].legend(['sae-lda','cnn-lda','vcnn-lda','ecnn-lda'])
+    ax[2].legend(['LDA','LDA-corrupt','LDA-ch'])
+    ax[0].set_title('NN')
+    ax[1].set_title('Aligned')
+    ax[2].set_title('LDA')
     ax[1].set_yticks([])
     ax[2].set_yticks([])
     for i in range(0,3):
-        ax[i].set_ylim(0,1)
+        ax[i].set_ylim(0,100)
         ax[i].set_xticks(range(0,4))
         ax[i].set_xticklabels(['1','2','3','4'])
 
     fig.set_tight_layout(True)
 
-    return 
+    # Plot accuracy vs. # noisy electrodes
+
+    fig, ax = plt.subplots()
+
+    x = np.arange(8)  # the label locations
+    arr = [5,2,3,9,7,8,10,11]
+    c = ['tab:blue','tab:orange','tab:green','tab:blue','tab:orange','tab:green','k','r']
+    clean_all = ave_clean[0,arr]
+    ax.bar(x,clean_all*100,color=c)
+    ax.set_xticks(range(8))
+    ax.set_xticklabels(['SAE','CNN','VCNN','SAE-LDA','CNN-LDA','VCNN-LDA','LDA','LDA-corrupt'])
+    ax.set_ylabel('Accuracy (%)')
+    ax.set_ylim([0,100])
+
+    fig.set_tight_layout(True)
+
+    return
+
+def plot_pos_results(ave_pos):
+    # Plot accuracy vs. position
+    fig,ax = plt.subplots(3,3)
+    for r in range(0,3):
+        for i in range(1,4):
+            ax[r,0].plot(ave_pos[r,:,i],'-o')
+        for i in range(6,9):    
+            ax[r,1].plot(ave_pos[r,:,i],'-o')
+            
+        for i in [10,11]:
+            ax[r,2].plot(ave_pos[r,:,i],'-o')    
+        ax[r,1].set_yticks([])
+        ax[r,2].set_yticks([])
+        for i in range(0,3):
+            ax[r,i].set_ylim(0,1)
+            ax[r,i].set_xticks([])
+            ax[2,i].set_xticks(range(0,4))
+            ax[2,i].set_xticklabels(['1','2','3','4'])
+    ax[1,0].set_ylabel('Accuracy')
+    fig.text(0.5, 0, 'Limb Position', ha='center')
+    ax[0,0].legend(['sae','cnn','vcnn','ecnn'])
+    ax[0,1].legend(['sae-lda','cnn-lda','vcnn-lda','ecnn-lda'])
+    ax[0,2].legend(['LDA','LDA-corrupt'])
+
+    fig.set_tight_layout(True)
+
+    return
 
 def plot_summary(acc_clean,acc_gauss,acc_60hz, acc_flat):
     lda_ind = 10
@@ -151,4 +207,4 @@ def plot_summary(acc_clean,acc_gauss,acc_60hz, acc_flat):
     ax.set_ylim([-20,60])
     ax.legend()
 
-    return ave_diff_clean
+    return 
