@@ -151,4 +151,4 @@ def plot_summary(acc_clean,acc_gauss,acc_60hz, acc_flat):
     ax.set_ylim([-20,60])
     ax.legend()
 
-    return 
+    return ave_diff_clean
