@@ -646,12 +646,12 @@ class Session():
                         _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=test_grp)
                         if x_test.size == 0:
                             skip = True
-
+                    # clean_size = 0
                     clean_size = int(np.size(x_test,axis=0))
                     # loop through test levels
                     for test_scale in range(1,test_tot + 1):
                         noisefolder = self.create_foldername(ftype='testnoise')
-                        noisefile = self.create_filename(foldername,cv, sub, ftype='testnoise', test_scale=test_scale)
+                        noisefile = self.create_filename(noisefolder,cv, sub, ftype='testnoise', test_scale=test_scale)
                         
                         if not skip:
                             if os.path.isfile(noisefile + '.p'):
@@ -697,8 +697,6 @@ class Session():
                                 x_test_lda = prd.extract_feats(x_test_noise)
                                 with open(noisefile + '.p','wb') as f:
                                     pickle.dump([x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean],f) 
-                            if noise_type == 'pos':
-                                clean_size = 0
 
                             # Reshape for nonconvolutional SAE
                             x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
@@ -721,6 +719,9 @@ class Session():
                             y_test_lda = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
 
                             y_test_ch = y_test_lda[:y_test_lda.shape[0]//2,...]
+                            # y_test_ch = np.argmax(to_categorical(p_test[:,4]-1),axis=1)[...,np.newaxis]
+                            # y_test_ch = y_test_lda
+                            
 
                             # Compile models and test data into lists
                             dl_mods = 5

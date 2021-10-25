@@ -147,8 +147,8 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, t
 
     if train_grp < 3:
         x_train, p_train = shuffle(x_train, p_train, random_state = 0)
-        x_test, p_test = shuffle(x_test, p_test, random_state = 0)
         x_valid, p_valid = shuffle(x_valid, p_valid, random_state = 0)
+    x_test, p_test = shuffle(x_test, p_test, random_state = 0)
     return x_train, x_test, x_valid, p_train, p_test, p_valid
 
 def norm_sub(feat, params):
