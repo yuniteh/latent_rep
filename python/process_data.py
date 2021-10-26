@@ -13,6 +13,8 @@ from collections import deque
 from itertools import combinations
 import time
 import json
+import pickle
+
 
 def load_raw(filename):
     struct = scipy.io.loadmat(filename)
@@ -45,6 +47,26 @@ def process_df(params):
     df = df.set_index('sub')
     
     return df
+
+def load_noise_data(filename):
+    struct = scipy.io.loadmat(filename)
+    raw_noise = struct['raw_win']
+
+    return raw_noise
+
+def process_save_noise(foldername):
+    files = os.listdir(foldername)
+    raw_all =  np.full([len(files),1000,200],np.nan)
+    for i in range(len(files)):
+        raw_noise = load_noise_data(foldername + '/' + files[i])
+        print(files[i])
+        raw_all[i,...] = raw_noise[:1000,:]
+
+    with open(foldername + '/all_real_noise.p', 'wb') as f:
+        pickle.dump([raw_all, files],f)
+    
+    return
+
 
 def sub_train_test(feat,params,sub,train_grp,test_grp):
     # Index EMG data
