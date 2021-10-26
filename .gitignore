@@ -2,6 +2,7 @@
 *.h5
 *.png
 *.p
+*.DAQ
 MyoArmbandDataset-master/EvaluationDataset
 MyoArmbandDataset-master/PreTrainingDataset
 figures
