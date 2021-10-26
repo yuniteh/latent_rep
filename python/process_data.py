@@ -278,7 +278,7 @@ def add_noise_all(x_train,x_test,p_train,p_test, sub, sub_type, dt=0, train_grp=
     
     return x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean
 
-def add_noise(raw, params, sub, n_type='flat', scale=5):
+def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0):
     # Index subject and training group
     max_ch = raw.shape[1] + 1
     num_ch = int(n_type[-1]) + 1
@@ -321,15 +321,18 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
             
             # loop through all channel combinations
             for ch in range(0,len(ch_all)):
-                ch_noise = np.random.randint(3,size=num_noise)
-                ch_level = np.random.randint(5,size=num_noise)
-                ch_noise_level = np.vstack((ch_noise,ch_level)).T
-                # redo if all values are the same
-                if num_noise > 1:
-                    while np.array([x == ch_noise_level[0,:] for x in ch_noise_level]).all():
-                        ch_noise = np.random.randint(3,size=num_noise)
-                        ch_level = np.random.randint(5,size=num_noise)
-                        ch_noise_level = np.vstack((ch_noise,ch_level)).T
+                if noise_type == 'mix':
+                    ch_noise = np.random.randint(3,size=num_noise)
+                    ch_level = np.random.randint(5,size=num_noise)
+                    ch_noise_level = np.vstack((ch_noise,ch_level)).T
+                    # redo if all values are the same
+                    if num_noise > 1:
+                        while np.array([x == ch_noise_level[0,:] for x in ch_noise_level]).all():
+                            ch_noise = np.random.randint(3,size=num_noise)
+                            ch_level = np.random.randint(5,size=num_noise)
+                            ch_noise_level = np.vstack((ch_noise,ch_level)).T
+                elif noise_type[:4] == 'real':
+                    ch_noise = np.random.randint(1000,size=(ch_split,num_noise))
                 ch_ind = 0
                 for i in ch_all[ch]:
                     if noise_type == 'gaussflat':
@@ -361,6 +364,13 @@ def add_noise(raw, params, sub, n_type='flat', scale=5):
                             x = np.linspace(0,temp.shape[2],temp.shape[2])
                             temp[ch*ch_split:(ch+1)*ch_split,i,:] += (ch_level[ch_ind]+1)*np.sin(2*np.pi*60*x)
                         ch_ind += 1
+                    elif noise_type == 'realcontact':
+                        temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[3,ch_noise[:,ch_ind],:]
+                        ch_ind += 1
+                    elif noise_type == 'realbreak':
+                        temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[0,ch_noise[:,ch_ind],:]
+                        ch_ind += 1
+
             out = np.concatenate((out,temp))
     
     out = np.concatenate((raw, out))

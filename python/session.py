@@ -557,6 +557,11 @@ class Session():
             test_tot = 1
         else:
             test_tot = 5 # noise amplitude (1-5)
+        
+        # load real_noise
+        if 'real' in noise_type:
+            with open('real_noise/all_real_noise.p', 'rb') as f:
+                real_noise, _ = pickle.load(f)
 
         # set number of cvs
         if self.dt == 'cv':
@@ -678,7 +683,10 @@ class Session():
                                         skip = True                    
                                 else:
                                     # Add noise and index testing data
-                                    x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale)
+                                    if 'real' in noise_type:
+                                        x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale, real_noise=real_noise)
+                                    else:
+                                        x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale)
                                     # copy clean data if not using noise
                                     if not self.noise:
                                         x_test_noise = cp.deepcopy(x_test_clean)
