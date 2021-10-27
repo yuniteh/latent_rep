@@ -706,6 +706,9 @@ class Session():
                                 with open(noisefile + '.p','wb') as f:
                                     pickle.dump([x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean],f) 
 
+                            x_temp = np.transpose(x_test_lda.reshape((x_test_lda.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                            x_test_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
+
                             # Reshape for nonconvolutional SAE
                             x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
                             x_test_clean_sae = x_test_clean_vae.reshape(x_test_clean_vae.shape[0],-1)

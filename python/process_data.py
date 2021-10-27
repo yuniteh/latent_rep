@@ -303,6 +303,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0):
         orig = np.tile(raw,(2,1,1))
         
     out = np.array([]).reshape(0,6,200)
+    x = np.linspace(0,0.2,200)
 
     # repeat twice if adding gauss and flat
     for rep_i in range(rep):   
@@ -312,7 +313,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0):
             ch_all = list(combinations(range(0,6),num_noise))
             temp = cp.deepcopy(raw)
             if full_type == 'full':
-                if noise_type == 'gaussflat60hz':
+                if noise_type == 'gaussflat60hz' or noise_type == 'allmix':
                     ch_split = temp.shape[0]//(6*len(ch_all))
                 else:
                     ch_split = temp.shape[0]//(3*len(ch_all))
@@ -321,16 +322,15 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0):
             
             # loop through all channel combinations
             for ch in range(0,len(ch_all)):
-                if noise_type == 'mix':
-                    ch_noise = np.random.randint(3,size=num_noise)
-                    ch_level = np.random.randint(5,size=num_noise)
-                    ch_noise_level = np.vstack((ch_noise,ch_level)).T
-                    # redo if all values are the same
+                if noise_type == 'mix' or noise_type == 'allmix':
+                    ch_noise = np.random.randint(3,size=(ch_split,num_noise))
+                    ch_level = np.random.randint(5,size=(ch_split,num_noise))
+
                     if num_noise > 1:
-                        while np.array([x == ch_noise_level[0,:] for x in ch_noise_level]).all():
-                            ch_noise = np.random.randint(3,size=num_noise)
-                            ch_level = np.random.randint(5,size=num_noise)
-                            ch_noise_level = np.vstack((ch_noise,ch_level)).T
+                        for i in range(ch_split):
+                            while np.array([x == ch_noise[i,0] for x in ch_noise[i,:]]).all() and np.array([x == ch_level[i,0] for x in ch_level[i,:]]).all():
+                                ch_noise[i,:] = np.random.randint(3,size = num_noise)
+                                ch_level[i,:] = np.random.randint(5,size = num_noise)
                 elif noise_type[:4] == 'real':
                     ch_noise = np.random.randint(1000,size=(ch_split,num_noise))
                 ch_ind = 0
@@ -345,7 +345,6 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0):
                             temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
                             temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])
                     elif noise_type == 'flat60hz':
-                        x = np.linspace(0,0.2,200)
                         if rep_i == 0:
                             temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] = 0
                             temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += np.sin(2*np.pi*60*x)
@@ -355,9 +354,8 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0):
                             temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += 4*np.sin(2*np.pi*60*x)
                             temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] += 5*np.sin(2*np.pi*60*x)
                     elif noise_type == 'gaussflat60hz':
-                        x = np.linspace(0,0.2,200)
                         if rep_i == 0:
-                            temp[6*ch*ch_split:(3*ch+2)*ch_split,i,:] = 0
+                            temp[6*ch*ch_split:(6*ch+2)*ch_split,i,:] = 0
                             temp[(6*ch+2)*ch_split:(6*ch+3)*ch_split,i,:] += np.sin(2*np.pi*60*x)
                             temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += 2*np.sin(2*np.pi*60*x)
                             temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += 3*np.sin(2*np.pi*60*x) 
@@ -368,26 +366,47 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0):
                             temp[(6*ch+2)*ch_split:(6*ch+3)*ch_split,i,:] += np.random.normal(0,2,temp.shape[2])
                             temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += np.random.normal(0,3,temp.shape[2])
                             temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
+                            temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])                    
+                    elif noise_type == 'allmix':
+                        if rep_i == 0:
+                            temp[6*ch*ch_split:(6*ch+1)*ch_split,i,:] = 0
+                            temp[(6*ch+2)*ch_split:(6*ch+3)*ch_split,i,:] += np.sin(2*np.pi*60*x)
+                            temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += 2*np.sin(2*np.pi*60*x)
+                            temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += 3*np.sin(2*np.pi*60*x) 
+                            temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += 4*np.sin(2*np.pi*60*x)
+                            temp_split = temp[(6*ch+1)*ch_split:(6*ch+2)*ch_split,i,:]
+                            for temp_iter in range(ch_split):
+                                if ch_noise[temp_iter,ch_ind] == 0:
+                                    temp_split[temp_iter,...] = 0
+                                elif ch_noise[temp_iter,ch_ind] == 1:
+                                    temp_split[temp_iter,...] += np.random.normal(0,ch_level[temp_iter,ch_ind]+1,temp.shape[2])
+                                else:
+                                    temp_split[temp_iter,...] += (ch_level[temp_iter,ch_ind]+1)*np.sin(2*np.pi*60*x)
+                            temp[(6*ch+1)*ch_split:(6*ch+2)*ch_split,i,:] = cp.deepcopy(temp_split)
+                            ch_ind += 1
+                        elif rep_i == 1:        
+                            temp[(6*ch)*ch_split:(6*ch+1)*ch_split,i,:] += 5*np.sin(2*np.pi*60*x)
+                            temp[(6*ch+1)*ch_split:(6*ch+2)*ch_split,i,:] += np.random.normal(0,1,temp.shape[2])
+                            temp[(6*ch+2)*ch_split:(6*ch+3)*ch_split,i,:] += np.random.normal(0,2,temp.shape[2])
+                            temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += np.random.normal(0,3,temp.shape[2])
+                            temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
                             temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])
-
                     elif noise_type == 'flat':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
                     elif noise_type == 'gauss':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += np.random.normal(0,scale,temp.shape[2])
                     elif noise_type == '60hz':
-                        x = np.linspace(0,0.2,200)
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += scale*np.sin(2*np.pi*60*x)
                     elif noise_type == 'mix':
-                        # if flat
-                        if ch_noise[ch_ind] == 1:
-                            temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
-                        # if gauss
-                        elif ch_noise[ch_ind] == 2:
-                            temp[ch*ch_split:(ch+1)*ch_split,i,:] += np.random.normal(0,ch_level[ch_ind]+1,temp.shape[2])
-                        # if 60hz
-                        else:
-                            x = np.linspace(0,temp.shape[2],temp.shape[2])
-                            temp[ch*ch_split:(ch+1)*ch_split,i,:] += (ch_level[ch_ind]+1)*np.sin(2*np.pi*60*x)
+                        temp_split = temp[ch*ch_split:(ch+1)*ch_split,i,:]
+                        for temp_iter in range(ch_split):
+                            if ch_noise[temp_iter,ch_ind] == 0:
+                                temp_split[temp_iter,...] = 0
+                            elif ch_noise[temp_iter,ch_ind] == 1:
+                                temp_split[temp_iter,...] += np.random.normal(0,ch_level[temp_iter,ch_ind]+1,temp.shape[2])
+                            else:
+                                temp_split[temp_iter,...] += (ch_level[temp_iter,ch_ind]+1)*np.sin(2*np.pi*60*x)
+                        temp[ch*ch_split:(ch+1)*ch_split,i,:] = cp.deepcopy(temp_split)
                         ch_ind += 1
                     elif noise_type == 'realcontact':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[2,ch_noise[:,ch_ind],:]
@@ -396,13 +415,15 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0):
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[3,ch_noise[:,ch_ind],:]
                         ch_ind += 1
                     elif noise_type == 'realbreak':
-                        temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[0,ch_noise[:,ch_ind],:]
+                        temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[0,ch_noise[ch_ind],:]
                         ch_ind += 1
                     elif noise_type == 'realbreaknm':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[1,ch_noise[ch_ind],:]
                         ch_ind += 1
                     elif noise_type == 'realmove':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[-1,ch_noise[:,ch_ind],:]
+                    elif noise_type == 'realmix':
+
 
             out = np.concatenate((out,temp))
     
