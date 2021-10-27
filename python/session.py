@@ -459,7 +459,7 @@ class Session():
                     qda_noise.fit(x_train_noise_lda, np.squeeze(y_train_noise_lda))
                 
                 # Reconstruct training data for data augmentation
-                if mod == 'all' or any("recon" in s for s in mod):
+                if any("recon" in s for s in mod):
                     # set weights from trained svae
                     svae.set_weights(svae_w)
                     svae_enc.set_weights(svae_enc_w)
@@ -485,7 +485,7 @@ class Session():
                     # Train ENC-LDA with augmented data
                     w_rec_al, c_rec_al,_, _, _ = train_lda(x_train_aug_align,y_train_all)
 
-                if mod == 'all' or any("gen" in s for s in mod):
+                if any("gen" in s for s in mod):
                     # set weights from trained svae
                     svae.set_weights(svae_w)
                     svae_enc.set_weights(svae_enc_w)
@@ -534,7 +534,7 @@ class Session():
                     with open(filename + '_hist.p', 'wb') as f:
                         pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist, ecnn_hist],f)
 
-                    if mod == 'all' or any("gen" in s for s in mod) or any ("recon" in s for s in mod):
+                    if any("gen" in s for s in mod) or any ("recon" in s for s in mod):
                         with open(filename + '_aug.p', 'wb') as f:
                             pickle.dump([w_rec, c_rec, w_rec_al, c_rec_al, w_gen, c_gen, w_gen_al, c_gen_al],f)
                     
@@ -553,7 +553,7 @@ class Session():
         # set number of tests for each noise types
         if noise_type == 'pos':
             test_tot = 4 # number of positions
-        elif 'flat' in noise_type or 'mix' in noise_type:
+        elif 'flat' in noise_type or 'mix' in noise_type or 'real' in noise_type:
             test_tot = 1
         else:
             test_tot = 5 # noise amplitude (1-5)
