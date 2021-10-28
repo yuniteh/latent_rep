@@ -47,9 +47,9 @@ class Session():
     def create_foldername(self,ftype=''):
         # Set folder
         if ftype == 'trainnoise':
-            foldername = 'noisedata_' + self.dt
+            foldername = 'noisedata_' + self.dt + '_' + self.mod_dt
         elif ftype == 'testnoise':
-            foldername = 'testdata_' + self.dt
+            foldername = 'testdata_' + self.dt + '_' + self.mod_dt
         else:
             if self.dt == 0:
                 today = date.today()
@@ -608,7 +608,7 @@ class Session():
                     
                     # Load saved data
                     with open(filename + '.p', 'rb') as f:
-                        scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)   
+                        scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise,emg_scale = pickle.load(f)   
 
                     # with open(filename + '_aug.p', 'rb') as f:
                     #     w_rec, c_rec, w_rec_al, c_rec_al, w_gen, c_gen, w_gen_al, c_gen_al = pickle.load(f)
@@ -658,6 +658,8 @@ class Session():
                         clean_size = 0
                     else:
                         clean_size = int(np.size(x_test,axis=0))
+                    
+                    x_test = x_test*emg_scale
                     # loop through test levels
                     for test_scale in range(1,test_tot + 1):
                         noisefolder = self.create_foldername(ftype='testnoise')
