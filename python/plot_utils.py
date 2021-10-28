@@ -86,7 +86,7 @@ def plot_noise_ch(params, sess):
 
     return 
 
-def plot_electrode_results(ave_noise,ave_clean):
+def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     ave_clean[0,-1] = ave_clean[0,10]
     ave_noise = np.vstack([ave_clean[0,:],ave_noise])
     # Plot accuracy vs. # noisy electrodes
@@ -134,6 +134,7 @@ def plot_electrode_results(ave_noise,ave_clean):
     ax.set_ylim(0,80)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
+    ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
 
     fig.set_tight_layout(True)
     # Plot accuracy vs. # noisy electrodes

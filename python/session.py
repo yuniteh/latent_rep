@@ -158,6 +158,9 @@ class Session():
                         if self.dt == 'cv':
                             x_valid, p_valid = x_full[p_full[:,6] == cv,...], p_full[p_full[:,6] == cv,...]
                             x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
+
+                        emg_scale = 5/np.max(np.abs(x_train))
+                        x_train = x_train*emg_scale
                 
                         x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, self.n_train, self.train_scale)
                         x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, self.n_train, self.train_scale)
@@ -529,7 +532,7 @@ class Session():
                 if mod != 'none':
                     with open(filename + '.p', 'wb') as f:
                         pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
-                            ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise],f)
+                            ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise, emg_scale],f)
 
                     with open(filename + '_hist.p', 'wb') as f:
                         pickle.dump([svae_hist, sae_hist, cnn_hist, vcnn_hist, ecnn_hist],f)
@@ -651,8 +654,10 @@ class Session():
                         _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=test_grp)
                         if x_test.size == 0:
                             skip = True
-                    # clean_size = 0
-                    clean_size = int(np.size(x_test,axis=0))
+                    if noise_type == 'pos':
+                        clean_size = 0
+                    else:
+                        clean_size = int(np.size(x_test,axis=0))
                     # loop through test levels
                     for test_scale in range(1,test_tot + 1):
                         noisefolder = self.create_foldername(ftype='testnoise')
