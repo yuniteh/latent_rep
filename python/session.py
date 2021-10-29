@@ -152,7 +152,9 @@ class Session():
                     if os.path.isfile(noisefile + '.p') and self.train_load:
                         print('loading data')
                         with open(noisefile + '.p','rb') as f:
-                            scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, y_valid_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda = pickle.load(f)                       
+                            scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, y_valid_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda = pickle.load(f)
+
+                        emg_scale = 1                       
                     else:
                         # Add noise to training data                        
                         if self.dt == 'cv':
@@ -160,7 +162,9 @@ class Session():
                             x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
 
                         emg_scale = 5/np.max(np.abs(x_train))
-                        x_train = x_train*emg_scale
+                        if self.sub_type == 'TR':
+                            x_train = x_train*emg_scale
+                            x_valid = x_valid*emg_scale
                 
                         x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, self.n_train, self.train_scale)
                         x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, self.n_train, self.train_scale)
@@ -210,7 +214,7 @@ class Session():
                     svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn_manual(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     
                 # Train SVAE
@@ -564,7 +568,7 @@ class Session():
         # load real_noise
         if 'real' in noise_type:
             with open('real_noise/all_real_noise.p', 'rb') as f:
-                real_noise, _ = pickle.load(f)
+                real_noise_temp, _ = pickle.load(f)
 
         # set number of cvs
         if self.dt == 'cv':
@@ -660,6 +664,7 @@ class Session():
                         clean_size = int(np.size(x_test,axis=0))
                     
                     x_test = x_test*emg_scale
+                    real_noise = real_noise_temp*emg_scale
                     # loop through test levels
                     for test_scale in range(1,test_tot + 1):
                         noisefolder = self.create_foldername(ftype='testnoise')
@@ -700,6 +705,8 @@ class Session():
 
                         if not skip:
                             if not test_load:
+                                x_test_noise[x_test_noise > 5] = 5
+                                x_test_noise[x_test_noise < -5] = -5
                                 # extract and scale features
                                 if self.feat_type == 'feat':
                                     x_test_vae, _ = prd.extract_scale(x_test_noise,scaler)

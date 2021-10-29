@@ -10,7 +10,7 @@ def plot_latent_dim(params,sess):
     foldername = sess.create_foldername()
 
     # Loop through subs
-    for sub_i in range(1,2):#np.max(params[:,0])+1):
+    for sub_i in range(2,3):#np.max(params[:,0])+1):
         # Loop through dimensions
         for lat in range(1,11):
             sess.latent_dim = lat
@@ -19,8 +19,8 @@ def plot_latent_dim(params,sess):
                 filename = sess.create_filename(foldername,cv,sub_i)
                 with open(filename + '_hist.p', 'rb') as f:
                     svae_hist, sae_hist, cnn_hist, vcnn_hist, ecnn_hist = pickle.load(f)
-                all_acc[sub_i-1,lat-1,cv-1,:] = np.array([svae_hist[-1,1],svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1], ecnn_hist['accuracy'][-1]])
-                all_val[sub_i-1,lat-1,cv-1,:] = np.array([svae_hist[-1,8],svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1], ecnn_hist['val_accuracy'][-1]])
+                all_acc[sub_i-1,lat-1,cv-1,:] = np.array([svae_hist[-1,1],svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist[-1,1], ecnn_hist[-1,4]])
+                all_val[sub_i-1,lat-1,cv-1,:] = np.array([svae_hist[-1,8],svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist[-1,3], ecnn_hist[-1,9]])
 
     mean_acc = np.nanmean(np.nanmean(all_acc,axis=2),axis=0)
     mean_val = np.nanmean(np.nanmean(all_val,axis=2),axis=0)
@@ -36,7 +36,7 @@ def plot_latent_dim(params,sess):
     ax.set_xticklabels(['1','2','3','4','5'])
     ax.legend(['VCAE','NN','CNN','VCNN','ECNN'])
 
-    return all_acc, all_val
+    return svae_hist, cnn_hist, vcnn_hist, ecnn_hist
 
 def plot_latent_rep(x_red, y):
     # plot reduced dimensions in 3D
