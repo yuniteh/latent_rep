@@ -261,7 +261,7 @@ def build_M2S2(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
         kl_loss = K.sum(kl_loss, axis=-1)
         kl_loss *= -0.5
-        vae_loss = reconstruction_loss + weight[1]*K.mean(kl_loss)
+        vae_loss = reconstruction_loss + K.mean(kl_loss)/100
         return vae_loss
 
     opt = optimizers.Adam(learning_rate=lr)
@@ -346,7 +346,7 @@ def build_M2S(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
         # print(reconstruction_loss)
         # print(kl_loss)
 
-        vae_loss = reconstruction_loss + weight[1]*K.mean(kl_loss)
+        vae_loss = reconstruction_loss + K.mean(kl_loss)/100
         return vae_loss
     
     def kloss(x_origin,x_out):

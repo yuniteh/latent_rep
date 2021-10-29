@@ -214,7 +214,7 @@ class Session():
                     svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn_manual(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     
                 # Train SVAE
@@ -222,7 +222,7 @@ class Session():
                     # get number of batches
                     n_batches = len(x_train_noise_vae) // self.batch_size
                     # initialize history array
-                    temp_epochs = 50
+                    temp_epochs = 30
                     svae_hist = np.zeros((temp_epochs,14))
                     # loop through epochs
                     for ep in range(temp_epochs):
@@ -281,62 +281,62 @@ class Session():
 
                 # Fit NNs and get weights
                 if mod == 'all' or any("var_c" in s for s in mod):
-                    # vcnn_hist = vcnn.fit(x_train_noise_vae, y_train_clean,epochs=30,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=self.batch_size)                
-                    # vcnn_w = vcnn.get_weights()
-                    # vcnn_enc_w = vcnn_enc.get_weights()
-                    # vcnn_clf_w = vcnn_clf.get_weights()
-                    # vcnn_hist = vcnn_hist.history
-                    temp_epochs = 50
+                    vcnn_hist = vcnn.fit(x_train_noise_vae, y_train_clean,epochs=30,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=self.batch_size)                
+                    vcnn_w = vcnn.get_weights()
+                    vcnn_enc_w = vcnn_enc.get_weights()
+                    vcnn_clf_w = vcnn_clf.get_weights()
+                    vcnn_hist = vcnn_hist.history
+                    # temp_epochs = 30
 
-                    # get number of batches
-                    n_batches = len(x_train_noise_vae) // self.batch_size
-                    # initialize history array
-                    vcnn_hist = np.zeros((temp_epochs,4))
-                    # loop through epochs
-                    for ep in range(temp_epochs):
-                        # set loss weight vector, not finalized
-                        if ep < 15: #temp_epochs//3: 
-                            # weight = np.array([[0,(2**(ep-(temp_epochs//3)))/10] for _ in range(self.batch_size)])
-                            weight = np.array([[0,(2**(ep-(15)))/100] for _ in range(self.batch_size)])
-                        # elif ep < 40:
-                        #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
-                        # elif ep < 60:
-                        #     weight = np.array([[0,(2**(ep-(60)))/100] for _ in range(self.batch_size)])
-                        # elif ep < 80:
-                        #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
-                        # elif ep < 100:
-                        #     weight = np.array([[0,(2**(ep-(100)))/100] for _ in range(self.batch_size)])
-                        else:
-                            weight = np.array([[1,.01] for _ in range(self.batch_size)])
+                    # # get number of batches
+                    # n_batches = len(x_train_noise_vae) // self.batch_size
+                    # # initialize history array
+                    # vcnn_hist = np.zeros((temp_epochs,4))
+                    # # loop through epochs
+                    # for ep in range(temp_epochs):
+                    #     # set loss weight vector, not finalized
+                    #     if ep < 15: #temp_epochs//3: 
+                    #         # weight = np.array([[0,(2**(ep-(temp_epochs//3)))/10] for _ in range(self.batch_size)])
+                    #         weight = np.array([[0,(2**(ep-(15)))/100] for _ in range(self.batch_size)])
+                    #     # elif ep < 40:
+                    #     #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
+                    #     # elif ep < 60:
+                    #     #     weight = np.array([[0,(2**(ep-(60)))/100] for _ in range(self.batch_size)])
+                    #     # elif ep < 80:
+                    #     #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
+                    #     # elif ep < 100:
+                    #     #     weight = np.array([[0,(2**(ep-(100)))/100] for _ in range(self.batch_size)])
+                    #     else:
+                    #         weight = np.array([[1,.01] for _ in range(self.batch_size)])
                         
-                        # print(weight[0,1])
+                    #     # print(weight[0,1])
                         
-                        # get batches for inputs
-                        x_train_noise_ep = dl.get_batches(x_train_noise_vae, self.batch_size)
-                        x_train_clean_ep = dl.get_batches(x_train_clean_vae, self.batch_size)
-                        y_train_ep = dl.get_batches(y_train_clean, self.batch_size)
-                        # loop through batches
-                        for ii in range(n_batches):
-                            x_train_noise_bat = next(x_train_noise_ep)
-                            x_train_clean_bat = next(x_train_clean_ep)
-                            y_train_bat = next(y_train_ep)
+                    #     # get batches for inputs
+                    #     x_train_noise_ep = dl.get_batches(x_train_noise_vae, self.batch_size)
+                    #     x_train_clean_ep = dl.get_batches(x_train_clean_vae, self.batch_size)
+                    #     y_train_ep = dl.get_batches(y_train_clean, self.batch_size)
+                    #     # loop through batches
+                    #     for ii in range(n_batches):
+                    #         x_train_noise_bat = next(x_train_noise_ep)
+                    #         x_train_clean_bat = next(x_train_clean_ep)
+                    #         y_train_bat = next(y_train_ep)
 
-                            # train
-                            temp_out = vcnn.train_on_batch([x_train_noise_bat,weight],y_train_bat)
+                    #         # train
+                    #         temp_out = vcnn.train_on_batch([x_train_noise_bat,weight],y_train_bat)
 
-                        # dummy loss weight for testing
-                        test_weight = np.array([[1,1] for _ in range(len(x_valid_noise_vae))])
+                    #     # dummy loss weight for testing
+                    #     test_weight = np.array([[1,1] for _ in range(len(x_valid_noise_vae))])
 
-                        # save training metrics in history array
-                        vcnn_hist[ep,:2] = temp_out
+                    #     # save training metrics in history array
+                    #     vcnn_hist[ep,:2] = temp_out
 
-                        ## validation testing
-                        vcnn_hist[ep,2:] = vcnn.test_on_batch([x_valid_noise_vae,test_weight],y_valid_clean)
+                    #     ## validation testing
+                    #     vcnn_hist[ep,2:] = vcnn.test_on_batch([x_valid_noise_vae,test_weight],y_valid_clean)
 
-                        # print training losses as we train
-                        if ep == 0:
-                            print(vcnn.metrics_names)
-                        print(vcnn_hist[ep,:])
+                    #     # print training losses as we train
+                    #     if ep == 0:
+                    #         print(vcnn.metrics_names)
+                    #     print(vcnn_hist[ep,:])
 
                     # get weights
                     vcnn_w = vcnn.get_weights()
@@ -361,7 +361,7 @@ class Session():
                     # get number of batches
                     n_batches = len(x_train_noise_vae) // self.batch_size
                     # initialize history array
-                    temp_epochs = 50
+                    temp_epochs = 30
                     ecnn_hist = np.zeros((temp_epochs,10))
                     # loop through epochs
                     for ep in range(temp_epochs):
