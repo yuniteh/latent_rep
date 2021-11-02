@@ -317,7 +317,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
             if full_type == 'full':
                 if noise_type == 'gaussflat60hz' or noise_type == 'allmix':
                     ch_split = temp.shape[0]//(6*len(ch_all))
-                elif noise_type == '60hzall' or noise_type == 'somemix':
+                elif noise_type == 'gauss60hz':
                     ch_split = temp.shape[0]//(5*len(ch_all))
                 else:
                     ch_split = temp.shape[0]//(3*len(ch_all))
@@ -344,7 +344,25 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                                 ch_level[i,:] = np.random.randint(4,size = num_noise)
                 ch_ind = 0
                 for i in ch_all[ch]:
-                    if noise_type == 'gaussflat':
+                    if noise_type == '60hzall':
+                        if rep_i == 0:
+                            temp[(3*ch)*ch_split:(3*ch+1)*ch_split,i,:] += np.random.randint(1,6)*np.sin(2*np.pi*60*x)
+                            temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += np.sin(2*np.pi*60*x)
+                            temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] += 2*np.sin(2*np.pi*60*x)
+                        else:
+                            temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] += 3*np.sin(2*np.pi*60*x)
+                            temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += 4*np.sin(2*np.pi*60*x)
+                            temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] += 5*np.sin(2*np.pi*60*x)
+                    elif noise_type == 'gaussall':
+                        if rep_i == 0:
+                            temp[(3*ch)*ch_split:(3*ch+1)*ch_split,i,:] += np.random.normal(0,np.random.randint(1,6),temp.shape[2])
+                            temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] +=  np.random.normal(0,1,temp.shape[2])
+                            temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] += np.random.normal(0,2,temp.shape[2])
+                        else:
+                            temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] +=  np.random.normal(0,3,temp.shape[2])
+                            temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] +=  np.random.normal(0,4,temp.shape[2])
+                            temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] +=  np.random.normal(0,5,temp.shape[2])
+                    elif noise_type == 'gaussflat':
                         if rep_i == 0:
                             temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] = 0
                             temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += np.random.normal(0,1,temp.shape[2])
@@ -362,6 +380,19 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                             temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] += 3*np.sin(2*np.pi*60*x)
                             temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += 4*np.sin(2*np.pi*60*x)
                             temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] += 5*np.sin(2*np.pi*60*x)
+                    elif noise_type == 'gauss60hz':
+                        if rep_i == 0:
+                            temp[(5*ch)*ch_split:(5*ch+1)*ch_split,i,:] += np.sin(2*np.pi*60*x)
+                            temp[(5*ch+1)*ch_split:(5*ch+2)*ch_split,i,:] += 2*np.sin(2*np.pi*60*x)
+                            temp[(5*ch+2)*ch_split:(5*ch+3)*ch_split,i,:] += 3*np.sin(2*np.pi*60*x)
+                            temp[(5*ch+3)*ch_split:(5*ch+4)*ch_split,i,:] += 4*np.sin(2*np.pi*60*x) 
+                            temp[(5*ch+4)*ch_split:(5*ch+5)*ch_split,i,:] += 5*np.sin(2*np.pi*60*x)
+                        elif rep_i == 1:        
+                            temp[(5*ch)*ch_split:(5*ch+1)*ch_split,i,:] += np.random.normal(0,1,temp.shape[2])
+                            temp[(5*ch+1)*ch_split:(5*ch+2)*ch_split,i,:] += np.random.normal(0,2,temp.shape[2])
+                            temp[(5*ch+2)*ch_split:(5*ch+3)*ch_split,i,:] += np.random.normal(0,3,temp.shape[2])
+                            temp[(5*ch+3)*ch_split:(5*ch+4)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
+                            temp[(5*ch+4)*ch_split:(5*ch+5)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])
                     elif noise_type == 'gaussflat60hz':
                         if rep_i == 0:
                             temp[6*ch*ch_split:(6*ch+2)*ch_split,i,:] = 0
@@ -376,19 +407,6 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                             temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += np.random.normal(0,3,temp.shape[2])
                             temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
                             temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])                    
-                    elif noise_type == 'somemix':
-                        if rep_i == 0:
-                            temp[(6*ch)*ch_split:(6*ch+1)*ch_split,i,:] += np.sin(2*np.pi*60*x)
-                            temp[(6*ch+2)*ch_split:(6*ch+3)*ch_split,i,:] += 2*np.sin(2*np.pi*60*x)
-                            temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += 3*np.sin(2*np.pi*60*x)
-                            temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += 4*np.sin(2*np.pi*60*x) 
-                            temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += 5*np.sin(2*np.pi*60*x)
-                        elif rep_i == 1:        
-                            temp[(6*ch)*ch_split:(6*ch+1)*ch_split,i,:] += np.random.normal(0,1,temp.shape[2])
-                            temp[(6*ch+1)*ch_split:(6*ch+2)*ch_split,i,:] += np.random.normal(0,2,temp.shape[2])
-                            temp[(6*ch+2)*ch_split:(6*ch+3)*ch_split,i,:] += np.random.normal(0,3,temp.shape[2])
-                            temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
-                            temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])
                     elif noise_type == 'allmix':
                         if rep_i == 0:
                             temp[6*ch*ch_split:(6*ch+1)*ch_split,i,:] = 0
@@ -413,15 +431,6 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                             temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += np.random.normal(0,3,temp.shape[2])
                             temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
                             temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])
-                    elif noise_type == '60hzall':
-                        if rep_i == 0:
-                            temp[(3*ch)*ch_split:(3*ch+1)*ch_split,i,:] += np.random.randint(1,6)*np.sin(2*np.pi*60*x)
-                            temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += np.sin(2*np.pi*60*x)
-                            temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] += 2*np.sin(2*np.pi*60*x)
-                        else:
-                            temp[3*ch*ch_split:(3*ch+1)*ch_split,i,:] += 3*np.sin(2*np.pi*60*x)
-                            temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,i,:] += 4*np.sin(2*np.pi*60*x)
-                            temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,i,:] += 5*np.sin(2*np.pi*60*x)
                     elif noise_type == 'flat':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
                     elif noise_type == 'gauss':
