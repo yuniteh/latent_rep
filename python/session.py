@@ -67,21 +67,23 @@ class Session():
 
     def create_filename(self,foldername,cv=0,sub=0,ftype='',test_scale=0):
         # full results file
-        if ftype == 'results':
-            filename = foldername + '/' + self.sub_type + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_' + self.n_train + '_' + str(self.train_scale) + '_' + self.n_test
+        # if ftype == 'results':
+        #     filename = foldername + '/' + self.sub_type + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_' + self.n_test + '_results'
+        # else:
+        # train noise file
+        if ftype == 'trainnoise':
+            filename = foldername + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_train) + '_' + str(self.train_scale)
+        elif ftype == 'testnoise':
+            filename = foldername + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_test) + '_' + str(test_scale)
+        elif ftype =='allresults':
+            filename = foldername + '/' + self.sub_type + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
+        # model file
         else:
-            # train noise file
-            if ftype == 'trainnoise':
-                filename = foldername + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_train) + '_' + str(self.train_scale)
-            elif ftype == 'testnoise':
-                filename = foldername + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_test) + '_' + str(test_scale)
-            # model file
-            else:
-                filename = foldername + '/' + self.sub_type + str(sub) + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
-            if self.dt == 'cv':
-                filename += '_cv_' + str(cv)
-            if self.sparsity and ftype == '':
-                filename += '_sparse'
+            filename = foldername + '/' + self.sub_type + str(sub) + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
+        if self.dt == 'cv':
+            filename += '_cv_' + str(cv)
+        if self.sparsity and ftype == '':
+            filename += '_sparse'
         
         return filename
 
@@ -161,7 +163,6 @@ class Session():
                         for i in range(np.size(x_train,1)):
                             emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
 
-                        # emg_scale = 5/np.max(np.abs(x_train))                   
                     else:
                         # Add noise to training data                        
                         if self.dt == 'cv':
@@ -172,8 +173,6 @@ class Session():
                         for i in range(np.size(x_train,1)):
                             emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
 
-                        # emg_scale = 5/np.max(np.abs(x_train))
-                        # if self.sub_type == 'TR':
                         x_train = x_train*emg_scale
                         x_valid = x_valid*emg_scale
                 
@@ -318,60 +317,6 @@ class Session():
                     cnn_hist = cnn_hist.history
                 
                 if mod == 'all' or any("ext_c" in s for s in mod):
-                    # # get number of batches
-                    # n_batches = len(x_train_noise_vae) // self.batch_size
-                    # # initialize history array
-                    # temp_epochs = 30
-                    # ecnn_hist = np.zeros((temp_epochs,10))
-                    # # loop through epochs
-                    # for ep in range(temp_epochs):
-                    #     # set loss weight vector, not finalized
-                    #     # if ep < self.epochs/2: 
-                    #     #     weight = np.array([[0,2**((ep-(self.epochs/2))/2)] for _ in range(self.batch_size)])
-                    #     # else:
-                    #     #     weight = np.array([[1,.5] for _ in range(self.batch_size)])
-                        
-                    #     if ep < 15: #temp_epochs//3: 
-                    #         # weight = np.array([[0,(2**(ep-(temp_epochs//3)))/10] for _ in range(self.batch_size)])
-                    #         weight = np.array([[0,(2**(ep-(20)))/100] for _ in range(self.batch_size)])
-                    #     # elif ep < 40:
-                    #     #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
-                    #     # elif ep < 60:
-                    #     #     weight = np.array([[0,(2**(ep-(60)))/100] for _ in range(self.batch_size)])
-                    #     # elif ep < 80:
-                    #     #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
-                    #     # elif ep < 100:
-                    #     #     weight = np.array([[0,(2**(ep-(100)))/100] for _ in range(self.batch_size)])
-                    #     else:
-                    #         weight = np.array([[1,.01] for _ in range(self.batch_size)])
-                        
-                    #     # get batches for inputs
-                    #     x_train_noise_ep = dl.get_batches(x_train_noise_vae, self.batch_size)
-                    #     x_train_clean_ep = dl.get_batches(x_train_clean_vae, self.batch_size)
-                    #     y_train_ep = dl.get_batches(y_train_clean, self.batch_size)
-                    #     # loop through batches
-                    #     for ii in range(n_batches):
-                    #         x_train_noise_bat = next(x_train_noise_ep)
-                    #         x_train_clean_bat = next(x_train_clean_ep)
-                    #         y_train_bat = next(y_train_ep)
-
-                    #         # train to reconstruct clean data
-                    #         temp_out = ecnn.train_on_batch([x_train_noise_bat,y_train_bat,weight],[x_train_clean_bat,y_train_bat])
-
-                    #     # dummy loss weight for testing
-                    #     test_weight = np.array([[1,1] for _ in range(len(x_valid_noise_vae))])
-
-                    #     # save training metrics in history array
-                    #     ecnn_hist[ep,:5] = temp_out
-
-                    #     ## validation testing to reconstruct clean features
-                    #     ecnn_hist[ep,5:] = ecnn.test_on_batch([x_valid_noise_vae,y_valid_clean,test_weight],[x_valid_noise_vae,y_valid_clean])
-
-                    #     # print training losses as we train
-                    #     if ep == 0:
-                    #         print(ecnn.metrics_names)
-                    #     print(ecnn_hist[ep,5:])
-
                     ecnn_hist = ecnn.fit([x_train_noise_vae,y_train_clean], [x_train_noise_vae,y_train_clean],epochs=30,validation_data = [[x_valid_noise_vae, y_valid_clean],[x_valid_noise_vae,y_valid_clean]],batch_size=self.batch_size)
                     ecnn_w = ecnn.get_weights()
                     ecnn_enc_w = ecnn_enc.get_weights()
@@ -715,7 +660,6 @@ class Session():
                             # y_test_ch = np.argmax(to_categorical(p_test[:,4]-1),axis=1)[...,np.newaxis]
                             # y_test_ch = y_test_lda
                             
-
                             # Compile models and test data into lists
                             dl_mods = 5
                             align_mods = 5
@@ -738,21 +682,16 @@ class Session():
                             acc_all[sub-1,cv-1,test_scale - 1,:], acc_noise[sub-1,cv-1,test_scale - 1,:], acc_clean[sub-1,cv-1,test_scale - 1,:] = np.nan, np.nan, np.nan
                 
                 # Save subject specific cv results
-                results = self.create_filename(resultsfolder, cv, sub)
+                subresults = self.create_filename(resultsfolder, cv, sub)
                 print(np.squeeze(acc_noise[sub-1,...]))
-                print('saving ' + filename + '_' + self.n_test + '_' + self.test_dt + '_results.p')
-                with open(results + '_' + self.n_test + '_cvresults.p', 'wb') as f:
+                print('saving sub results: ' + subresults + '_' + self.n_test + '_subresults.p')
+                with open(subresults + '_' + self.n_test + '_subresults.p', 'wb') as f:
                     pickle.dump([acc_all[sub-1,...], acc_noise[sub-1,...], acc_clean[sub-1,...]],f)
         
         # save results for all subjects, need to figure out n_test = 0
-        if self.n_test != 0:
-            resultsfile = foldername + '/' + self.sub_type + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_' + self.n_train + '_' + str(self.train_scale) + '_' + self.n_test
-            if self.sparsity:
-                resultsfile = resultsfile + '_sparse'
-        else:
-            resultsfile = filename
-
-        with open(resultsfile + '_results.p', 'wb') as f:
+        allresults = self.create_filename(resultsfolder, cv, sub, ftype='allresults')
+        print('saving all results: ' + allresults + '_' + self.n_test + '_results.p')
+        with open(allresults + '_' + self.n_test + '_results.p', 'wb') as f:
             pickle.dump([acc_all, acc_clean, acc_noise],f)
 
         out = {'acc_all':acc_all, 'acc_noise':acc_noise, 'acc_clean':acc_clean}
