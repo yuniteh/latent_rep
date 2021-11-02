@@ -274,7 +274,7 @@ def build_M2S2(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
         inter_shape = (3,2,1)
     elif input_type == 'raw':
         input_shape = (6,50,1)
-        inter_shape = (3,25,1)
+        inter_shape = (3,25,1)        
 
     weight = Input(shape=(2,))
     # build encoder model
@@ -813,6 +813,8 @@ def build_sae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
         input_shape = (24,)
     elif input_type == 'raw':
         input_shape = (300,)
+    elif input_type == 'mav':
+        input_shape = (6,)
 
     # build encoder model
     inputs = Input(shape=input_shape)
