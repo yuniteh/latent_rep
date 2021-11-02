@@ -10,7 +10,7 @@ def plot_latent_dim(params,sess):
     foldername = sess.create_foldername()
 
     # Loop through subs
-    for sub_i in range(1,2):#np.max(params[:,0])+1):
+    for sub_i in range(2,3):#np.max(params[:,0])+1):
         # Loop through dimensions
         for lat in range(1,11):
             sess.latent_dim = lat
@@ -19,8 +19,8 @@ def plot_latent_dim(params,sess):
                 filename = sess.create_filename(foldername,cv,sub_i)
                 with open(filename + '_hist.p', 'rb') as f:
                     svae_hist, sae_hist, cnn_hist, vcnn_hist, ecnn_hist = pickle.load(f)
-                all_acc[sub_i-1,lat-1,cv-1,:] = np.array([svae_hist[-1,1],svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist['accuracy'][-1], ecnn_hist['accuracy'][-1]])
-                all_val[sub_i-1,lat-1,cv-1,:] = np.array([svae_hist[-1,8],svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist['val_accuracy'][-1], ecnn_hist['val_accuracy'][-1]])
+                all_acc[sub_i-1,lat-1,cv-1,:] = np.array([svae_hist[-1,1],svae_hist[-1,5], sae_hist['accuracy'][-1], cnn_hist['accuracy'][-1], vcnn_hist[-1,1], ecnn_hist[-1,4]])
+                all_val[sub_i-1,lat-1,cv-1,:] = np.array([svae_hist[-1,8],svae_hist[-1,12], sae_hist['val_accuracy'][-1], cnn_hist['val_accuracy'][-1], vcnn_hist[-1,3], ecnn_hist[-1,9]])
 
     mean_acc = np.nanmean(np.nanmean(all_acc,axis=2),axis=0)
     mean_val = np.nanmean(np.nanmean(all_val,axis=2),axis=0)
@@ -36,7 +36,7 @@ def plot_latent_dim(params,sess):
     ax.set_xticklabels(['1','2','3','4','5'])
     ax.legend(['VCAE','NN','CNN','VCNN','ECNN'])
 
-    return all_acc, all_val
+    return svae_hist, cnn_hist, vcnn_hist, ecnn_hist
 
 def plot_latent_rep(x_red, y):
     # plot reduced dimensions in 3D
@@ -86,17 +86,19 @@ def plot_noise_ch(params, sess):
 
     return 
 
-def plot_electrode_results(ave_noise,ave_clean):
-        # Plot accuracy vs. # noisy electrodes
+def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
+    ave_clean[0,-1] = ave_clean[0,10]
+    ave_noise = np.vstack([ave_clean[0,:],ave_noise])
+    # Plot accuracy vs. # noisy electrodes
     fig,ax = plt.subplots(1,3)
     c = ['k','r','m']
     c_i = 0
     for i in range(1,5):
-        ax[0].plot(100*ave_noise[:,i],'-o')
+        ax[0].plot(100-100*ave_noise[:,i],'-o')
     for i in range(6,10):    
-        ax[1].plot(100*ave_noise[:,i],'-o')
+        ax[1].plot(100-100*ave_noise[:,i],'-o')
     for i in [10,11,14]:
-        ax[2].plot(100*ave_noise[:,i],'-o',color=c[c_i])
+        ax[2].plot(100-100*ave_noise[:,i],'-o',color=c[c_i])
         c_i+=1    
 
     ax[0].set_ylabel('Accuracy (%)')
@@ -110,12 +112,31 @@ def plot_electrode_results(ave_noise,ave_clean):
     ax[1].set_yticks([])
     ax[2].set_yticks([])
     for i in range(0,3):
-        ax[i].set_ylim(0,100)
-        ax[i].set_xticks(range(0,4))
-        ax[i].set_xticklabels(['1','2','3','4'])
+        ax[i].set_ylim(0,80)
+        ax[i].set_xticks(range(0,5))
+        ax[i].set_xticklabels(['0','1','2','3','4'])
 
     fig.set_tight_layout(True)
 
+# Plot accuracy vs. # noisy electrodes
+    fig,ax = plt.subplots()
+    c = ['k','r','m']
+    c_i = 0
+    for i in range(6,10):    
+        ax.plot(100-100*ave_noise[:,i],'-o')
+    for i in [10,11,14]:
+        ax.plot(100-100*ave_noise[:,i],'--o',color=c[c_i])
+        c_i+=1    
+
+    ax.set_ylabel('Error Rate (%)')
+    fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
+    ax.legend(['sae-lda','cnn-lda','vcnn-lda','ecnn-lda','LDA','LDA-corrupt','LDA-ch'])
+    ax.set_ylim(0,80)
+    ax.set_xticks(range(0,5))
+    ax.set_xticklabels(['0','1','2','3','4'])
+    ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
+
+    fig.set_tight_layout(True)
     # Plot accuracy vs. # noisy electrodes
 
     fig, ax = plt.subplots()
@@ -124,11 +145,11 @@ def plot_electrode_results(ave_noise,ave_clean):
     arr = [5,2,3,9,7,8,10,11]
     c = ['tab:blue','tab:orange','tab:green','tab:blue','tab:orange','tab:green','k','r']
     clean_all = ave_clean[0,arr]
-    ax.bar(x,clean_all*100,color=c)
+    ax.bar(x,100-clean_all*100,color=c)
     ax.set_xticks(range(8))
     ax.set_xticklabels(['SAE','CNN','VCNN','SAE-LDA','CNN-LDA','VCNN-LDA','LDA','LDA-corrupt'])
     ax.set_ylabel('Accuracy (%)')
-    ax.set_ylim([0,100])
+    ax.set_ylim([0,40])
 
     fig.set_tight_layout(True)
 
