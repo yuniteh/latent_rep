@@ -541,7 +541,9 @@ class Session():
                     # Build models and set weights
                     K.clear_session()
                     svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    sae, sae_enc, sae_clf = dl.build_sae_var(self.latent_dim, y_shape, input_type='mav', sparse=self.sparsity,lr=self.lr)
+
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
@@ -655,8 +657,8 @@ class Session():
                             x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
                             x_test_clean_sae = x_test_clean_vae.reshape(x_test_clean_vae.shape[0],-1)
 
-                            # x_test_dlsae = x_test_dlsae[:,0:-1:4]
-                            # x_test_clean_sae = x_test_clean_sae[:,0:-1:4]
+                            x_test_dlsae = x_test_dlsae[:,0:-1:4]
+                            x_test_clean_sae = x_test_clean_sae[:,0:-1:4]
 
                             # TEMP - CNN extended
                             x_test_ext = np.concatenate((x_test_vae,x_test_vae[:,:2,...]),axis=1)
