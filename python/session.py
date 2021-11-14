@@ -221,8 +221,8 @@ class Session():
                     x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
 
                     # if self.mod_dt == 'mav':
-                    # x_train_noise_sae = x_train_noise_sae[:,0:-1:4]
-                    # x_valid_noise_sae = x_valid_noise_sae[:,0:-1:4]
+                    x_train_noise_sae = x_train_noise_sae[:,0:-1:4]
+                    x_valid_noise_sae = x_valid_noise_sae[:,0:-1:4]
 
                     # TEMP - CNN extended
                     x_train_noise_ext = np.concatenate((x_train_noise_vae,x_train_noise_vae[:,:2,...]),axis=1)
@@ -234,7 +234,8 @@ class Session():
                     # if self.mod_dt == 'mav':
                     # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
                     # else:
-                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    sae, sae_enc, sae_clf = dl.build_sae_var(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)

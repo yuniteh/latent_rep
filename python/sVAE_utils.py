@@ -844,6 +844,44 @@ def build_sae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     vae.compile(optimizer=opt, loss='categorical_crossentropy',experimental_run_tf_function=False,metrics=['accuracy'])
     return vae, encoder, clf_supervised
 
+def build_sae_var(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
+    
+    if input_type == 'feat':
+        input_shape = (24,)
+    elif input_type == 'raw':
+        input_shape = (300,)
+    elif input_type == 'mav':
+        input_shape = (6,)
+
+    # build encoder model
+    inputs = Input(shape=input_shape)
+    x = Dense(24, activation="relu")(inputs)
+    x = BatchNormalization()(x)
+    x = Dense(12, activation="relu")(x)
+    x = BatchNormalization()(x)
+    x = Dense(8, activation="relu")(x)
+    x = BatchNormalization()(x)
+    z_mean = Dense(latent_dim, name="z_mean", activity_regularizer=regularizers.l1(10e-5))(x)
+    z_log_var = Dense(latent_dim, name="z_log_var", activity_regularizer=regularizers.l1(10e-5))(x)
+    z_mean = BatchNormalization()(z_mean)
+    z_log_var = BatchNormalization()(z_log_var)
+    z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
+    z = BatchNormalization()(z)
+    encoder = Model(inputs, z, name="encoder")
+
+    # classifier
+    clf_latent_inputs = Input(shape=(latent_dim,), name='z_clf')
+    clf_outputs = Dense(n_class, activation='softmax', name='class_output')(clf_latent_inputs)
+    clf_supervised = Model(clf_latent_inputs, clf_outputs, name='clf')
+
+    # instantiate VAE model
+    outputs = clf_supervised(encoder(inputs))
+    vae = Model(inputs, outputs, name='vae_mlp')
+
+    opt = optimizers.Adam(learning_rate=lr)
+    vae.compile(optimizer=opt, loss='categorical_crossentropy',experimental_run_tf_function=False,metrics=['accuracy'])
+    return vae, encoder, clf_supervised
+
 ## VARIATIONAL AUTOENCODER - NO CLASSIFIER
 def build_vae(latent_dim, input_type='feat'):
     if input_type == 'feat':
