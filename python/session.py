@@ -186,6 +186,11 @@ class Session():
                         # shuffle data to make even batches
                         x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
 
+                        x_train_noise[x_train_noise > 5] = 5
+                        x_train_noise[x_train_noise < -5] = -5
+                        x_train_clean[x_train_clean > 5] = 5
+                        x_train_clean[x_train_clean < -5] = -5
+
                         # Training data for LDA/QDA
                         y_train = p_train[:,4]
                         x_train_lda = prd.extract_feats(x_train)
@@ -215,6 +220,10 @@ class Session():
                     x_train_noise_sae = x_train_noise_vae.reshape(x_train_noise_vae.shape[0],-1)
                     x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
 
+                    # if self.mod_dt == 'mav':
+                    x_train_noise_sae = x_train_noise_sae[:,0:-1:4]
+                    x_valid_noise_sae = x_valid_noise_sae[:,0:-1:4]
+
                     # TEMP - CNN extended
                     x_train_noise_ext = np.concatenate((x_train_noise_vae,x_train_noise_vae[:,:2,...]),axis=1)
                     x_valid_noise_ext = np.concatenate((x_valid_noise_vae,x_valid_noise_vae[:,:2,...]),axis=1)
@@ -222,7 +231,11 @@ class Session():
                     # Build models
                     K.clear_session()
                     svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # if self.mod_dt == 'mav':
+                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
+                    # else:
+                    # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # sae, sae_enc, sae_clf = dl.build_sae_var(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
@@ -528,7 +541,9 @@ class Session():
                     # Build models and set weights
                     K.clear_session()
                     svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type='mav', sparse=self.sparsity,lr=self.lr)
+
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
@@ -570,8 +585,8 @@ class Session():
                     
                     if 'noisescale' in self.test_dt:
                         x_test = x_test*emg_scale
-                    # if self.test_dt == 'noisescale':
                     #     real_noise = real_noise_temp*emg_scale
+                    #     print('scaling')
                     # else:
                     #     real_noise = real_noise_temp
                     # loop through test levels
@@ -606,8 +621,8 @@ class Session():
                                     # Add noise and index testing data
                                     if 'real' in noise_type:
                                         if 'noisescale' in self.test_dt:
+                                            print('scaling noise')
                                             x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale, real_noise=real_noise_temp, emg_scale = emg_scale)
-                                            print(emg_scale)
                                         else:
                                             x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale, real_noise=real_noise_temp)
                                     else:
@@ -620,6 +635,8 @@ class Session():
                             if not test_load:
                                 x_test_noise[x_test_noise > 5] = 5
                                 x_test_noise[x_test_noise < -5] = -5
+                                x_test_clean[x_test_clean > 5] = 5
+                                x_test_clean[x_test_clean < -5] = -5
                                 # extract and scale features
                                 if self.feat_type == 'feat':
                                     x_test_vae, _ = prd.extract_scale(x_test_noise,scaler)
@@ -639,6 +656,9 @@ class Session():
                             # Reshape for nonconvolutional SAE
                             x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
                             x_test_clean_sae = x_test_clean_vae.reshape(x_test_clean_vae.shape[0],-1)
+
+                            x_test_dlsae = x_test_dlsae[:,0:-1:4]
+                            x_test_clean_sae = x_test_clean_sae[:,0:-1:4]
 
                             # TEMP - CNN extended
                             x_test_ext = np.concatenate((x_test_vae,x_test_vae[:,:2,...]),axis=1)
