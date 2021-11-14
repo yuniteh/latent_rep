@@ -232,10 +232,10 @@ class Session():
                     K.clear_session()
                     svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     # if self.mod_dt == 'mav':
-                    # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
+                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
                     # else:
                     # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    sae, sae_enc, sae_clf = dl.build_sae_var(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
+                    # sae, sae_enc, sae_clf = dl.build_sae_var(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
@@ -542,7 +542,7 @@ class Session():
                     K.clear_session()
                     svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    sae, sae_enc, sae_clf = dl.build_sae_var(self.latent_dim, y_shape, input_type='mav', sparse=self.sparsity,lr=self.lr)
+                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type='mav', sparse=self.sparsity,lr=self.lr)
 
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
