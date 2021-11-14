@@ -292,7 +292,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
     if full_type == 'full':
         if noise_type == 'gaussflat60hz' or noise_type == 'allmix':
             split = 6
-        elif noise_type == 'gauss60hz' or noise_type == '60hzall' or noise_type == 'gaussall':
+        elif noise_type == 'gauss60hz' or noise_type == '60hzall' or noise_type == 'gaussall' or noise_type == 'testall':
             split = 5
         else:
             split = 3
@@ -305,6 +305,8 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
     if full_type == 'full':
         if noise_type != '60hzall' or noise_type != 'gaussall':
             rep = 2
+        elif noise_type == 'testall':
+            rep = 3
         start_ch = 1
         sub_params = np.tile(params,(rep*(num_ch-1)+1,1))
         orig = np.tile(raw,(rep*(num_ch-1)+1,1,1))
@@ -416,6 +418,24 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                             temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += np.random.normal(0,3,temp.shape[2])
                             temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
                             temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])
+                    elif noise_type == 'testall':
+                        if rep_i == 0:
+                            for scale_i in range(5):
+                                temp[(5*ch+scale_i)*ch_split:(5*ch+scale_i+1)*ch_split,i,:] += (scale_i+1)*np.sin(2*np.pi*60*x)
+                        elif rep_i == 1:        
+                            for scale_i in range(5):
+                                temp[(5*ch+scale_i)*ch_split:(5*ch+scale_i+1)*ch_split,i,:] += np.random.normal(0,scale_i+1,temp.shape[2])
+                        else:
+                            temp[5*ch*ch_split:(5*ch+2)*ch_split,i,:] = 0
+                            temp_split = temp[(5*ch+2)*ch_split:(5*ch+5)*ch_split,i,:]
+                            for temp_iter in range(ch_split):
+                                if ch_noise[temp_iter,ch_ind] == 0:
+                                    temp_split[temp_iter,...] = 0
+                                elif ch_noise[temp_iter,ch_ind] == 1:
+                                    temp_split[temp_iter,...] += np.random.normal(0,ch_level[temp_iter,ch_ind]+1,temp.shape[2])
+                                else:
+                                    temp_split[temp_iter,...] += (ch_level[temp_iter,ch_ind]+1)*np.sin(2*np.pi*60*x)
+                            temp[(5*ch+2)*ch_split:(5*ch+5)*ch_split,i,:] = cp.deepcopy(temp_split)
                     elif noise_type == 'flat':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
                     elif noise_type == 'gauss':

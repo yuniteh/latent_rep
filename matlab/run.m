@@ -6,7 +6,6 @@ raw = data.daq.DAQ_DATA(:,ch);
 t = data.daq.t;
 win = data.setup.DAQ_FRAME;
 inc = data.setup.DAQ_FRINC;
-
 %% Separate into windows
 raw_win = zeros(length(raw)/25,200);
 
@@ -16,6 +15,7 @@ for i = 1:25:length(raw)-200
     ind = ind + 1;
 end
 %% plot all
+figure
 plot(raw)
 ylim([-5,5])
 %% Plot through windows on loop

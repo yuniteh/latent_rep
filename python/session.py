@@ -186,6 +186,11 @@ class Session():
                         # shuffle data to make even batches
                         x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
 
+                        x_train_noise[x_train_noise > 5] = 5
+                        x_train_noise[x_train_noise < -5] = -5
+                        x_train_clean[x_train_clean > 5] = 5
+                        x_train_clean[x_train_clean < -5] = -5
+
                         # Training data for LDA/QDA
                         y_train = p_train[:,4]
                         x_train_lda = prd.extract_feats(x_train)
@@ -577,8 +582,8 @@ class Session():
                     
                     if 'noisescale' in self.test_dt:
                         x_test = x_test*emg_scale
-                    # if self.test_dt == 'noisescale':
                     #     real_noise = real_noise_temp*emg_scale
+                    #     print('scaling')
                     # else:
                     #     real_noise = real_noise_temp
                     # loop through test levels
@@ -613,6 +618,7 @@ class Session():
                                     # Add noise and index testing data
                                     if 'real' in noise_type:
                                         if 'noisescale' in self.test_dt:
+                                            print('scaling noise')
                                             x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale, real_noise=real_noise_temp, emg_scale = emg_scale)
                                         else:
                                             x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale, real_noise=real_noise_temp)
@@ -626,6 +632,8 @@ class Session():
                             if not test_load:
                                 x_test_noise[x_test_noise > 5] = 5
                                 x_test_noise[x_test_noise < -5] = -5
+                                x_test_clean[x_test_clean > 5] = 5
+                                x_test_clean[x_test_clean < -5] = -5
                                 # extract and scale features
                                 if self.feat_type == 'feat':
                                     x_test_vae, _ = prd.extract_scale(x_test_noise,scaler)
