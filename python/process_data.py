@@ -14,6 +14,7 @@ from itertools import combinations
 import time
 import json
 import pickle
+from statsmodels.tsa.ar_model import AutoReg
 
 
 def load_raw(filename):
@@ -607,7 +608,7 @@ def extract_feats_fast(raw):
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     return feat_out
 
-def extract_feats(raw,th=0.01):
+def extract_feats(raw,th=0.01,ft='feat'):
     if raw.shape[-1] == 1:
         raw = np.squeeze(raw)
     N=raw.shape[2]
@@ -634,6 +635,9 @@ def extract_feats(raw,th=0.01):
 
     # feat_out = 0
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
+
+    # if ft == 'tdar':
+    #     reg_out = AutoReg(raw, lags=6).fit()
     return feat_out
 
 def extract_scale(x,scaler,load=True):

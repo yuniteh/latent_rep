@@ -158,7 +158,7 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     ax.set_ylabel('Error Rate (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
     ax.legend(['sae','cnn','svae','sae-lda','cnn-lda','svae-lda','LDA','LDA-corrupt','LDA-ch'])
-    ax.set_ylim(0,90)
+    ax.set_ylim(0,80)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
     ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
