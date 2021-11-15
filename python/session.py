@@ -52,8 +52,12 @@ class Session():
         # Set folder
         if ftype == 'trainnoise':
             foldername = 'noisedata_' + self.dt + '_' + self.mod_dt
+            if self.feat_type == 'tdar':
+                foldername += '_tdar'
         elif ftype == 'testnoise':
             foldername = 'testdata_' + self.dt + '_' + self.test_dt
+            if self.feat_type == 'tdar':
+                foldername += '_tdar'
         elif ftype =='results':
             foldername = 'results_' + str(self.train_grp) + '_' + self.dt + '_' + self.test_dt
         else:
@@ -193,18 +197,18 @@ class Session():
 
                         # Training data for LDA/QDA
                         y_train = p_train[:,4]
-                        x_train_lda = prd.extract_feats(x_train)
+                        x_train_lda = prd.extract_feats(x_train,ft=self.feat_type)
                         y_train_lda = y_train[...,np.newaxis] - 1
-                        x_train_noise_lda = prd.extract_feats(x_train_noise)
+                        x_train_noise_lda = prd.extract_feats(x_train_noise,ft=self.feat_type)
                         y_train_noise_lda = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
                         # Shape data based on feature type
                         if self.feat_type == 'feat':
                             # extract and scale features from training and validation data
-                            x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load) 
-                            x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler)
-                            x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler)
-                            x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler)
+                            x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load,ft=self.feat_type) 
+                            x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler,ft=self.feat_type)
+                            x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler,ft=self.feat_type)
+                            x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler,ft=self.feat_type)
 
                         elif self.feat_type == 'raw': # not finalized
                             x_train_noise_vae = 0.5+cp.deepcopy(x_train_noise[:,:,::4,:])/10

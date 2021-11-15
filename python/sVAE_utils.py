@@ -106,6 +106,9 @@ def build_M2(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     elif input_type == 'raw':
         input_shape = (6,50,1)
         inter_shape = (3,25,1)
+    elif input_type == 'tdar':
+        input_shape = (6,10,1)
+        inter_shape = (3,5,1)
 
     weight = Input(shape=(2,))
     # build encoder model
@@ -274,7 +277,10 @@ def build_M2S2(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
         inter_shape = (3,2,1)
     elif input_type == 'raw':
         input_shape = (6,50,1)
-        inter_shape = (3,25,1)        
+        inter_shape = (3,25,1)    
+    elif input_type == 'tdar':
+        input_shape = (6,10,1)
+        inter_shape = (3,5,1)    
 
     weight = Input(shape=(2,))
     # build encoder model
@@ -659,6 +665,8 @@ def build_vcnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
         input_shape = (6,4,1)
     elif input_type == 'raw':
         input_shape = (6,50,1)
+    elif input_type == 'tdar':
+        input_shape = (6,10,1)
 
     # build encoder model
     inputs = Input(shape=input_shape)
@@ -713,6 +721,8 @@ def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
         input_shape = (6,4,1)
     elif input_type == 'raw':
         input_shape = (6,50,1)
+    elif input_type == 'tdar':
+        input_shape = (6,10,1)
 
     # build encoder model
     inputs = Input(shape=input_shape)
@@ -815,6 +825,8 @@ def build_sae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
         input_shape = (300,)
     elif input_type == 'mav':
         input_shape = (6,)
+    elif input_type == 'tdar':
+        input_shape = (60,)
 
     # build encoder model
     inputs = Input(shape=input_shape)

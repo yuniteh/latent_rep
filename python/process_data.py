@@ -644,9 +644,9 @@ def extract_feats(raw,th=0.01,ft='feat',order=6):
         feat_out = np.hstack([feat_out,reg_out])
     return feat_out
 
-def extract_scale(x,scaler,load=True):
+def extract_scale(x,scaler,load=True, ft='feat'):
     # extract features 
-    x_temp = np.transpose(extract_feats(x).reshape((x.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+    x_temp = np.transpose(extract_feats(x,ft=ft).reshape((x.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
 
     # scale features
     if load:
