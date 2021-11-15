@@ -608,7 +608,7 @@ def extract_feats_fast(raw):
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     return feat_out
 
-def extract_feats(raw,th=0.01,ft='feat'):
+def extract_feats(raw,th=0.01,ft='feat',order=6):
     if raw.shape[-1] == 1:
         raw = np.squeeze(raw)
     N=raw.shape[2]
@@ -635,9 +635,13 @@ def extract_feats(raw,th=0.01,ft='feat'):
 
     # feat_out = 0
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
-
+    
     if ft == 'tdar':
-        reg_out = AutoReg(raw, lags=6).fit()
+        reg_out = np.full((samp,raw.shape[1]*order),np.nan)
+        for i in range(samp):
+            temp = lpc(np.squeeze(raw[i,:,:]),order)
+            reg_out[i,:] = np.real(temp).T.reshape(-1)
+        feat_out = np.hstack([feat_out,reg_out])
     return feat_out
 
 def extract_scale(x,scaler,load=True):
