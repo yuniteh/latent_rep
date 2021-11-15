@@ -637,7 +637,7 @@ def extract_feats(raw,th=0.01,ft='feat',order=6):
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     
     if ft == 'tdar':
-        reg_out = np.full((samp,raw.shape[1]*order),np.nan)
+        reg_out = np.zeros((samp,raw.shape[1]*order))
         for i in range(samp):
             temp = lpc(np.squeeze(raw[i,:,:]),order)
             reg_out[i,:] = np.real(temp).T.reshape(-1)
@@ -646,7 +646,11 @@ def extract_feats(raw,th=0.01,ft='feat',order=6):
 
 def extract_scale(x,scaler,load=True, ft='feat'):
     # extract features 
-    x_temp = np.transpose(extract_feats(x,ft=ft).reshape((x.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+    if ft == 'feat':
+        num_feat = 4
+    elif ft == 'tdar':
+        num_feat = 10
+    x_temp = np.transpose(extract_feats(x,ft=ft).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
 
     # scale features
     if load:
@@ -740,5 +744,7 @@ def levinson(r, order, allow_singularity=False):
             A[...,j] = save + temp * A[...,kj]
             if j != kj:
                 A[...,kj] += temp*save
+    
+    A = np.nan_to_num(A)
 
     return A

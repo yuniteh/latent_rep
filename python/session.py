@@ -203,7 +203,7 @@ class Session():
                         y_train_noise_lda = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
                         # Shape data based on feature type
-                        if self.feat_type == 'feat':
+                        if self.feat_type == 'feat' or self.feat_type == 'tdar':
                             # extract and scale features from training and validation data
                             x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load,ft=self.feat_type) 
                             x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler,ft=self.feat_type)
@@ -227,6 +227,8 @@ class Session():
                     # if self.mod_dt == 'mav':
                     x_train_noise_sae = x_train_noise_sae[:,0:-1:4]
                     x_valid_noise_sae = x_valid_noise_sae[:,0:-1:4]
+                    x_train_noise_sae = x_train_noise_sae[:,:6]
+                    x_valid_noise_sae = x_valid_noise_sae[:,:6]
 
                     # TEMP - CNN extended
                     x_train_noise_ext = np.concatenate((x_train_noise_vae,x_train_noise_vae[:,:2,...]),axis=1)
@@ -642,19 +644,22 @@ class Session():
                                 x_test_clean[x_test_clean > 5] = 5
                                 x_test_clean[x_test_clean < -5] = -5
                                 # extract and scale features
-                                if self.feat_type == 'feat':
-                                    x_test_vae, _ = prd.extract_scale(x_test_noise,scaler)
-                                    x_test_clean_vae, _ = prd.extract_scale(x_test_clean,scaler)
+                                if self.feat_type == 'feat' or self.feat_type == 'tdar':
+                                    x_test_vae, _ = prd.extract_scale(x_test_noise,scaler,ft=self.feat_type)
+                                    x_test_clean_vae, _ = prd.extract_scale(x_test_clean,scaler,ft=self.feat_type)
                                 # not finalized, scale raw data
                                 elif self.feat_type == 'raw':
                                     x_test_vae = cp.deepcopy(x_test_noise[:,:,::2,:])/5
                                     x_test_clean_vae = cp.deepcopy(x_test_clean[:,:,::2,:])/5
                                 
-                                x_test_lda = prd.extract_feats(x_test_noise)
+                                x_test_lda = prd.extract_feats(x_test_noise,ft=self.feat_type)
                                 with open(noisefile + '.p','wb') as f:
                                     pickle.dump([x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean],f) 
-
-                            x_temp = np.transpose(x_test_lda.reshape((x_test_lda.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                            if self.feat_type == 'feat':
+                                num_feat = 4
+                            elif self.feat_type == 'tdar':
+                                num_feat = 10
+                            x_temp = np.transpose(x_test_lda.reshape((x_test_lda.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
                             x_test_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
 
                             # Reshape for nonconvolutional SAE
