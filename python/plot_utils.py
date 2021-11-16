@@ -121,7 +121,7 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     # Plot accuracy vs. # noisy electrodes
     fig,ax = plt.subplots()
     c = ['k','r','m']
-    c_tab = ['tab:blue', 'tab:orange', 'tab:green']
+    c_tab = ['tab:purple','tab:blue', 'tab:orange', 'tab:green']
     c_i = 0
     for i in range(6,10):    
         ax.plot(100-100*ave_noise[:,i],'-o')
@@ -143,11 +143,11 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     fig,ax = plt.subplots()
     c = ['k','r','m']
     c_i = 0
-    for i in [1,2,4]:    
+    for i in [0,1,2,4]:    
         ax.plot(100-100*ave_noise[:,i],':o',color=c_tab[c_i])
         c_i+=1
     c_i = 0
-    for i in [6,7,9]:    
+    for i in [5,6,7,9]:    
         ax.plot(100-100*ave_noise[:,i],'-o',color=c_tab[c_i])
         c_i+=1
     c_i = 0
@@ -157,7 +157,7 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
 
     ax.set_ylabel('Error Rate (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
-    ax.legend(['sae','cnn','svae','sae-lda','cnn-lda','svae-lda','LDA','LDA-corrupt','LDA-ch'])
+    ax.legend(['sae-feat','sae','cnn','svae','sae-feat-lda','sae-lda','cnn-lda','svae-lda','LDA','LDA-corrupt','LDA-ch'])
     ax.set_ylim(0,80)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
