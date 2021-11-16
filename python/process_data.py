@@ -638,11 +638,15 @@ def extract_feats(raw,th=0.01,ft='feat',order=6):
     
     if ft == 'tdar':
         reg_out = np.zeros((samp,raw.shape[1]*order))
-        for i in range(samp):
-            AR = np.zeros((6,order))
-            for ch in range(6):
-                AR[ch,:] = np.squeeze(matAR(raw[i,ch,:],order))
-            reg_out[i,:] = np.real(AR).T.reshape(-1)
+        # for i in range(samp):
+        AR = np.zeros((samp,raw.shape[1],order))
+        for ch in range(raw.shape[1]):
+            # for ch in range(raw.shape[1]):
+            AR[:,ch,:] = np.squeeze(matAR_ch(raw[:,ch,:],order))
+        print(AR.shape)
+        reg_out = np.real(AR).reshape((samp,-1))
+        print(reg_out.shape)
+                # print(ch)
             # temp = lpc(np.squeeze(raw[i,:,:]),order)
             # reg_out[i,:] = np.real(temp).T.reshape(-1)
         feat_out = np.hstack([feat_out,reg_out])
@@ -834,3 +838,67 @@ def matAR(data,order):
     
     AR = np.nan_to_num(AR)
     return AR[1:]
+
+def matAR_ch(data,order):
+    datalen = data.shape[-1]
+    num_ch = data.shape[0]
+    AR = np.zeros((order+1,num_ch))
+    K = np.zeros((order+1,num_ch))
+
+    R0 = np.zeros((num_ch,))
+    ix = 0
+    iy = 0
+    for k in range(datalen):
+        R0 += np.multiply(data[:,ix],data[:,iy])
+        ix += 1
+        iy += 1
+
+    R = np.zeros((order,num_ch))
+
+    for i in range(order):
+        if 1 > (datalen - (1 + i)):
+            i0 = 0
+        else:
+            i0 = datalen - (1 + i)
+
+        if ((1 + i) + 1) > datalen:
+            i1 = 1
+        else:
+            i1 = (1 + i) + 1
+        
+        q = np.zeros((num_ch,))
+        if i0 >= 1:
+            ix = 0
+            iy = 0
+            for k in range(1,i0+1):
+                q += np.multiply(data[:,ix],data[:,(i1 + iy)-1])
+                ix += 1
+                iy += 1
+        
+        R[i,:] = q
+
+    AR[1,:] = np.divide(-R[0,:],R0)
+    K[0,:] = AR[1,:]
+    q = np.full((num_ch,),R[0,:])
+    temp = np.zeros((order,num_ch))
+
+    for i in range(order-1):
+        R0 += np.multiply(q,K[i,:])
+        q = np.zeros((num_ch,))
+        for k in range(i+1):
+            b = AR[(((1+i)+2) - (1 + k)) - 1,:]
+            q += np.multiply(R[k,:], b)
+
+        q += R[((1+i)+1)-1,:]
+        K[1+i,:] = np.divide(-q,R0)
+        for k in range(i+1):
+            b = AR[(((1+i)+2)-(1+k)) - 1,:]
+            temp[k,:] = np.multiply(K[((1+i)+1)-1,:],b)
+        
+        for k in range(((1+i)+1) - 1):
+            AR[k+1,:] += temp[k,:]
+        
+        AR[(1+i)+1,:] = K[1+i,:]
+    
+    AR = np.nan_to_num(AR).T
+    return AR[:,1:]
