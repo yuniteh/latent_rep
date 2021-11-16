@@ -119,7 +119,7 @@ class Session():
                 if self.dt == 'cv':
                     x_full, x_valid, _, p_full, p_valid, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
                 else:
-                    x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,load=True,train_grp=self.train_grp)
+                    x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,load=False,train_grp=self.train_grp)
 
             # loop through cross validation
             for cv in range(self.start_cv,self.max_cv):
@@ -158,7 +158,7 @@ class Session():
                     noisefolder = self.create_foldername(ftype='trainnoise')
                     noisefile = self.create_filename(noisefolder, cv, sub, ftype='trainnoise')
                     
-                    if os.path.isfile(noisefile + '.p') and self.train_load:
+                    if 0:#os.path.isfile(noisefile + '.p') and self.train_load:
                         print('loading data')
                         with open(noisefile + '.p','rb') as f:
                             scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, y_valid_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda = pickle.load(f)
@@ -380,6 +380,8 @@ class Session():
                 if mod == 'all' or any("lda" in s for s in mod):
                     w,c, mu, C, v = train_lda(x_train_lda,y_train_lda)
                     w_noise,c_noise, _, _, v_noise = train_lda(x_train_noise_lda,y_train_noise_lda)
+                    # print(eval_lda(w, c, x_valid_lda, y_valid_lda))
+                    print(eval_lda(w, c, x_train_lda, y_train_lda))
                 
                 # Train QDA
                 if mod == 'all' or any("qda" in s for s in mod):
@@ -668,6 +670,8 @@ class Session():
 
                             x_test_dlsae = x_test_dlsae[:,0:-1:4]
                             x_test_clean_sae = x_test_clean_sae[:,0:-1:4]
+                            x_test_dlsae = x_test_dlsae[:,:6]
+                            x_test_clean_sae = x_test_clean_sae[:,:6]
 
                             # TEMP - CNN extended
                             x_test_ext = np.concatenate((x_test_vae,x_test_vae[:,:2,...]),axis=1)
@@ -748,7 +752,7 @@ class Session():
             if clean_size == 0:
                 acc_noise = 0
             else:
-                acc_noise = eval_lda_ch(mod[0], mod[1], mod[2], x_test, y_test)
+                acc_noise = eval_lda_ch(mod[0], mod[1], mod[2], x_test, y_test, ft=self.feat_type)
             acc_all = 0
             acc_clean = 0
 

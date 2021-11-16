@@ -712,10 +712,16 @@ def levinson(r, order, allow_singularity=False):
         * the `N` reflections coefficients values
     """
     M = order
-    if r.ndim > 1:
-        A = np.zeros((r.shape[0],M), dtype=float)
+    realdata = np.isrealobj(r)
+
+    if realdata == True:
+        dt = float
     else:
-        A = np.zeros(M,dtype=float)
+        dt= complex
+    if r.ndim > 1:
+        A = np.zeros((r.shape[0],M), dtype=dt)
+    else:
+        A = np.zeros(M,dtype=dt)
 
     T0  = np.real(r[...,0])
     T = r[...,1:]
@@ -730,21 +736,97 @@ def levinson(r, order, allow_singularity=False):
             for j in range(0, k):
                 save = save + A[...,j] * T[...,k-j-1]
             temp = -save / P
-        P = P * (1. - temp**2.)
-        if P.any() <= 0 and allow_singularity==False:
+        if realdata:
+            P = P * (1. - temp**2.)
+        else:
+            P = P * (1. - (temp.real**2+temp.imag**2))
+        if np.any(P == 0) and allow_singularity==False:
+            print(P)
             raise ValueError("singular matrix")
         A[...,k] = temp
         if k == 0:
             continue
 
         khalf = (k+1)//2
-        for j in range(0, khalf):
-            kj = k-j-1
-            save = A[...,j]
-            A[...,j] = save + temp * A[...,kj]
-            if j != kj:
-                A[...,kj] += temp*save
+        if realdata is True:
+            for j in range(0, khalf):
+                kj = k-j-1
+                save = A[...,j]
+                A[...,j] = save + temp * A[...,kj]
+                if j != kj:
+                    A[...,kj] += temp*save
+        else:
+            for j in range(0, khalf):
+                kj = k-j-1
+                save = A[...,j]
+                A[...,j] = save + temp * A[...,kj].conjugate()
+                if j != kj:
+                    A[...,kj] = A[...,kj] + temp * save.conjugate()
     
     A = np.nan_to_num(A)
 
     return A
+
+
+def matAR(data,order):
+    datalen = len(data)
+    AR = np.zeros((order+1,1))
+    K = np.zeros((order+1,1))
+
+    R0 = 0.0
+    ix = 0
+    iy = 0
+    for k in datalen:
+        R0 = data[ix] * data[iy]
+        ix += 1
+        iy += 1
+
+    R = np.zeros((order,1))
+
+    for i in range(order):
+        if 1 > (datalen - (1 + i)):
+            i0 = 0
+        else:
+            i0 = datalen - (1 + i)
+
+        if ((1 + i) + 1) > datalen:
+            i1 = 1
+        else:
+            i1 = (1 + i) + 1
+        
+        q = 0
+        if i0 >= 1:
+            ix = 0
+            iy = 0
+            for k in range(1,i0+1):
+                q += data[ix] * data[(i1 + iy)-1]
+                ix += 1
+                iy += 1
+        
+        R[i] = q
+
+    AR[1] = -R[0]/R0
+    K[0] = AR[1]
+    q = R[0]
+    temp = np.zeros((order,1))
+
+    for i in range(order-1):
+        R0 += q * K[i]
+        q = 0
+        for k in range(i+1):
+            b = AR[(((1+i)+2) - (1 + k)) - 1]
+            q += R[k] * b
+        
+        q += R[((1+i)+1)-1]
+        K[1+i] = -q/R0
+        for k in range(i+1):
+            b = AR[(((1+i)+2)-(1+k)) - 1]
+            temp[k] = K[((1+i)+1)-1] * b
+        
+        for k in range(((1+i)+1) - 1):
+            AR[k+1] += temp[k]
+        
+        AR[(1+i)+1] = K[1+i]
+    
+    AR = np.nan_to_num(AR)
+    return AR[1:]
