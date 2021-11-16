@@ -328,7 +328,7 @@ class Session():
                     vcnn_clf_w = vcnn_clf.get_weights()
 
                 if mod == 'all' or any("sae" in s for s in mod):
-                    sae_hist = sae.fit(x_train_noise_sae2, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=self.batch_size)
+                    sae_hist = sae.fit(x_train_noise_sae2, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae2, y_valid_clean],batch_size=self.batch_size)
                     sae_w = sae.get_weights()
                     sae_enc_w = sae_enc.get_weights()
                     sae_clf_w = sae_clf.get_weights()
