@@ -639,8 +639,12 @@ def extract_feats(raw,th=0.01,ft='feat',order=6):
     if ft == 'tdar':
         reg_out = np.zeros((samp,raw.shape[1]*order))
         for i in range(samp):
-            temp = lpc(np.squeeze(raw[i,:,:]),order)
-            reg_out[i,:] = np.real(temp).T.reshape(-1)
+            AR = np.zeros((6,order))
+            for ch in range(6):
+                AR[ch,:] = np.squeeze(matAR(raw[i,ch,:],order))
+            reg_out[i,:] = np.real(AR).T.reshape(-1)
+            # temp = lpc(np.squeeze(raw[i,:,:]),order)
+            # reg_out[i,:] = np.real(temp).T.reshape(-1)
         feat_out = np.hstack([feat_out,reg_out])
     return feat_out
 
@@ -776,8 +780,8 @@ def matAR(data,order):
     R0 = 0.0
     ix = 0
     iy = 0
-    for k in datalen:
-        R0 = data[ix] * data[iy]
+    for k in range(datalen):
+        R0 += data[ix] * data[iy]
         ix += 1
         iy += 1
 
