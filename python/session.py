@@ -158,7 +158,7 @@ class Session():
                     noisefolder = self.create_foldername(ftype='trainnoise')
                     noisefile = self.create_filename(noisefolder, cv, sub, ftype='trainnoise')
                     
-                    if 0:#os.path.isfile(noisefile + '.p') and self.train_load:
+                    if os.path.isfile(noisefile + '.p') and self.train_load:
                         print('loading data')
                         with open(noisefile + '.p','rb') as f:
                             scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, y_valid_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda = pickle.load(f)
@@ -225,10 +225,8 @@ class Session():
                     x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
 
                     # if self.mod_dt == 'mav':
-                    x_train_noise_sae = x_train_noise_sae[:,0:-1:4]
-                    x_valid_noise_sae = x_valid_noise_sae[:,0:-1:4]
-                    x_train_noise_sae = x_train_noise_sae[:,:6]
-                    x_valid_noise_sae = x_valid_noise_sae[:,:6]
+                    x_train_noise_sae2 = x_train_noise_sae[:,0:-1:4]
+                    x_valid_noise_sae2 = x_valid_noise_sae[:,0:-1:4]
 
                     # TEMP - CNN extended
                     x_train_noise_ext = np.concatenate((x_train_noise_vae,x_train_noise_vae[:,:2,...]),axis=1)
@@ -236,7 +234,8 @@ class Session():
 
                     # Build models
                     K.clear_session()
-                    svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    svae, svae_enc, svae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type='feat', sparse=self.sparsity,lr=self.lr)
                     # if self.mod_dt == 'mav':
                     sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
                     # else:
@@ -248,6 +247,13 @@ class Session():
                     
                 # Train SVAE
                 if mod == 'all' or any("svae" in s for s in mod):
+                    svae_hist = svae.fit(x_train_noise_sae, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=self.batch_size)
+                    svae_w = svae.get_weights()
+                    svae_enc_w = svae_enc.get_weights()
+                    svae_clf_w = svae_clf.get_weights()
+                    svae_hist = svae_hist.history
+                    svae_dec_w = 0
+                if 0:#mod == 'all' or any("svae" in s for s in mod):
                     # get number of batches
                     n_batches = len(x_train_noise_vae) // self.batch_size
                     # initialize history array
@@ -322,7 +328,7 @@ class Session():
                     vcnn_clf_w = vcnn_clf.get_weights()
 
                 if mod == 'all' or any("sae" in s for s in mod):
-                    sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=self.batch_size)
+                    sae_hist = sae.fit(x_train_noise_sae2, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=self.batch_size)
                     sae_w = sae.get_weights()
                     sae_enc_w = sae_enc.get_weights()
                     sae_clf_w = sae_clf.get_weights()
@@ -360,8 +366,9 @@ class Session():
 
                     # align input data
                     # _, _, x_train_svae = svae_enc.predict(x_train_noise_vae)
-                    _, x_train_svae = svae_clf.predict(x_train_noise_vae)
-                    x_train_sae = sae_enc.predict(x_train_noise_sae)
+                    # _, x_train_svae = svae_clf.predict(x_train_noise_vae)
+                    x_train_svae = svae_enc.predict(x_train_noise_sae)
+                    x_train_sae = sae_enc.predict(x_train_noise_sae2)
                     x_train_cnn = cnn_enc.predict(x_train_noise_vae)
                     _, _, x_train_vcnn = vcnn_enc.predict(x_train_noise_vae)
                     _,_,_, x_train_ecnn = ecnn_enc.predict(x_train_noise_vae)
@@ -548,17 +555,18 @@ class Session():
                     y_shape = np.max(p_train[:,4])
                     # Build models and set weights
                     K.clear_session()
-                    svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    svae, svae_enc, svae_clf = dl.build_sae(self.latent_dim, y_shape, input_type='feat', sparse=self.sparsity,lr=self.lr)
                     sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type='mav', sparse=self.sparsity,lr=self.lr)
-
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    svae_dec_w = 0
 
                     svae.set_weights(svae_w)
                     svae_enc.set_weights(svae_enc_w)
-                    svae_dec.set_weights(svae_dec_w)
+                    # svae_dec.set_weights(svae_dec_w)
                     svae_clf.set_weights(svae_clf_w)
 
                     sae.set_weights(sae_w)
@@ -668,18 +676,17 @@ class Session():
                             x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
                             x_test_clean_sae = x_test_clean_vae.reshape(x_test_clean_vae.shape[0],-1)
 
-                            x_test_dlsae = x_test_dlsae[:,0:-1:4]
-                            x_test_clean_sae = x_test_clean_sae[:,0:-1:4]
-                            x_test_dlsae = x_test_dlsae[:,:6]
-                            x_test_clean_sae = x_test_clean_sae[:,:6]
+                            x_test_dlsae2 = x_test_dlsae[:,0:-1:4]
+                            x_test_clean_sae2 = x_test_clean_sae[:,0:-1:4]
 
                             # TEMP - CNN extended
                             x_test_ext = np.concatenate((x_test_vae,x_test_vae[:,:2,...]),axis=1)
 
                             # Align test data for ENC-LDA
                             # _,_, x_test_svae = svae_enc.predict(x_test_vae)
-                            _, x_test_svae = svae_clf.predict(x_test_vae)
-                            x_test_sae = sae_enc.predict(x_test_dlsae)
+                            # _, x_test_svae = svae_clf.predict(x_test_vae)
+                            x_test_svae = svae_enc.predict(x_test_dlsae)
+                            x_test_sae = sae_enc.predict(x_test_dlsae2)
                             x_test_cnn = cnn_enc.predict(x_test_vae)
                             _,_,_,x_test_ecnn = ecnn_enc.predict(x_test_vae)
                             _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
@@ -699,7 +706,7 @@ class Session():
                             lda_mods = 2
                             qda_mods = 2
                             mods_all = [svae,sae,cnn,vcnn,ecnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w_ecnn,c_ecnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, self.n_test]]
-                            x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_vae','x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_ecnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
+                            x_test_all = ['x_test_dlsae', 'x_test_dlsae2', 'x_test_vae', 'x_test_vae', 'x_test_vae','x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_ecnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
                             y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
                             mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
                             
@@ -717,6 +724,7 @@ class Session():
                 # Save subject specific cv results
                 subresults = self.create_filename(resultsfolder, cv, sub)
                 print(np.squeeze(acc_noise[sub-1,...]))
+                print(np.squeeze(acc_clean[sub-1,...]))
                 print('saving sub results: ' + subresults + '_' + self.n_test + '_subresults.p')
                 with open(subresults + '_' + self.n_test + '_subresults.p', 'wb') as f:
                     pickle.dump([acc_all[sub-1,...], acc_noise[sub-1,...], acc_clean[sub-1,...]],f)

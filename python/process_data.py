@@ -637,18 +637,10 @@ def extract_feats(raw,th=0.01,ft='feat',order=6):
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     
     if ft == 'tdar':
-        reg_out = np.zeros((samp,raw.shape[1]*order))
-        # for i in range(samp):
         AR = np.zeros((samp,raw.shape[1],order))
         for ch in range(raw.shape[1]):
-            # for ch in range(raw.shape[1]):
             AR[:,ch,:] = np.squeeze(matAR_ch(raw[:,ch,:],order))
-        print(AR.shape)
-        reg_out = np.real(AR).reshape((samp,-1))
-        print(reg_out.shape)
-                # print(ch)
-            # temp = lpc(np.squeeze(raw[i,:,:]),order)
-            # reg_out[i,:] = np.real(temp).T.reshape(-1)
+        reg_out = np.real(AR.transpose(0,2,1)).reshape((samp,-1))
         feat_out = np.hstack([feat_out,reg_out])
     return feat_out
 
@@ -659,7 +651,7 @@ def extract_scale(x,scaler,load=True, ft='feat'):
     elif ft == 'tdar':
         num_feat = 10
     x_temp = np.transpose(extract_feats(x,ft=ft).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
-
+    
     # scale features
     if load:
         x_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
