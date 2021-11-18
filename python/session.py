@@ -70,10 +70,6 @@ class Session():
         return foldername
 
     def create_filename(self,foldername,cv=0,sub=0,ftype='',test_scale=0):
-        # full results file
-        # if ftype == 'results':
-        #     filename = foldername + '/' + self.sub_type + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_' + self.n_test + '_results'
-        # else:
         # train noise file
         if ftype == 'trainnoise':
             filename = foldername + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_train) + '_' + str(self.train_scale)
@@ -266,23 +262,9 @@ class Session():
                     svae_hist = np.zeros((temp_epochs,14))
                     # loop through epochs
                     for ep in range(temp_epochs):
-                        # set loss weight vector, not finalized
-                        # if ep < self.epochs/2: 
-                        #     weight = np.array([[0,2**((ep-(self.epochs/2))/2)] for _ in range(self.batch_size)])
-                        # else:
-                        #     weight = np.array([[1,.5] for _ in range(self.batch_size)])
-                        
+                        # set loss weight vector, not finalized                        
                         if ep < 15: #temp_epochs//3: 
-                            # weight = np.array([[0,(2**(ep-(temp_epochs//3)))/10] for _ in range(self.batch_size)])
                             weight = np.array([[0,(2**(ep-(20)))/100] for _ in range(self.batch_size)])
-                        # elif ep < 40:
-                        #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
-                        # elif ep < 60:
-                        #     weight = np.array([[0,(2**(ep-(60)))/100] for _ in range(self.batch_size)])
-                        # elif ep < 80:
-                        #     weight = np.array([[1,.01] for _ in range(self.batch_size)])
-                        # elif ep < 100:
-                        #     weight = np.array([[0,(2**(ep-(100)))/100] for _ in range(self.batch_size)])
                         else:
                             weight = np.array([[1,.01] for _ in range(self.batch_size)])
                         
@@ -392,8 +374,6 @@ class Session():
                 if mod == 'all' or any("lda" in s for s in mod):
                     w,c, mu, C, v = train_lda(x_train_lda,y_train_lda)
                     w_noise,c_noise, _, _, v_noise = train_lda(x_train_noise_lda,y_train_noise_lda)
-                    # print(eval_lda(w, c, x_valid_lda, y_valid_lda))
-                    print(eval_lda(w, c, x_train_lda, y_train_lda))
                 
                 # Train QDA
                 if mod == 'all' or any("qda" in s for s in mod):
@@ -611,10 +591,7 @@ class Session():
                     
                     if 'noisescale' in self.test_dt:
                         x_test = x_test*emg_scale
-                    #     real_noise = real_noise_temp*emg_scale
-                    #     print('scaling')
-                    # else:
-                    #     real_noise = real_noise_temp
+
                     # loop through test levels
                     for test_scale in range(1,test_tot + 1):
                         noisefolder = self.create_foldername(ftype='testnoise')
