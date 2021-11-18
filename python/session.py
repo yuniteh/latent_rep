@@ -98,6 +98,11 @@ class Session():
         if self.dt == 'manual':
             self.start_cv = 1
             self.max_cv = 2
+        
+        if self.feat_type == 'feat':
+            num_feats = 4
+        elif self.feat_type == 'tdar':
+            num_feats = 10
 
         # Set folder
         foldername = self.create_foldername()
@@ -225,8 +230,8 @@ class Session():
                     x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
 
                     # if self.mod_dt == 'mav':
-                    x_train_noise_sae2 = x_train_noise_sae[:,0:-1:4]
-                    x_valid_noise_sae2 = x_valid_noise_sae[:,0:-1:4]
+                    x_train_noise_sae2 = x_train_noise_sae[:,0:-1:num_feats]
+                    x_valid_noise_sae2 = x_valid_noise_sae[:,0:-1:num_feats]
 
                     # TEMP - CNN extended
                     x_train_noise_ext = np.concatenate((x_train_noise_vae,x_train_noise_vae[:,:2,...]),axis=1)
@@ -235,7 +240,7 @@ class Session():
                     # Build models
                     K.clear_session()
                     # svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    svae, svae_enc, svae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type='feat', sparse=self.sparsity,lr=self.lr)
+                    svae, svae_enc, svae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     # if self.mod_dt == 'mav':
                     sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
                     # else:
@@ -357,7 +362,7 @@ class Session():
                 # Align training data for ENC-LDA
                 if mod == 'all' or any("aligned" in s for s in mod):
                     # set weights from trained models
-                    # svae_enc.set_weights(svae_enc_w)
+                    svae_enc.set_weights(svae_enc_w)
                     sae_enc.set_weights(sae_enc_w)
                     cnn_enc.set_weights(cnn_enc_w)
                     vcnn_enc.set_weights(vcnn_enc_w)
@@ -521,6 +526,11 @@ class Session():
         foldername = self.create_foldername()
         resultsfolder = self.create_foldername(ftype='results')
 
+        if self.feat_type == 'feat':
+            num_feats = 4
+        elif self.feat_type == 'tdar':
+            num_feats = 10
+
         # loop through subjects
         for sub in range(1,np.max(params[:,0])+1):            
             # index based on training group and subject
@@ -557,7 +567,7 @@ class Session():
                     K.clear_session()
                     # svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    svae, svae_enc, svae_clf = dl.build_sae(self.latent_dim, y_shape, input_type='feat', sparse=self.sparsity,lr=self.lr)
+                    svae, svae_enc, svae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type='mav', sparse=self.sparsity,lr=self.lr)
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
@@ -676,8 +686,8 @@ class Session():
                             x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
                             x_test_clean_sae = x_test_clean_vae.reshape(x_test_clean_vae.shape[0],-1)
 
-                            x_test_dlsae2 = x_test_dlsae[:,0:-1:4]
-                            x_test_clean_sae2 = x_test_clean_sae[:,0:-1:4]
+                            x_test_dlsae2 = x_test_dlsae[:,0:-1:num_feats]
+                            x_test_clean_sae2 = x_test_clean_sae[:,0:-1:num_feats]
 
                             # TEMP - CNN extended
                             x_test_ext = np.concatenate((x_test_vae,x_test_vae[:,:2,...]),axis=1)
