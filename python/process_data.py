@@ -471,7 +471,6 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
             out = np.concatenate((out,temp))
     
     out = np.concatenate((raw, out))
-    # sub_params = np.concatenate((params,sub_params))
 
     noisy, clean, y = out, orig, to_categorical(sub_params[:,4]-1)
 

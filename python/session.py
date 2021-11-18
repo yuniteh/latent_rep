@@ -165,8 +165,9 @@ class Session():
                             scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, y_valid_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda = pickle.load(f)
 
                         emg_scale = np.ones((np.size(x_train,1),1))
-                        for i in range(np.size(x_train,1)):
-                            emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
+                        if 'emgscale' in self.mod_dt:
+                            for i in range(np.size(x_train,1)):
+                                emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
 
                     else:
                         # Add noise to training data                        
@@ -175,8 +176,10 @@ class Session():
                             x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
 
                         emg_scale = np.ones((np.size(x_train,1),1))
-                        for i in range(np.size(x_train,1)):
-                            emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
+
+                        if 'emgscale' in self.mod_dt:
+                            for i in range(np.size(x_train,1)):
+                                emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
 
                         x_train = x_train*emg_scale
                         x_valid = x_valid*emg_scale
