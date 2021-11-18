@@ -165,20 +165,6 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
 
     fig.set_tight_layout(True)
 
-    fig, ax = plt.subplots()
-
-    x = np.arange(8)  # the label locations
-    arr = [5,2,3,9,7,8,10,11]
-    c = ['tab:blue','tab:orange','tab:green','tab:blue','tab:orange','tab:green','k','r']
-    clean_all = ave_clean[0,arr]
-    ax.bar(x,100-clean_all*100,color=c)
-    ax.set_xticks(range(8))
-    ax.set_xticklabels(['SAE','CNN','VCNN','SAE-LDA','CNN-LDA','VCNN-LDA','LDA','LDA-corrupt'])
-    ax.set_ylabel('Accuracy (%)')
-    ax.set_ylim([0,40])
-
-    fig.set_tight_layout(True)
-
     return
 
 def plot_pos_results(ave_pos):
