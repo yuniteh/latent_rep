@@ -490,15 +490,6 @@ def add_noise_old(raw, params, sub, n_type='flat', scale=5):
         orig = np.tile(raw,(num_ch,1,1))
         out = cp.deepcopy(raw)
 
-        # single channel noise
-        # temp = cp.deepcopy(raw)
-        # ch_split = temp.shape[0]//(3*(max_ch-1))
-        # for ch in range(0,max_ch-1):
-        #     temp[3*ch*ch_split:(3*ch+1)*ch_split,ch,:] += np.random.normal(0,scale,temp.shape[2])
-        #     temp[(3*ch+1)*ch_split:(3*ch+2)*ch_split,ch,:] += np.random.normal(0,scale/5,temp.shape[2])
-        #     temp[(3*ch+2)*ch_split:(3*ch+3)*ch_split,ch,:] = 0 
-        # out = np.concatenate((out,temp))
-
         # double channel noise
         for num_noise in range(1,num_ch):
             ch_all = list(combinations(range(0,6),num_noise))
@@ -528,7 +519,6 @@ def add_noise_old(raw, params, sub, n_type='flat', scale=5):
             temp = cp.deepcopy(raw)
             if n_type == 'gaussflat':
                 temp[:temp.shape[0]//3,ch,:] += np.random.normal(0,scale,temp.shape[2])
-                # temp[temp.shape[0]//2:,ch,:] = 0 
                 temp[temp.shape[0]//3:2*temp.shape[0]//3,ch,:] += np.random.normal(0,scale/2,temp.shape[2])
                 temp[2*temp.shape[0]//3:,ch,:] = 0 
             elif n_type == 'gaussflatup2':
@@ -573,10 +563,8 @@ def add_noise_old(raw, params, sub, n_type='flat', scale=5):
             out = np.concatenate((out,temp))
 
     noisy, clean, y = out, orig, to_categorical(sub_params[:,-2]-1)
-    # x, x2, y = out,orig,to_categorical(sub_params[:,-2]-1)
+
     # Add dimension to x data to fit CNN architecture
-    # x = x[...,np.newaxis]
-    # x2 = x2[...,np.newaxis]
     clean = clean[...,np.newaxis]
     noisy = noisy[...,np.newaxis]
     return noisy,clean,y
