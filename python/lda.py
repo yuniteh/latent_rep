@@ -12,7 +12,7 @@ def eval_lda(w, c, x_test, y_test):
     acc = np.sum(out.reshape(y_test.shape) == y_test)/y_test.shape[0]
     return acc
 
-def eval_lda_ch(mu_class, C, n_type, x, y):
+def eval_lda_ch(mu_class, C, n_type, x, y, ft = 'feat'):
     # Index subject and training group
     num_ch = int(n_type[-1]) + 1
     full_type = n_type[0:4]
@@ -29,7 +29,12 @@ def eval_lda_ch(mu_class, C, n_type, x, y):
     # tile data twice, once for clean and once for noise
     elif full_type == 'part':
         start_ch = num_ch - 1
-    
+
+    if ft == 'feat':
+        num_feat = 4
+    elif ft == 'tdar':
+        num_feat = 10
+
     acc = np.zeros(num_ch-start_ch)
     # loop through channel noise
     for num_noise in range(start_ch,num_ch):
@@ -42,8 +47,8 @@ def eval_lda_ch(mu_class, C, n_type, x, y):
             mask = np.ones(temp.shape[1],dtype=bool)
             for i in ch_all[ch]:
                 mask[i] = 0
-            maskmu = np.tile(mask,4)
-            test_data = prd.extract_feats(temp[:,mask,:])
+            maskmu = np.tile(mask,num_feat)
+            test_data = prd.extract_feats(temp[:,mask,:],ft=ft)
             C_temp = C[maskmu,:]
             C_in = C_temp[:,maskmu]
             w_temp, c_temp = train_lda(test_data,y_test,mu_bool = True, mu_class = mu_class[:,maskmu], C = C_in)

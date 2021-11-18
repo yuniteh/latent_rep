@@ -52,8 +52,12 @@ class Session():
         # Set folder
         if ftype == 'trainnoise':
             foldername = 'noisedata_' + self.dt + '_' + self.mod_dt
+            if self.feat_type == 'tdar':
+                foldername += '_tdar'
         elif ftype == 'testnoise':
             foldername = 'testdata_' + self.dt + '_' + self.test_dt
+            if self.feat_type == 'tdar':
+                foldername += '_tdar'
         elif ftype =='results':
             foldername = 'results_' + str(self.train_grp) + '_' + self.dt + '_' + self.test_dt
         else:
@@ -94,6 +98,11 @@ class Session():
         if self.dt == 'manual':
             self.start_cv = 1
             self.max_cv = 2
+        
+        if self.feat_type == 'feat':
+            num_feats = 4
+        elif self.feat_type == 'tdar':
+            num_feats = 10
 
         # Set folder
         foldername = self.create_foldername()
@@ -186,20 +195,25 @@ class Session():
                         # shuffle data to make even batches
                         x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
 
+                        x_train_noise[x_train_noise > 5] = 5
+                        x_train_noise[x_train_noise < -5] = -5
+                        x_train_clean[x_train_clean > 5] = 5
+                        x_train_clean[x_train_clean < -5] = -5
+
                         # Training data for LDA/QDA
                         y_train = p_train[:,4]
-                        x_train_lda = prd.extract_feats(x_train)
+                        x_train_lda = prd.extract_feats(x_train,ft=self.feat_type)
                         y_train_lda = y_train[...,np.newaxis] - 1
-                        x_train_noise_lda = prd.extract_feats(x_train_noise)
+                        x_train_noise_lda = prd.extract_feats(x_train_noise,ft=self.feat_type)
                         y_train_noise_lda = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
                         # Shape data based on feature type
-                        if self.feat_type == 'feat':
+                        if self.feat_type == 'feat' or self.feat_type == 'tdar':
                             # extract and scale features from training and validation data
-                            x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load) 
-                            x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler)
-                            x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler)
-                            x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler)
+                            x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load,ft=self.feat_type) 
+                            x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler,ft=self.feat_type)
+                            x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler,ft=self.feat_type)
+                            x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler,ft=self.feat_type)
 
                         elif self.feat_type == 'raw': # not finalized
                             x_train_noise_vae = 0.5+cp.deepcopy(x_train_noise[:,:,::4,:])/10
@@ -215,20 +229,36 @@ class Session():
                     x_train_noise_sae = x_train_noise_vae.reshape(x_train_noise_vae.shape[0],-1)
                     x_valid_noise_sae = x_valid_noise_vae.reshape(x_valid_noise_vae.shape[0],-1)
 
+                    # if self.mod_dt == 'mav':
+                    x_train_noise_sae2 = x_train_noise_sae[:,0:-1:num_feats]
+                    x_valid_noise_sae2 = x_valid_noise_sae[:,0:-1:num_feats]
+
                     # TEMP - CNN extended
                     x_train_noise_ext = np.concatenate((x_train_noise_vae,x_train_noise_vae[:,:2,...]),axis=1)
                     x_valid_noise_ext = np.concatenate((x_valid_noise_vae,x_valid_noise_vae[:,:2,...]),axis=1)
 
                     # Build models
                     K.clear_session()
-                    svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    svae, svae_enc, svae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # if self.mod_dt == 'mav':
+                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
+                    # else:
+                    # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # sae, sae_enc, sae_clf = dl.build_sae_var(self.latent_dim, y_train_clean.shape[1], input_type='mav', sparse=self.sparsity,lr=self.lr)
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_train_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     
                 # Train SVAE
                 if mod == 'all' or any("svae" in s for s in mod):
+                    svae_hist = svae.fit(x_train_noise_sae, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=self.batch_size)
+                    svae_w = svae.get_weights()
+                    svae_enc_w = svae_enc.get_weights()
+                    svae_clf_w = svae_clf.get_weights()
+                    svae_hist = svae_hist.history
+                    svae_dec_w = 0
+                if 0:#mod == 'all' or any("svae" in s for s in mod):
                     # get number of batches
                     n_batches = len(x_train_noise_vae) // self.batch_size
                     # initialize history array
@@ -303,7 +333,7 @@ class Session():
                     vcnn_clf_w = vcnn_clf.get_weights()
 
                 if mod == 'all' or any("sae" in s for s in mod):
-                    sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=self.batch_size)
+                    sae_hist = sae.fit(x_train_noise_sae2, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae2, y_valid_clean],batch_size=self.batch_size)
                     sae_w = sae.get_weights()
                     sae_enc_w = sae_enc.get_weights()
                     sae_clf_w = sae_clf.get_weights()
@@ -332,7 +362,7 @@ class Session():
                 # Align training data for ENC-LDA
                 if mod == 'all' or any("aligned" in s for s in mod):
                     # set weights from trained models
-                    # svae_enc.set_weights(svae_enc_w)
+                    svae_enc.set_weights(svae_enc_w)
                     sae_enc.set_weights(sae_enc_w)
                     cnn_enc.set_weights(cnn_enc_w)
                     vcnn_enc.set_weights(vcnn_enc_w)
@@ -341,8 +371,9 @@ class Session():
 
                     # align input data
                     # _, _, x_train_svae = svae_enc.predict(x_train_noise_vae)
-                    _, x_train_svae = svae_clf.predict(x_train_noise_vae)
-                    x_train_sae = sae_enc.predict(x_train_noise_sae)
+                    # _, x_train_svae = svae_clf.predict(x_train_noise_vae)
+                    x_train_svae = svae_enc.predict(x_train_noise_sae)
+                    x_train_sae = sae_enc.predict(x_train_noise_sae2)
                     x_train_cnn = cnn_enc.predict(x_train_noise_vae)
                     _, _, x_train_vcnn = vcnn_enc.predict(x_train_noise_vae)
                     _,_,_, x_train_ecnn = ecnn_enc.predict(x_train_noise_vae)
@@ -361,6 +392,8 @@ class Session():
                 if mod == 'all' or any("lda" in s for s in mod):
                     w,c, mu, C, v = train_lda(x_train_lda,y_train_lda)
                     w_noise,c_noise, _, _, v_noise = train_lda(x_train_noise_lda,y_train_noise_lda)
+                    # print(eval_lda(w, c, x_valid_lda, y_valid_lda))
+                    print(eval_lda(w, c, x_train_lda, y_train_lda))
                 
                 # Train QDA
                 if mod == 'all' or any("qda" in s for s in mod):
@@ -493,6 +526,11 @@ class Session():
         foldername = self.create_foldername()
         resultsfolder = self.create_foldername(ftype='results')
 
+        if self.feat_type == 'feat':
+            num_feats = 4
+        elif self.feat_type == 'tdar':
+            num_feats = 10
+
         # loop through subjects
         for sub in range(1,np.max(params[:,0])+1):            
             # index based on training group and subject
@@ -527,15 +565,18 @@ class Session():
                     y_shape = np.max(p_train[:,4])
                     # Build models and set weights
                     K.clear_session()
-                    svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # svae, svae_enc, svae_dec, svae_clf = dl.build_M2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    # sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    svae, svae_enc, svae_clf = dl.build_sae(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    sae, sae_enc, sae_clf = dl.build_sae(self.latent_dim, y_shape, input_type='mav', sparse=self.sparsity,lr=self.lr)
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    svae_dec_w = 0
 
                     svae.set_weights(svae_w)
                     svae_enc.set_weights(svae_enc_w)
-                    svae_dec.set_weights(svae_dec_w)
+                    # svae_dec.set_weights(svae_dec_w)
                     svae_clf.set_weights(svae_clf_w)
 
                     sae.set_weights(sae_w)
@@ -570,8 +611,8 @@ class Session():
                     
                     if 'noisescale' in self.test_dt:
                         x_test = x_test*emg_scale
-                    # if self.test_dt == 'noisescale':
                     #     real_noise = real_noise_temp*emg_scale
+                    #     print('scaling')
                     # else:
                     #     real_noise = real_noise_temp
                     # loop through test levels
@@ -606,8 +647,8 @@ class Session():
                                     # Add noise and index testing data
                                     if 'real' in noise_type:
                                         if 'noisescale' in self.test_dt:
+                                            print('scaling noise')
                                             x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale, real_noise=real_noise_temp, emg_scale = emg_scale)
-                                            print(emg_scale)
                                         else:
                                             x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale, real_noise=real_noise_temp)
                                     else:
@@ -620,33 +661,42 @@ class Session():
                             if not test_load:
                                 x_test_noise[x_test_noise > 5] = 5
                                 x_test_noise[x_test_noise < -5] = -5
+                                x_test_clean[x_test_clean > 5] = 5
+                                x_test_clean[x_test_clean < -5] = -5
                                 # extract and scale features
-                                if self.feat_type == 'feat':
-                                    x_test_vae, _ = prd.extract_scale(x_test_noise,scaler)
-                                    x_test_clean_vae, _ = prd.extract_scale(x_test_clean,scaler)
+                                if self.feat_type == 'feat' or self.feat_type == 'tdar':
+                                    x_test_vae, _ = prd.extract_scale(x_test_noise,scaler,ft=self.feat_type)
+                                    x_test_clean_vae, _ = prd.extract_scale(x_test_clean,scaler,ft=self.feat_type)
                                 # not finalized, scale raw data
                                 elif self.feat_type == 'raw':
                                     x_test_vae = cp.deepcopy(x_test_noise[:,:,::2,:])/5
                                     x_test_clean_vae = cp.deepcopy(x_test_clean[:,:,::2,:])/5
                                 
-                                x_test_lda = prd.extract_feats(x_test_noise)
+                                x_test_lda = prd.extract_feats(x_test_noise,ft=self.feat_type)
                                 with open(noisefile + '.p','wb') as f:
                                     pickle.dump([x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean],f) 
-
-                            x_temp = np.transpose(x_test_lda.reshape((x_test_lda.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
+                            if self.feat_type == 'feat':
+                                num_feat = 4
+                            elif self.feat_type == 'tdar':
+                                num_feat = 10
+                            x_temp = np.transpose(x_test_lda.reshape((x_test_lda.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
                             x_test_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
 
                             # Reshape for nonconvolutional SAE
                             x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
                             x_test_clean_sae = x_test_clean_vae.reshape(x_test_clean_vae.shape[0],-1)
 
+                            x_test_dlsae2 = x_test_dlsae[:,0:-1:num_feats]
+                            x_test_clean_sae2 = x_test_clean_sae[:,0:-1:num_feats]
+
                             # TEMP - CNN extended
                             x_test_ext = np.concatenate((x_test_vae,x_test_vae[:,:2,...]),axis=1)
 
                             # Align test data for ENC-LDA
                             # _,_, x_test_svae = svae_enc.predict(x_test_vae)
-                            _, x_test_svae = svae_clf.predict(x_test_vae)
-                            x_test_sae = sae_enc.predict(x_test_dlsae)
+                            # _, x_test_svae = svae_clf.predict(x_test_vae)
+                            x_test_svae = svae_enc.predict(x_test_dlsae)
+                            x_test_sae = sae_enc.predict(x_test_dlsae2)
                             x_test_cnn = cnn_enc.predict(x_test_vae)
                             _,_,_,x_test_ecnn = ecnn_enc.predict(x_test_vae)
                             _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
@@ -666,7 +716,7 @@ class Session():
                             lda_mods = 2
                             qda_mods = 2
                             mods_all = [svae,sae,cnn,vcnn,ecnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w_ecnn,c_ecnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, self.n_test]]
-                            x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_vae','x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_ecnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
+                            x_test_all = ['x_test_dlsae', 'x_test_dlsae2', 'x_test_vae', 'x_test_vae', 'x_test_vae','x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_ecnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
                             y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
                             mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
                             
@@ -684,6 +734,7 @@ class Session():
                 # Save subject specific cv results
                 subresults = self.create_filename(resultsfolder, cv, sub)
                 print(np.squeeze(acc_noise[sub-1,...]))
+                print(np.squeeze(acc_clean[sub-1,...]))
                 print('saving sub results: ' + subresults + '_' + self.n_test + '_subresults.p')
                 with open(subresults + '_' + self.n_test + '_subresults.p', 'wb') as f:
                     pickle.dump([acc_all[sub-1,...], acc_noise[sub-1,...], acc_clean[sub-1,...]],f)
@@ -719,7 +770,7 @@ class Session():
             if clean_size == 0:
                 acc_noise = 0
             else:
-                acc_noise = eval_lda_ch(mod[0], mod[1], mod[2], x_test, y_test)
+                acc_noise = eval_lda_ch(mod[0], mod[1], mod[2], x_test, y_test, ft=self.feat_type)
             acc_all = 0
             acc_clean = 0
 

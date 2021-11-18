@@ -14,6 +14,7 @@ from itertools import combinations
 import time
 import json
 import pickle
+from scipy.fftpack import fft, ifft
 
 
 def load_raw(filename):
@@ -292,7 +293,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
     if full_type == 'full':
         if noise_type == 'gaussflat60hz' or noise_type == 'allmix':
             split = 6
-        elif noise_type == 'gauss60hz' or noise_type == '60hzall' or noise_type == 'gaussall':
+        elif noise_type == 'gauss60hz' or noise_type == '60hzall' or noise_type == 'gaussall' or noise_type == 'testall':
             split = 5
         else:
             split = 3
@@ -305,6 +306,8 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
     if full_type == 'full':
         if noise_type != '60hzall' or noise_type != 'gaussall':
             rep = 2
+        elif noise_type == 'testall':
+            rep = 3
         start_ch = 1
         sub_params = np.tile(params,(rep*(num_ch-1)+1,1))
         orig = np.tile(raw,(rep*(num_ch-1)+1,1,1))
@@ -416,6 +419,24 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                             temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += np.random.normal(0,3,temp.shape[2])
                             temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
                             temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])
+                    elif noise_type == 'testall':
+                        if rep_i == 0:
+                            for scale_i in range(5):
+                                temp[(5*ch+scale_i)*ch_split:(5*ch+scale_i+1)*ch_split,i,:] += (scale_i+1)*np.sin(2*np.pi*60*x)
+                        elif rep_i == 1:        
+                            for scale_i in range(5):
+                                temp[(5*ch+scale_i)*ch_split:(5*ch+scale_i+1)*ch_split,i,:] += np.random.normal(0,scale_i+1,temp.shape[2])
+                        else:
+                            temp[5*ch*ch_split:(5*ch+2)*ch_split,i,:] = 0
+                            temp_split = temp[(5*ch+2)*ch_split:(5*ch+5)*ch_split,i,:]
+                            for temp_iter in range(ch_split):
+                                if ch_noise[temp_iter,ch_ind] == 0:
+                                    temp_split[temp_iter,...] = 0
+                                elif ch_noise[temp_iter,ch_ind] == 1:
+                                    temp_split[temp_iter,...] += np.random.normal(0,ch_level[temp_iter,ch_ind]+1,temp.shape[2])
+                                else:
+                                    temp_split[temp_iter,...] += (ch_level[temp_iter,ch_ind]+1)*np.sin(2*np.pi*60*x)
+                            temp[(5*ch+2)*ch_split:(5*ch+5)*ch_split,i,:] = cp.deepcopy(temp_split)
                     elif noise_type == 'flat':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] = 0
                     elif noise_type == 'gauss':
@@ -587,7 +608,7 @@ def extract_feats_fast(raw):
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     return feat_out
 
-def extract_feats(raw,th=0.01):
+def extract_feats(raw,th=0.01,ft='feat',order=6):
     if raw.shape[-1] == 1:
         raw = np.squeeze(raw)
     N=raw.shape[2]
@@ -614,12 +635,23 @@ def extract_feats(raw,th=0.01):
 
     # feat_out = 0
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
+    
+    if ft == 'tdar':
+        AR = np.zeros((samp,raw.shape[1],order))
+        for ch in range(raw.shape[1]):
+            AR[:,ch,:] = np.squeeze(matAR_ch(raw[:,ch,:],order))
+        reg_out = np.real(AR.transpose(0,2,1)).reshape((samp,-1))
+        feat_out = np.hstack([feat_out,reg_out])
     return feat_out
 
-def extract_scale(x,scaler,load=True):
+def extract_scale(x,scaler,load=True, ft='feat'):
     # extract features 
-    x_temp = np.transpose(extract_feats(x).reshape((x.shape[0],4,-1)),(0,2,1))[...,np.newaxis]
-
+    if ft == 'feat':
+        num_feat = 4
+    elif ft == 'tdar':
+        num_feat = 10
+    x_temp = np.transpose(extract_feats(x,ft=ft).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
+    
     # scale features
     if load:
         x_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
@@ -628,4 +660,237 @@ def extract_scale(x,scaler,load=True):
     
     return x_vae, scaler
 
+def lpc(signal, order, axis=-1):
+    """Compute the Linear Prediction Coefficients.
+    Return the order + 1 LPC coefficients for the signal. c = lpc(x, k) will
+    find the k+1 coefficients of a k order linear filter:
+      xp[n] = -c[1] * x[n-2] - ... - c[k-1] * x[n-k-1]
+    Such as the sum of the squared-error e[i] = xp[i] - x[i] is minimized.
+    Parameters
+    ----------
+    signal: array_like
+        input signal
+    order : int
+        LPC order (the output will have order + 1 items)
+    Returns
+    -------
+    a : array-like
+        the solution of the inversion.
+    e : array-like
+        the prediction error.
+    k : array-like
+        reflection coefficients.
+    Notes
+    -----
+    This uses Levinson-Durbin recursion for the autocorrelation matrix
+    inversion, and fft for the autocorrelation computation.
+    For small order, particularly if order << signal size, direct computation
+    of the autocorrelation is faster: use levinson and correlate in this case."""
+    n = signal.shape[axis]
+    if order > n:
+        raise ValueError("Input signal must have length >= order")
+
+    maxlag = signal.shape[axis]
+    nfft = int(2 ** np.ceil(np.log2(np.abs(2*maxlag-1))))
+    r = np.real(ifft(np.abs(fft(signal, n=nfft) ** 2)))
+    r = r[..., :maxlag+1] / signal.shape[-1]
+    a = levinson(r, order)
+    return a
+
+def levinson(r, order, allow_singularity=False):
+    """Levinson-Durbin recursion.
+
+    Find the coefficients of a length(r)-1 order autoregressive linear process
+
+    :param r: autocorrelation sequence of length N + 1 (first element being the zero-lag autocorrelation)
+    :param order: requested order of the autoregressive coefficients. default is N.
+    :param allow_singularity: false by default. Other implementations may be True (e.g., octave)
+
+    :return:
+        * the `N+1` autoregressive coefficients :math:`A=(1, a_1...a_N)`
+        * the prediction errors
+        * the `N` reflections coefficients values
+    """
+    M = order
+    realdata = np.isrealobj(r)
+
+    if realdata == True:
+        dt = float
+    else:
+        dt= complex
+    if r.ndim > 1:
+        A = np.zeros((r.shape[0],M), dtype=dt)
+    else:
+        A = np.zeros(M,dtype=dt)
+
+    T0  = np.real(r[...,0])
+    T = r[...,1:]
+
+    P = T0
+
+    for k in range(0, M):
+        save = T[...,k]
+        if k == 0:
+            temp = -save / P
+        else:
+            for j in range(0, k):
+                save = save + A[...,j] * T[...,k-j-1]
+            temp = -save / P
+        if realdata:
+            P = P * (1. - temp**2.)
+        else:
+            P = P * (1. - (temp.real**2+temp.imag**2))
+        if np.any(P == 0) and allow_singularity==False:
+            print(P)
+            raise ValueError("singular matrix")
+        A[...,k] = temp
+        if k == 0:
+            continue
+
+        khalf = (k+1)//2
+        if realdata is True:
+            for j in range(0, khalf):
+                kj = k-j-1
+                save = A[...,j]
+                A[...,j] = save + temp * A[...,kj]
+                if j != kj:
+                    A[...,kj] += temp*save
+        else:
+            for j in range(0, khalf):
+                kj = k-j-1
+                save = A[...,j]
+                A[...,j] = save + temp * A[...,kj].conjugate()
+                if j != kj:
+                    A[...,kj] = A[...,kj] + temp * save.conjugate()
     
+    A = np.nan_to_num(A)
+
+    return A
+
+
+def matAR(data,order):
+    datalen = len(data)
+    AR = np.zeros((order+1,1))
+    K = np.zeros((order+1,1))
+
+    R0 = 0.0
+    ix = 0
+    iy = 0
+    for k in range(datalen):
+        R0 += data[ix] * data[iy]
+        ix += 1
+        iy += 1
+
+    R = np.zeros((order,1))
+
+    for i in range(order):
+        if 1 > (datalen - (1 + i)):
+            i0 = 0
+        else:
+            i0 = datalen - (1 + i)
+
+        if ((1 + i) + 1) > datalen:
+            i1 = 1
+        else:
+            i1 = (1 + i) + 1
+        
+        q = 0
+        if i0 >= 1:
+            ix = 0
+            iy = 0
+            for k in range(1,i0+1):
+                q += data[ix] * data[(i1 + iy)-1]
+                ix += 1
+                iy += 1
+        
+        R[i] = q
+
+    AR[1] = -R[0]/R0
+    K[0] = AR[1]
+    q = R[0]
+    temp = np.zeros((order,1))
+
+    for i in range(order-1):
+        R0 += q * K[i]
+        q = 0
+        for k in range(i+1):
+            b = AR[(((1+i)+2) - (1 + k)) - 1]
+            q += R[k] * b
+        
+        q += R[((1+i)+1)-1]
+        K[1+i] = -q/R0
+        for k in range(i+1):
+            b = AR[(((1+i)+2)-(1+k)) - 1]
+            temp[k] = K[((1+i)+1)-1] * b
+        
+        for k in range(((1+i)+1) - 1):
+            AR[k+1] += temp[k]
+        
+        AR[(1+i)+1] = K[1+i]
+    
+    AR = np.nan_to_num(AR)
+    return AR[1:]
+
+def matAR_ch(data,order):
+    datalen = data.shape[-1]
+    num_ch = data.shape[0]
+    AR = np.zeros((order+1,num_ch))
+    K = np.zeros((order+1,num_ch))
+
+    R0 = np.zeros((num_ch,))
+    ix = 0
+    iy = 0
+    for k in range(datalen):
+        R0 += np.multiply(data[:,ix],data[:,iy])
+        ix += 1
+        iy += 1
+
+    R = np.zeros((order,num_ch))
+
+    for i in range(order):
+        if 1 > (datalen - (1 + i)):
+            i0 = 0
+        else:
+            i0 = datalen - (1 + i)
+
+        if ((1 + i) + 1) > datalen:
+            i1 = 1
+        else:
+            i1 = (1 + i) + 1
+        
+        q = np.zeros((num_ch,))
+        if i0 >= 1:
+            ix = 0
+            iy = 0
+            for k in range(1,i0+1):
+                q += np.multiply(data[:,ix],data[:,(i1 + iy)-1])
+                ix += 1
+                iy += 1
+        
+        R[i,:] = q
+
+    AR[1,:] = np.divide(-R[0,:],R0)
+    K[0,:] = AR[1,:]
+    q = np.full((num_ch,),R[0,:])
+    temp = np.zeros((order,num_ch))
+
+    for i in range(order-1):
+        R0 += np.multiply(q,K[i,:])
+        q = np.zeros((num_ch,))
+        for k in range(i+1):
+            b = AR[(((1+i)+2) - (1 + k)) - 1,:]
+            q += np.multiply(R[k,:], b)
+
+        q += R[((1+i)+1)-1,:]
+        K[1+i,:] = np.divide(-q,R0)
+        for k in range(i+1):
+            b = AR[(((1+i)+2)-(1+k)) - 1,:]
+            temp[k,:] = np.multiply(K[((1+i)+1)-1,:],b)
+        
+        for k in range(((1+i)+1) - 1):
+            AR[k+1,:] += temp[k,:]
+        
+        AR[(1+i)+1,:] = K[1+i,:]
+    
+    AR = np.nan_to_num(AR).T
+    return AR[:,1:]
