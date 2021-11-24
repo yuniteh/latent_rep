@@ -285,7 +285,7 @@ def build_M2S2(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     weight = Input(shape=(2,))
     # build encoder model
     x_in = Input(shape=input_shape)
-    x = Conv2D(32, (3,2), activation="relu", strides=1, padding="same")(x_in)
+    x = Conv2D(32, (3,3), activation="relu", strides=1, padding="same")(x_in)
     x = BatchNormalization()(x)
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)
@@ -726,7 +726,7 @@ def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
 
     # build encoder model
     inputs = Input(shape=input_shape)
-    x = Conv2D(32, (3,2), activation="relu", strides=1, padding="same")(inputs)
+    x = Conv2D(32, (3,3), activation="relu", strides=1, padding="same")(inputs)
     x = BatchNormalization()(x)
     x = Conv2D(32, 3, activation="relu", strides=2, padding="same")(x)
     x = BatchNormalization()(x)

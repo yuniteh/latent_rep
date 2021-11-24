@@ -91,7 +91,7 @@ class Session():
         np.set_printoptions(precision=3,suppress=True)
         i_tot = 14
         filename = 0
-        if self.dt == 'manual':
+        if self.dt != 'cv':
             self.start_cv = 1
             self.max_cv = 2
         
@@ -194,10 +194,11 @@ class Session():
                         # shuffle data to make even batches
                         x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
 
-                        x_train_noise[x_train_noise > 5] = 5
-                        x_train_noise[x_train_noise < -5] = -5
-                        x_train_clean[x_train_clean > 5] = 5
-                        x_train_clean[x_train_clean < -5] = -5
+                        if 'lim' in self.mod_dt:
+                            x_train_noise[x_train_noise > 5] = 5
+                            x_train_noise[x_train_noise < -5] = -5
+                            x_train_clean[x_train_clean > 5] = 5
+                            x_train_clean[x_train_clean < -5] = -5
 
                         # Training data for LDA/QDA
                         y_train = p_train[:,4]
@@ -532,7 +533,6 @@ class Session():
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    svae_dec_w = 0
 
                     svae.set_weights(svae_w)
                     svae_enc.set_weights(svae_enc_w)
@@ -569,6 +569,7 @@ class Session():
                     else:
                         clean_size = int(np.size(x_test,axis=0))
                     
+                    print(emg_scale)
                     if 'noisescale' in self.test_dt:
                         x_test = x_test*emg_scale
 
@@ -616,10 +617,11 @@ class Session():
 
                         if not skip:
                             if not test_load:
-                                x_test_noise[x_test_noise > 5] = 5
-                                x_test_noise[x_test_noise < -5] = -5
-                                x_test_clean[x_test_clean > 5] = 5
-                                x_test_clean[x_test_clean < -5] = -5
+                                if 'lim' in self.mod_dt:
+                                    x_test_noise[x_test_noise > 5] = 5
+                                    x_test_noise[x_test_noise < -5] = -5
+                                    x_test_clean[x_test_clean > 5] = 5
+                                    x_test_clean[x_test_clean < -5] = -5
                                 # extract and scale features
                                 if self.feat_type == 'feat' or self.feat_type == 'tdar':
                                     x_test_vae, _ = prd.extract_scale(x_test_noise,scaler,ft=self.feat_type)
@@ -648,7 +650,7 @@ class Session():
 
                             # Align test data for ENC-LDA
                             _, x_test_svae = svae_clf.predict(x_test_vae)
-                            x_test_sae = sae_enc.predict(x_test_dlsae2)
+                            x_test_sae = sae_enc.predict(x_test_dlsae)
                             x_test_cnn = cnn_enc.predict(x_test_vae)
                             _,_,_,x_test_ecnn = ecnn_enc.predict(x_test_vae)
                             _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)

@@ -125,11 +125,11 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     fig,ax = plt.subplots()
     c = ['k','r','m']
     c_i = 0
-    for i in [0:5]:    
+    for i in range(5):    
         ax.plot(100-100*ave_noise[:,i],':o',color=c_tab[c_i])
         c_i+=1
     c_i = 0
-    for i in [5:10]:    
+    for i in range(5,10):    
         ax.plot(100-100*ave_noise[:,i],'-o',color=c_tab[c_i])
         c_i+=1
     c_i = 0

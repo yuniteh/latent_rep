@@ -160,6 +160,11 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, t
                 x_train, p_train = raw[train_ind,:,:], params[train_ind,:]
                 x_valid, p_valid = raw[valid_ind,:,:], params[valid_ind,:]
                 x_test, p_test = raw[test_ind,:,:], params[test_ind,:]
+            elif dt == 'all':
+                valid_ind = ind & (params[:,6] == valid_i)
+                x_train, p_train = raw[ind,:,:], params[ind,:]
+                x_valid, p_valid = raw[valid_ind,:,:], params[valid_ind,:]
+                x_test, p_test = raw[valid_ind,:,:], params[valid_ind,:]
             else:
                 # Split training and testing data
                 x_temp, x_test, p_temp, p_test = train_test_split(raw[ind,:,:], params[ind,:], test_size = 0.2, stratify=params[ind,4], shuffle=True)
