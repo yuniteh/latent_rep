@@ -600,11 +600,13 @@ def extract_feats_fast(raw):
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     return feat_out
 
-def extract_feats(raw,th=0.01,ft='feat',order=6):
+def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
     if raw.shape[-1] == 1:
         raw = np.squeeze(raw)
     N=raw.shape[2]
     samp = raw.shape[0]
+    # th_array = np.multiply(emg_scale,th)
+    # th = cp.deepcopy(th_array)
 
     mav=np.sum(np.absolute(raw),axis=2)/N
 

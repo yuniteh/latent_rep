@@ -575,8 +575,10 @@ class Session():
                         clean_size = int(np.size(x_test,axis=0))
                     
                     print(emg_scale)
+                    x_test_old = cp.deepcopy(x_test)
                     if 'emgscale' in self.mod_dt:
                         x_test = x_test*emg_scale
+                    x_test_scaled = cp.deepcopy(x_test)
 
                     # loop through test levels
                     for test_scale in range(1,test_tot + 1):
@@ -703,7 +705,7 @@ class Session():
             pickle.dump([acc_all, acc_clean, acc_noise],f)
 
         out = {'acc_all':acc_all, 'acc_noise':acc_noise, 'acc_clean':acc_clean}
-        return out
+        return out,x_test_old, x_test_scaled, emg_scale
 
     def eval_mod(self, x_test, y_test, clean_size, mod, eval_type):
         if clean_size == 0:
