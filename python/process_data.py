@@ -616,14 +616,14 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
     next = np.roll(raw, -1, axis=2)
 
     # zero crossings
-    zero_change = (next[...,:-1]*raw[...,:-1] < 0) & (np.absolute(next[...,:-1]-raw[...,:-1])>z_th)
+    zero_change = (next[...,:-1]*raw[...,:-1] < 0) & (np.absolute(next[...,:-1]-raw[...,:-1])>(emg_scale*z_th))
     zc = np.sum(zero_change, axis=2)
 
     # slope sign change
     next_s = next[...,1:-1] - raw[...,1:-1]
     last_s = raw[...,1:-1] - last[...,1:-1]
     sign_change = ((next_s > 0) & (last_s < 0)) | ((next_s < 0) & (last_s > 0))
-    th_check = (np.absolute(next_s) > s_th) & (np.absolute(last_s) > s_th)
+    th_check = (np.absolute(next_s) >(emg_scale*s_th)) & (np.absolute(last_s) > (emg_scale*s_th))
     ssc = np.sum(sign_change & th_check, axis=2)
 
     # waveform length
