@@ -640,13 +640,13 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
         feat_out = np.hstack([feat_out,reg_out])
     return feat_out
 
-def extract_scale(x,scaler,load=True, ft='feat'):
+def extract_scale(x,scaler,load=True, ft='feat',emg_scale=[1,1,1,1,1]):
     # extract features 
     if ft == 'feat':
         num_feat = 4
     elif ft == 'tdar':
         num_feat = 10
-    x_temp = np.transpose(extract_feats(x,ft=ft).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
+    x_temp = np.transpose(extract_feats(x,ft=ft,emg_scale=emg_scale).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
     
     # scale features
     if load:

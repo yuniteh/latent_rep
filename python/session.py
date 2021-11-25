@@ -205,18 +205,18 @@ class Session():
 
                         # Training data for LDA/QDA
                         y_train = p_train[:,4]
-                        x_train_lda = prd.extract_feats(x_train,ft=self.feat_type)
+                        x_train_lda = prd.extract_feats(x_train,ft=self.feat_type,emg_scale=emg_scale)
                         y_train_lda = y_train[...,np.newaxis] - 1
-                        x_train_noise_lda = prd.extract_feats(x_train_noise,ft=self.feat_type)
+                        x_train_noise_lda = prd.extract_feats(x_train_noise,ft=self.feat_type,emg_scale=emg_scale)
                         y_train_noise_lda = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
                         # Shape data based on feature type
                         if self.feat_type == 'feat' or self.feat_type == 'tdar':
                             # extract and scale features from training and validation data
-                            x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load,ft=self.feat_type) 
-                            x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler,ft=self.feat_type)
-                            x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler,ft=self.feat_type)
-                            x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler,ft=self.feat_type)
+                            x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load,ft=self.feat_type,emg_scale=emg_scale) 
+                            x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler,ft=self.feat_type,emg_scale=emg_scale)
+                            x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler,ft=self.feat_type,emg_scale=emg_scale)
+                            x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler,ft=self.feat_type,emg_scale=emg_scale)
 
                         elif self.feat_type == 'raw': # not finalized
                             x_train_noise_vae = 0.5+cp.deepcopy(x_train_noise[:,:,::4,:])/10
@@ -631,14 +631,14 @@ class Session():
                                     x_test_clean[x_test_clean < -5] = -5
                                 # extract and scale features
                                 if self.feat_type == 'feat' or self.feat_type == 'tdar':
-                                    x_test_vae, _ = prd.extract_scale(x_test_noise,scaler,ft=self.feat_type)
-                                    x_test_clean_vae, _ = prd.extract_scale(x_test_clean,scaler,ft=self.feat_type)
+                                    x_test_vae, _ = prd.extract_scale(x_test_noise,scaler,ft=self.feat_type,emg_scale=emg_scale)
+                                    x_test_clean_vae, _ = prd.extract_scale(x_test_clean,scaler,ft=self.feat_type,emg_scale=emg_scale)
                                 # not finalized, scale raw data
                                 elif self.feat_type == 'raw':
                                     x_test_vae = cp.deepcopy(x_test_noise[:,:,::2,:])/5
                                     x_test_clean_vae = cp.deepcopy(x_test_clean[:,:,::2,:])/5
                                 
-                                x_test_lda = prd.extract_feats(x_test_noise,ft=self.feat_type)
+                                x_test_lda = prd.extract_feats(x_test_noise,ft=self.feat_type,emg_scale=emg_scale)
                                 with open(noisefile + '.p','wb') as f:
                                     pickle.dump([x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean],f) 
                             if self.feat_type == 'feat':
