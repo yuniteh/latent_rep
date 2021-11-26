@@ -12,7 +12,7 @@ def eval_lda(w, c, x_test, y_test):
     acc = np.sum(out.reshape(y_test.shape) == y_test)/y_test.shape[0]
     return acc
 
-def eval_lda_ch(mu_class, C, n_type, x, y, ft = 'feat'):
+def eval_lda_ch(mu_class, C, n_type, x, y, ft = 'feat',emg_scale=[1,1,1,1,1,1]):
     # Index subject and training group
     num_ch = int(n_type[-1]) + 1
     full_type = n_type[0:4]
@@ -48,7 +48,9 @@ def eval_lda_ch(mu_class, C, n_type, x, y, ft = 'feat'):
             for i in ch_all[ch]:
                 mask[i] = 0
             maskmu = np.tile(mask,num_feat)
-            test_data = prd.extract_feats(temp[:,mask,:],ft=ft)
+            # print(mask.shape)
+            emg_temp = emg_scale[mask]
+            test_data = prd.extract_feats(temp[:,mask,:],ft=ft,emg_scale=emg_temp)
             C_temp = C[maskmu,:]
             C_in = C_temp[:,maskmu]
             w_temp, c_temp = train_lda(test_data,y_test,mu_bool = True, mu_class = mu_class[:,maskmu], C = C_in)
