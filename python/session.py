@@ -463,7 +463,7 @@ class Session():
         mod_tot = 15
         # set testing noise type
         noise_type = self.n_test[4:-1]
-
+        print(noise_type)
         # set number of tests for each noise types
         if noise_type == 'pos':
             test_tot = 4 # number of positions
@@ -684,9 +684,9 @@ class Session():
                                 max_i = len(mods_all) - 1
                             else:
                                 max_i = len(mods_all)
-
                             for i in range(max_i):
                                 acc_all[sub-1,cv-1,test_scale - 1,i], acc_noise[sub-1,cv-1,test_scale - 1,i], acc_clean[sub-1,cv-1,test_scale - 1,i] = self.eval_mod(eval(x_test_all[i]), eval(y_test_all[i]), clean_size, mods_all[i], mods_type[i])
+                            print(acc_all[sub-1,cv-1,test_scale - 1,:])
                         else:
                             acc_all[sub-1,cv-1,test_scale - 1,:], acc_noise[sub-1,cv-1,test_scale - 1,:], acc_clean[sub-1,cv-1,test_scale - 1,:] = np.nan, np.nan, np.nan
                 

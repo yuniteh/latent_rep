@@ -179,13 +179,12 @@ def plot_pos_results(ave_pos):
     # Plot accuracy vs. position
     fig,ax = plt.subplots(3,3)
     for r in range(0,3):
-        for i in range(1,4):
+        for i in [1,2,4]:
             ax[r,0].plot(ave_pos[r,:,i],'-o')
-        for i in range(6,9):    
-            ax[r,1].plot(ave_pos[r,:,i],'-o')
-            
-        for i in [10,11]:
-            ax[r,2].plot(ave_pos[r,:,i],'-o')    
+        for i in [6,7,9]:    
+            ax[r,1].plot(ave_pos[r,:,i],'-o')            
+        for i in [10,11,14]:
+            ax[r,1].plot(ave_pos[r,:,i],'-o')    
         ax[r,1].set_yticks([])
         ax[r,2].set_yticks([])
         for i in range(0,3):
@@ -195,8 +194,8 @@ def plot_pos_results(ave_pos):
             ax[2,i].set_xticklabels(['1','2','3','4'])
     ax[1,0].set_ylabel('Accuracy')
     fig.text(0.5, 0, 'Limb Position', ha='center')
-    ax[0,0].legend(['sae','cnn','vcnn','ecnn'])
-    ax[0,1].legend(['sae-lda','cnn-lda','vcnn-lda','ecnn-lda'])
+    ax[0,0].legend(['sae','cnn','svae','ecnn'])
+    ax[0,1].legend(['sae-lda','cnn-lda','svae-lda','LDA','LDA-corrupt'])
     ax[0,2].legend(['LDA','LDA-corrupt'])
 
     fig.set_tight_layout(True)
