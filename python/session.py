@@ -586,7 +586,7 @@ class Session():
                         noisefile = self.create_filename(noisefolder,cv, sub, ftype='testnoise', test_scale=test_scale)
                         
                         if not skip:
-                            if os.path.isfile(noisefile + '.p'):
+                            if 0:#os.path.isfile(noisefile + '.p'):
                                 print('loading data')
                                 with open(noisefile + '.p','rb') as f:
                                     x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean = pickle.load(f) 
