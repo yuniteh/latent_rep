@@ -326,6 +326,9 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
     x = np.linspace(0,0.2,200)
     if noise_type == 'realmix':
         real_noise = np.delete(real_noise,(2),axis=0)
+    elif noise_type == 'realmixnew':
+        real_noise = np.delete(real_noise,(2),axis=0)
+        real_noise = np.delete(real_noise,(1),axis=0)
 
     # repeat twice if adding gauss and flat
     for rep_i in range(rep):   
@@ -355,6 +358,9 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                             for i in range(ch_split):
                                 while np.array([x == ch_level[i,0] for x in ch_level[i,:]]).all():
                                     ch_level[i,:] = np.random.randint(4,size = num_noise)
+                    else:
+                        ch_level = np.random.randint(3,size=(ch_split,num_noise))
+
                 ch_ind = 0
                 for i in ch_all[ch]:
                     if noise_type == '60hzall':
