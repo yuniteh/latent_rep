@@ -326,6 +326,9 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
     x = np.linspace(0,0.2,200)
     if noise_type == 'realmix':
         real_noise = np.delete(real_noise,(2),axis=0)
+    elif noise_type == 'realmixnew':
+        real_noise = np.delete(real_noise,(2),axis=0)
+        real_noise = np.delete(real_noise,(1),axis=0)
 
     # repeat twice if adding gauss and flat
     for rep_i in range(rep):   
@@ -350,10 +353,14 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                 elif noise_type[:4] == 'real':
                     ch_noise = np.random.randint(1000,size=(ch_split,num_noise))
                     ch_level = np.random.randint(4,size=(ch_split,num_noise))
-                    if num_noise > 1:
-                        for i in range(ch_split):
-                            while np.array([x == ch_level[i,0] for x in ch_level[i,:]]).all():
-                                ch_level[i,:] = np.random.randint(4,size = num_noise)
+                    if noise_type == 'realmix':
+                        if num_noise > 1:
+                            for i in range(ch_split):
+                                while np.array([x == ch_level[i,0] for x in ch_level[i,:]]).all():
+                                    ch_level[i,:] = np.random.randint(4,size = num_noise)
+                    else:
+                        ch_level = np.random.randint(3,size=(ch_split,num_noise))
+
                 ch_ind = 0
                 for i in ch_all[ch]:
                     if noise_type == '60hzall':
@@ -468,7 +475,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[1,ch_noise[:,0],:] * emg_scale[i]
                     elif noise_type == 'realmove':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[-1,ch_noise[:,ch_ind],:] * emg_scale[i]
-                    elif noise_type == 'realmix':
+                    elif noise_type[:7] == 'realmix':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[ch_level[:,ch_ind],ch_noise[:,ch_ind],:] * emg_scale[i]
                     
                     ch_ind += 1 
