@@ -501,7 +501,7 @@ class Session():
             num_feats = 10
 
         # loop through subjects
-        for sub in range(1,2):#np.max(params[:,0])+1):            
+        for sub in range(1,np.max(params[:,0])+1):            
             # index based on training group and subject
             ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
 
@@ -586,7 +586,7 @@ class Session():
                         noisefile = self.create_filename(noisefolder,cv, sub, ftype='testnoise', test_scale=test_scale)
                         
                         if not skip:
-                            if 0:#os.path.isfile(noisefile + '.p'):
+                            if os.path.isfile(noisefile + '.p'):
                                 print('loading data')
                                 with open(noisefile + '.p','rb') as f:
                                     x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean = pickle.load(f) 
