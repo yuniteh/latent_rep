@@ -501,7 +501,7 @@ class Session():
             num_feats = 10
 
         # loop through subjects
-        for sub in range(1,np.max(params[:,0])+1):            
+        for sub in range(1,2):#np.max(params[:,0])+1):            
             # index based on training group and subject
             ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
 
@@ -705,7 +705,7 @@ class Session():
             pickle.dump([acc_all, acc_clean, acc_noise],f)
 
         out = {'acc_all':acc_all, 'acc_noise':acc_noise, 'acc_clean':acc_clean}
-        return out,x_test_old, x_test_scaled, emg_scale
+        return out, x_test_noise, x_test_clean, y_test_clean
 
     def eval_mod(self, x_test, y_test, clean_size, mod, eval_type):
         if clean_size == 0:
