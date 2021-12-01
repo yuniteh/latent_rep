@@ -287,7 +287,47 @@ def plot_pos_results(ave_pos):
 
     return
 
-def plot_summary(acc_clean,acc_gauss,acc_60hz, acc_flat):
+def plot_summary(acc_clean, acc_mix):
+    lda_ind = 10
+    all_ind = [11, 6, 7, 14]
+    labels = ['LDA-corrupt', 'SAE-LDA', 'CNN-LDA', 'LDA-ch']
+    acc_clean[...,-1] = acc_clean[...,10]
+
+    lda_mix = np.tile(acc_mix[...,lda_ind,np.newaxis],(1,1,len(all_ind)))
+    lda_clean = np.tile(acc_clean[...,lda_ind,np.newaxis],(1,1,len(all_ind)))
+
+    all_mix_diff = acc_mix[...,all_ind] - lda_mix
+    all_clean_diff = acc_clean[...,all_ind] - lda_clean
+
+    # averaged over noise levels, then noise channels, then subject
+    ave_diff_mix = np.nanmean(np.nanmean(all_mix_diff,axis=1),axis=0)
+    ave_diff_clean = np.nanmean(np.nanmean(all_clean_diff,axis=1),axis=0)
+
+    # separated by channels
+    diff_mix = np.nanmean(all_mix_diff,axis=0)
+    diff_clean = np.nanmean(all_clean_diff,axis=0)
+    print(diff_mix.shape)
+
+    fig, ax = plt.subplots()
+    c = ['r','tab:purple','tab:blue', 'm']
+
+    x = np.arange(len(all_ind))  # the label locations
+    width = 0.15
+    rects1 = ax.bar(x - 2*width, 100*diff_clean[0,:], width, color = c, edgecolor='k')
+    rects2 = ax.bar(x - width, 100*diff_mix[0,:], width, color = c, edgecolor='k')
+    rects3 = ax.bar(x, 100*diff_mix[1,:], width, color = c, edgecolor='k')
+    rects4 = ax.bar(x + width, 100*diff_mix[2,:], width, color = c, edgecolor='k')
+    rects5 = ax.bar(x + 2*width, 100*diff_mix[3,:], width, color = c, edgecolor='k')
+
+    ax.set_ylabel('Difference from Baseline LDA (%)')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.axhline(linewidth=.5,color='k')
+    ax.set_ylim([-25,50])
+
+    return 
+
+def plot_summary_old(acc_clean,acc_gauss,acc_60hz, acc_flat):
     lda_ind = 10
     cor_ind = 11
     sae_ind = 1
@@ -331,54 +371,5 @@ def plot_summary(acc_clean,acc_gauss,acc_60hz, acc_flat):
     ax.axhline(linewidth=.5,color='k')
     ax.set_ylim([-20,60])
     ax.legend()
-
-    return 
-
-def plot_summary_new(acc_clean, acc_mix):
-    lda_ind = 10
-    all_ind = [11, 6, 7, 14]
-    labels = ['LDA-corrupt', 'SAE-LDA', 'CNN-LDA', 'LDA-ch']
-    acc_clean = acc_clean
-    acc_mix = acc_mix
-
-    lda_mix = np.tile(acc_mix[...,lda_ind,np.newaxis],(1,1,len(all_ind)))
-    lda_clean = np.tile(acc_clean[...,lda_ind,np.newaxis],(1,1,len(all_ind)))
-
-    all_mix_diff = acc_mix[...,all_ind] - lda_mix
-    all_clean_diff = acc_clean[...,all_ind] - lda_clean
-
-    # averaged over noise levels, then noise channels, then subject
-    ave_diff_mix = np.nanmean(np.nanmean(all_mix_diff,axis=1),axis=0)
-    ave_diff_clean = np.nanmean(np.nanmean(all_clean_diff,axis=1),axis=0)
-
-    # separated by channels
-    diff_mix = np.nanmean(all_mix_diff,axis=0)
-    diff_clean = np.nanmean(all_clean_diff,axis=0)
-    print(diff_mix.shape)
-
-    fig, ax = plt.subplots()
-    c = ['r','tab:purple','tab:blue', 'm']
-
-    x = np.arange(len(all_ind))  # the label locations
-    width = 0.15
-    # rects1 = ax.bar(x - 3*width/2, 100*ave_diff_clean, width, label='clean')
-    # rects2 = ax.bar(x - width/2, 100*ave_diff_mix, width, label='gauss')
-    # rects3 = ax.bar(x + width/2, 100*ave_diff_flat, width, label='flat')
-    # # rects4 = ax.bar(x + 3*width/2, 100*ave_diff_60hz, width, label='60hz')
-    rects1 = ax.bar(x - 2*width, 100*diff_clean[0,:], width, color = c, edgecolor='k')
-    rects2 = ax.bar(x - width, 100*diff_mix[0,:], width, color = c, edgecolor='k')
-    rects3 = ax.bar(x, 100*diff_mix[1,:], width, color = c, edgecolor='k')
-    rects4 = ax.bar(x + width, 100*diff_mix[2,:], width, color = c, edgecolor='k')
-    rects5 = ax.bar(x + 2*width, 100*diff_mix[3,:], width, color = c, edgecolor='k')
-
-    # width = .3
-    # rects1 = ax.bar(x - width/2, 100*ave_diff_clean, width, label='clean')
-    # rects2 = ax.bar(x + width/2, 100*ave_diff_mix, width, label='noisy')
-
-    ax.set_ylabel('Difference from Baseline LDA (%)')
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.axhline(linewidth=.5,color='k')
-    ax.set_ylim([-25,50])
 
     return 
