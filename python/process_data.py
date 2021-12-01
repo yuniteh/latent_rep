@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from sklearn.preprocessing import MinMaxScaler
 from collections import deque
-from itertools import combinations
+from itertools import combinations, product
 import time
 import json
 import pickle
@@ -160,6 +160,11 @@ def train_data_split(raw, params, sub, sub_type, dt=0, train_grp=2, load=True, t
                 x_train, p_train = raw[train_ind,:,:], params[train_ind,:]
                 x_valid, p_valid = raw[valid_ind,:,:], params[valid_ind,:]
                 x_test, p_test = raw[test_ind,:,:], params[test_ind,:]
+            elif dt == 'all':
+                valid_ind = ind & (params[:,6] == valid_i)
+                x_train, p_train = raw[ind,:,:], params[ind,:]
+                x_valid, p_valid = raw[valid_ind,:,:], params[valid_ind,:]
+                x_test, p_test = raw[valid_ind,:,:], params[valid_ind,:]
             else:
                 # Split training and testing data
                 x_temp, x_test, p_temp, p_test = train_test_split(raw[ind,:,:], params[ind,:], test_size = 0.2, stratify=params[ind,4], shuffle=True)
@@ -321,6 +326,11 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
     x = np.linspace(0,0.2,200)
     if noise_type == 'realmix':
         real_noise = np.delete(real_noise,(2),axis=0)
+        # real_noise = np.delete(real_noise,(1),axis=0)
+    elif noise_type == 'realmixnew' or noise_type == 'realmixeven':
+        real_noise = np.delete(real_noise,(2),axis=0)
+        # real_noise = np.delete(real_noise,(1),axis=0)
+    real_type = real_noise.shape[0]
 
     # repeat twice if adding gauss and flat
     for rep_i in range(rep):   
@@ -344,11 +354,21 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                                 ch_level[i,:] = np.random.randint(5,size = num_noise)
                 elif noise_type[:4] == 'real':
                     ch_noise = np.random.randint(1000,size=(ch_split,num_noise))
-                    ch_level = np.random.randint(4,size=(ch_split,num_noise))
-                    if num_noise > 1:
-                        for i in range(ch_split):
-                            while np.array([x == ch_level[i,0] for x in ch_level[i,:]]).all():
-                                ch_level[i,:] = np.random.randint(4,size = num_noise)
+                    ch_level = np.random.randint(real_type,size=(ch_split,num_noise))
+                    if noise_type == 'realmix':
+                        if num_noise > 1:
+                            for i in range(ch_split):
+                                while np.array([x == ch_level[i,0] for x in ch_level[i,:]]).all():
+                                    ch_level[i,:] = np.random.randint(real_type,size = num_noise)
+                    elif noise_type == 'realmixeven':
+                        noise_combo = np.array([x for x in product(np.arange(real_type),repeat=num_noise)])
+                        rep_noise = ch_split//noise_combo.shape[0]
+                        noise_all = np.tile(noise_combo,(rep_noise,1))
+                        noise_extra = np.random.randint(real_type,size=(ch_split%noise_combo.shape[0],num_noise))
+                        noise_all = np.concatenate((noise_all,noise_extra))
+                    else:
+                        ch_level = np.random.randint(real_type,size=(ch_split,num_noise))
+
                 ch_ind = 0
                 for i in ch_all[ch]:
                     if noise_type == '60hzall':
@@ -463,7 +483,9 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[1,ch_noise[:,0],:] * emg_scale[i]
                     elif noise_type == 'realmove':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[-1,ch_noise[:,ch_ind],:] * emg_scale[i]
-                    elif noise_type == 'realmix':
+                    elif noise_type == 'realmixeven':
+                        temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[noise_all[:,ch_ind],ch_noise[:,ch_ind],:] * emg_scale[i]
+                    elif noise_type[:7] == 'realmix':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[ch_level[:,ch_ind],ch_noise[:,ch_ind],:] * emg_scale[i]
                     
                     ch_ind += 1 
@@ -471,7 +493,6 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
             out = np.concatenate((out,temp))
     
     out = np.concatenate((raw, out))
-    # sub_params = np.concatenate((params,sub_params))
 
     noisy, clean, y = out, orig, to_categorical(sub_params[:,4]-1)
 
@@ -596,11 +617,15 @@ def extract_feats_fast(raw):
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     return feat_out
 
-def extract_feats(raw,th=0.01,ft='feat',order=6):
+def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
     if raw.shape[-1] == 1:
         raw = np.squeeze(raw)
     N=raw.shape[2]
     samp = raw.shape[0]
+    # th_array = np.multiply(emg_scale,th)
+    # th = cp.deepcopy(th_array)
+    z_th = 0.025
+    s_th = 0.015
 
     mav=np.sum(np.absolute(raw),axis=2)/N
 
@@ -608,14 +633,14 @@ def extract_feats(raw,th=0.01,ft='feat',order=6):
     next = np.roll(raw, -1, axis=2)
 
     # zero crossings
-    zero_change = (next[...,:-1]*raw[...,:-1] < 0) & (np.absolute(next[...,:-1]-raw[...,:-1])>th)
+    zero_change = (next[...,:-1]*raw[...,:-1] < 0) & (np.absolute(next[...,:-1]-raw[...,:-1])>(emg_scale*z_th))
     zc = np.sum(zero_change, axis=2)
 
     # slope sign change
     next_s = next[...,1:-1] - raw[...,1:-1]
     last_s = raw[...,1:-1] - last[...,1:-1]
     sign_change = ((next_s > 0) & (last_s < 0)) | ((next_s < 0) & (last_s > 0))
-    th_check = (np.absolute(next_s) > th) & (np.absolute(last_s) > th)
+    th_check = (np.absolute(next_s) >(emg_scale*s_th)) & (np.absolute(last_s) > (emg_scale*s_th))
     ssc = np.sum(sign_change & th_check, axis=2)
 
     # waveform length
@@ -632,13 +657,13 @@ def extract_feats(raw,th=0.01,ft='feat',order=6):
         feat_out = np.hstack([feat_out,reg_out])
     return feat_out
 
-def extract_scale(x,scaler,load=True, ft='feat'):
+def extract_scale(x,scaler,load=True, ft='feat',emg_scale=[1,1,1,1,1,1]):
     # extract features 
     if ft == 'feat':
         num_feat = 4
     elif ft == 'tdar':
         num_feat = 10
-    x_temp = np.transpose(extract_feats(x,ft=ft).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
+    x_temp = np.transpose(extract_feats(x,ft=ft,emg_scale=emg_scale).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
     
     # scale features
     if load:

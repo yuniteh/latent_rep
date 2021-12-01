@@ -55,11 +55,11 @@ class Session():
             if self.feat_type == 'tdar':
                 foldername += '_tdar'
         elif ftype == 'testnoise':
-            foldername = 'testdata_' + self.dt + '_' + self.test_dt
+            foldername = 'testdata_' + self.dt + '_' + self.mod_dt + '_' + self.test_dt
             if self.feat_type == 'tdar':
                 foldername += '_tdar'
         elif ftype =='results':
-            foldername = 'results_' + str(self.train_grp) + '_' + self.dt + '_' + self.test_dt
+            foldername = 'results_' + str(self.train_grp) + '_' + self.dt + '_' + self.mod_dt + '_' + self.test_dt
         else:
             foldername = 'models_' + str(self.train_grp) + '_' + self.dt
             if self.mod_dt != 0:
@@ -91,7 +91,7 @@ class Session():
         np.set_printoptions(precision=3,suppress=True)
         i_tot = 14
         filename = 0
-        if self.dt == 'manual':
+        if self.dt != 'cv':
             self.start_cv = 1
             self.max_cv = 2
         
@@ -120,7 +120,7 @@ class Session():
                 if self.dt == 'cv':
                     x_full, x_valid, _, p_full, p_valid, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
                 else:
-                    x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,load=False,train_grp=self.train_grp)
+                    x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,load=True,train_grp=self.train_grp)
 
             # loop through cross validation
             for cv in range(self.start_cv,self.max_cv):
@@ -134,7 +134,10 @@ class Session():
                     self.load = True
                     with open(filename + '.p', 'rb') as f:
                         scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
-                            ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise, emg_scale = pickle.load(f)   
+                            ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise, emg_scale = pickle.load(f) 
+                        # scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
+                        # ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise= pickle.load(f)
+                        # emg_scale = 1     
 
                     with open(filename + '_hist.p', 'rb') as f:
                         svae_hist, sae_hist, cnn_hist, vcnn_hist, ecnn_hist = pickle.load(f)
@@ -165,8 +168,9 @@ class Session():
                             scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, y_valid_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda = pickle.load(f)
 
                         emg_scale = np.ones((np.size(x_train,1),1))
-                        for i in range(np.size(x_train,1)):
-                            emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
+                        if 'emgscale' in self.mod_dt:
+                            for i in range(np.size(x_train,1)):
+                                emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
 
                     else:
                         # Add noise to training data                        
@@ -175,8 +179,10 @@ class Session():
                             x_train, p_train = x_full[p_full[:,6] != cv,...], p_full[p_full[:,6] != cv,...]
 
                         emg_scale = np.ones((np.size(x_train,1),1))
-                        for i in range(np.size(x_train,1)):
-                            emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
+
+                        if 'emgscale' in self.mod_dt:
+                            for i in range(np.size(x_train,1)):
+                                emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
 
                         x_train = x_train*emg_scale
                         x_valid = x_valid*emg_scale
@@ -191,25 +197,26 @@ class Session():
                         # shuffle data to make even batches
                         x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
 
-                        x_train_noise[x_train_noise > 5] = 5
-                        x_train_noise[x_train_noise < -5] = -5
-                        x_train_clean[x_train_clean > 5] = 5
-                        x_train_clean[x_train_clean < -5] = -5
+                        if 'lim' in self.mod_dt:
+                            x_train_noise[x_train_noise > 5] = 5
+                            x_train_noise[x_train_noise < -5] = -5
+                            x_train_clean[x_train_clean > 5] = 5
+                            x_train_clean[x_train_clean < -5] = -5
 
                         # Training data for LDA/QDA
                         y_train = p_train[:,4]
-                        x_train_lda = prd.extract_feats(x_train,ft=self.feat_type)
+                        x_train_lda = prd.extract_feats(x_train,ft=self.feat_type,emg_scale=emg_scale)
                         y_train_lda = y_train[...,np.newaxis] - 1
-                        x_train_noise_lda = prd.extract_feats(x_train_noise,ft=self.feat_type)
+                        x_train_noise_lda = prd.extract_feats(x_train_noise,ft=self.feat_type,emg_scale=emg_scale)
                         y_train_noise_lda = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
                         # Shape data based on feature type
                         if self.feat_type == 'feat' or self.feat_type == 'tdar':
                             # extract and scale features from training and validation data
-                            x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load,ft=self.feat_type) 
-                            x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler,ft=self.feat_type)
-                            x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler,ft=self.feat_type)
-                            x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler,ft=self.feat_type)
+                            x_train_noise_vae, scaler = prd.extract_scale(x_train_noise,scaler,self.load,ft=self.feat_type,emg_scale=emg_scale) 
+                            x_train_clean_vae, _ = prd.extract_scale(x_train_clean,scaler,ft=self.feat_type,emg_scale=emg_scale)
+                            x_valid_noise_vae, _ = prd.extract_scale(x_valid_noise,scaler,ft=self.feat_type,emg_scale=emg_scale)
+                            x_valid_clean_vae, _ = prd.extract_scale(x_valid_clean,scaler,ft=self.feat_type,emg_scale=emg_scale)
 
                         elif self.feat_type == 'raw': # not finalized
                             x_train_noise_vae = 0.5+cp.deepcopy(x_train_noise[:,:,::4,:])/10
@@ -456,7 +463,7 @@ class Session():
         mod_tot = 15
         # set testing noise type
         noise_type = self.n_test[4:-1]
-
+        print(noise_type)
         # set number of tests for each noise types
         if noise_type == 'pos':
             test_tot = 4 # number of positions
@@ -519,6 +526,8 @@ class Session():
                     # Load saved data
                     with open(filename + '.p', 'rb') as f:
                         scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise,emg_scale = pickle.load(f)   
+                        # scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)  
+                        # emg_scale = 1 
 
                     # Add noise to training data
                     y_shape = np.max(p_train[:,4])
@@ -529,7 +538,6 @@ class Session():
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-                    svae_dec_w = 0
 
                     svae.set_weights(svae_w)
                     svae_enc.set_weights(svae_enc_w)
@@ -566,8 +574,11 @@ class Session():
                     else:
                         clean_size = int(np.size(x_test,axis=0))
                     
-                    if 'noisescale' in self.test_dt:
+                    print(emg_scale)
+                    x_test_old = cp.deepcopy(x_test)
+                    if 'emgscale' in self.mod_dt:
                         x_test = x_test*emg_scale
+                    x_test_scaled = cp.deepcopy(x_test)
 
                     # loop through test levels
                     for test_scale in range(1,test_tot + 1):
@@ -613,20 +624,21 @@ class Session():
 
                         if not skip:
                             if not test_load:
-                                x_test_noise[x_test_noise > 5] = 5
-                                x_test_noise[x_test_noise < -5] = -5
-                                x_test_clean[x_test_clean > 5] = 5
-                                x_test_clean[x_test_clean < -5] = -5
+                                if 'lim' in self.mod_dt:
+                                    x_test_noise[x_test_noise > 5] = 5
+                                    x_test_noise[x_test_noise < -5] = -5
+                                    x_test_clean[x_test_clean > 5] = 5
+                                    x_test_clean[x_test_clean < -5] = -5
                                 # extract and scale features
                                 if self.feat_type == 'feat' or self.feat_type == 'tdar':
-                                    x_test_vae, _ = prd.extract_scale(x_test_noise,scaler,ft=self.feat_type)
-                                    x_test_clean_vae, _ = prd.extract_scale(x_test_clean,scaler,ft=self.feat_type)
+                                    x_test_vae, _ = prd.extract_scale(x_test_noise,scaler,ft=self.feat_type,emg_scale=emg_scale)
+                                    x_test_clean_vae, _ = prd.extract_scale(x_test_clean,scaler,ft=self.feat_type,emg_scale=emg_scale)
                                 # not finalized, scale raw data
                                 elif self.feat_type == 'raw':
                                     x_test_vae = cp.deepcopy(x_test_noise[:,:,::2,:])/5
                                     x_test_clean_vae = cp.deepcopy(x_test_clean[:,:,::2,:])/5
                                 
-                                x_test_lda = prd.extract_feats(x_test_noise,ft=self.feat_type)
+                                x_test_lda = prd.extract_feats(x_test_noise,ft=self.feat_type,emg_scale=emg_scale)
                                 with open(noisefile + '.p','wb') as f:
                                     pickle.dump([x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean],f) 
                             if self.feat_type == 'feat':
@@ -645,7 +657,7 @@ class Session():
 
                             # Align test data for ENC-LDA
                             _, x_test_svae = svae_clf.predict(x_test_vae)
-                            x_test_sae = sae_enc.predict(x_test_dlsae2)
+                            x_test_sae = sae_enc.predict(x_test_dlsae)
                             x_test_cnn = cnn_enc.predict(x_test_vae)
                             _,_,_,x_test_ecnn = ecnn_enc.predict(x_test_vae)
                             _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
@@ -662,7 +674,7 @@ class Session():
                             align_mods = 5
                             lda_mods = 2
                             qda_mods = 2
-                            mods_all = [svae,sae,cnn,vcnn,ecnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w_ecnn,c_ecnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, self.n_test]]
+                            mods_all = [svae,sae,cnn,vcnn,ecnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w_ecnn,c_ecnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, self.n_test,emg_scale]]
                             x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_vae','x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_ecnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
                             y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
                             mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
@@ -672,9 +684,9 @@ class Session():
                                 max_i = len(mods_all) - 1
                             else:
                                 max_i = len(mods_all)
-
                             for i in range(max_i):
                                 acc_all[sub-1,cv-1,test_scale - 1,i], acc_noise[sub-1,cv-1,test_scale - 1,i], acc_clean[sub-1,cv-1,test_scale - 1,i] = self.eval_mod(eval(x_test_all[i]), eval(y_test_all[i]), clean_size, mods_all[i], mods_type[i])
+                            print(acc_all[sub-1,cv-1,test_scale - 1,:])
                         else:
                             acc_all[sub-1,cv-1,test_scale - 1,:], acc_noise[sub-1,cv-1,test_scale - 1,:], acc_clean[sub-1,cv-1,test_scale - 1,:] = np.nan, np.nan, np.nan
                 
@@ -693,7 +705,7 @@ class Session():
             pickle.dump([acc_all, acc_clean, acc_noise],f)
 
         out = {'acc_all':acc_all, 'acc_noise':acc_noise, 'acc_clean':acc_clean}
-        return out
+        return out, x_test_noise, x_test_clean, y_test_clean
 
     def eval_mod(self, x_test, y_test, clean_size, mod, eval_type):
         if clean_size == 0:
@@ -717,7 +729,7 @@ class Session():
             if clean_size == 0:
                 acc_noise = 0
             else:
-                acc_noise = eval_lda_ch(mod[0], mod[1], mod[2], x_test, y_test, ft=self.feat_type)
+                acc_noise = eval_lda_ch(mod[0], mod[1], mod[2], x_test, y_test, ft=self.feat_type,emg_scale=mod[3])
             acc_all = 0
             acc_clean = 0
 
