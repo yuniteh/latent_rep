@@ -1,5 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import pandas as pd
 
 def plot_fit(coef,T=1,Telec=1):
     ## plot best fit line
@@ -11,3 +14,66 @@ def plot_fit(coef,T=1,Telec=1):
         y = coef['Intercept']+ T[n-1] + coef['elec']*x + Telec[n-1]*x
         plt.plot(x,y,color=c_tab[c_i])
         c_i+=1
+    
+    return
+
+def get_coefs(mdf):
+    coef = mdf.params
+    i = 0
+    T = np.zeros(14,)
+    Telec = np.zeros(14,)
+    Telec2 = np.zeros(14,)
+    Telec3 = np.zeros(14,)
+    for ind in coef.index:
+        for iter in range(14):
+            if iter > 8:
+                st = 7
+            else:
+                st = 6
+            str_i = 'T.' + str(iter+1) + '.0]'
+            if ind[-st:] == str_i:
+                T[iter] = coef[i]
+            str_i = 'T.' + str(iter+1) + '.0]:elec'
+            if ind[-(st+5):] == str_i:
+                Telec[iter] = coef[i]
+            str_i = 'T.' + str(iter+1) + '.0]:elec2'
+            if ind[-(st+6):] == str_i:
+                Telec2[iter] = coef[i]
+            str_i = 'T.' + str(iter+1) + '.0]:elec3'
+            if ind[-(st+6):] == str_i:
+                Telec3[iter] = coef[i]
+        i +=1
+    
+    return T, Telec, Telec2, Telec3
+
+def create_dataframe(acc_clean,acc_noise):
+    acc_clean[...,-1] = acc_clean[...,10]
+    acc_clean = acc_clean[~np.isnan(acc_clean[:,0,0,0]),...]
+    acc_noise = acc_noise[~np.isnan(acc_noise[:,0,0,0]),...]
+
+    data = np.squeeze(np.hstack((acc_clean[:,[0],:,:], acc_noise))).reshape([-1])
+    mask = np.ones((data.shape))
+    mask[np.isnan(data)] = 0
+    data = data[mask.astype(bool)]
+
+    sub = 1
+    sub_array = np.zeros(data.shape)
+    temp_elec = np.zeros((acc_clean.shape[-1]*5,))
+    elec = 0
+    for i in range(0,acc_clean.shape[-1]*5,acc_clean.shape[-1]):
+        temp_elec[i:i+acc_clean.shape[-1]] = elec
+        elec+=1
+    elec_array = np.tile(temp_elec,(acc_clean.shape[0],))
+    for i in range(0,data.shape[0],acc_clean.shape[-1]*5):
+        sub_array[i:i+acc_clean.shape[-1]*5,] = sub
+        sub+=1
+    mod_array = np.tile(np.arange(acc_clean.shape[-1]),(acc_clean.shape[0]*5,))
+    data = 100*(1-data)
+    data = np.stack((data,sub_array,elec_array,mod_array))
+    df = pd.DataFrame(data.T,columns=['acc','sub','elec','mod'])
+
+    df['elec2'] = df['elec']**2
+    df['elec3'] = df['elec']**3
+    df['elec4'] = df['elec']**4
+
+    return df
