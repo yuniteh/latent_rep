@@ -1,7 +1,29 @@
 import pickle
 import numpy as np
 from matplotlib import pyplot as plt
-import session
+
+def plot_noisy(noisy_in, clean_in, y, cl=4):
+    ind = np.argmax(y,axis=1)
+    ind_p = np.squeeze(np.asarray(np.where(ind == cl)))
+
+    xnoise = noisy_in[ind_p,:,:,0]
+    xclean = clean_in[ind_p,:,:,0]
+    noise = xnoise-xclean
+    noiseind = np.argmax(np.max(noise,axis=2),axis=1)
+    noiseind[np.max(np.max(noise,axis=2),axis=1) == 0] = -1
+
+    std_all = np.max(xclean[:400,...],axis=2)
+    std_ch = std_all[np.arange(std_all.shape[0]),noiseind[400:]]
+    print(np.max(std_ch))
+    n = np.argmax(std_ch)+400
+
+    fig4,ax = plt.subplots(3,1)
+    ax[0].plot(np.squeeze(xclean[n,noiseind[n],:]))
+    ax[1].plot(np.squeeze(xnoise[n,noiseind[n],:]))
+    ax[2].plot(np.squeeze(noise[n,noiseind[n],:]))
+
+    for i in range(3):
+        ax[i].set_ylim(-5,5)
 
 def plot_latent_dim(params,sess):
     all_acc = np.full([np.max(params[:,0]),10,4,6],np.nan)
@@ -89,20 +111,15 @@ def plot_noise_ch(params, sess):
 def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     ave_clean[0,-1] = ave_clean[0,10]
     ave_noise = np.vstack([ave_clean[0,:],ave_noise])
+    all_temp = np.tile(ave_noise[:,10][...,np.newaxis],(1,15))
     ave_noise_diff = np.divide((1-ave_noise) - (1-ave_noise[0,:]), 1)#(1-ave_noise[0,:]))
     ave_clean_diff = np.divide((1-ave_noise) - (1-ave_clean[0,10]), 1)#(1-ave_clean[0,10]))
-    print(ave_noise[:,10][...,np.newaxis].shape)
-    all_temp = np.tile(ave_noise[:,10][...,np.newaxis],(1,15))
     ave_all_diff = np.divide((1-ave_noise) - (1-all_temp), 1)#(1-ave_clean[0,10]))
 
     # Plot accuracy vs. # noisy electrodes
     fig,ax = plt.subplots()
     c = ['k','r','m']
     c_tab = ['tab:purple','tab:blue', 'tab:orange', 'tab:green','tab:red']
-    # c_i = 0
-    # for i in [1,2]:#,4]:    
-    #     ax.plot(100-100*ave_noise[:,i],':o',color=c_tab[c_i])
-    #     c_i+=1
     c_i = 0
     for i in [6,7]:#,9]:    
         ax.plot(100*ave_noise[:,i],'-o',color=c_tab[c_i])
@@ -114,7 +131,6 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
 
     ax.set_ylabel('Accuracy (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
-    # ax.legend(['sae','cnn','svae','sae-lda','cnn-lda','svae-lda','LDA','LDA-corrupt','LDA-ch'])
     ax.legend(['sae-lda','cnn-lda','LDA','LDA-corrupt','LDA-ch'])
     ax.set_ylim(0,80)
     ax.set_xticks(range(0,5))
@@ -142,7 +158,6 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     ax.set_ylabel('Difference in Error Rate (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
     ax.legend(['sae','cnn','svae','sae-lda','cnn-lda','svae-lda','LDA','LDA-corrupt','LDA-ch'])
-    # ax.set_ylim(0,80)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
     ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
@@ -168,7 +183,6 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     ax.set_ylabel('Difference in Error Rate (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
     ax.legend(['sae','cnn','svae','sae-lda','cnn-lda','svae-lda','LDA','LDA-corrupt','LDA-ch'])
-    # ax.set_ylim(0,80)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
     ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
@@ -194,7 +208,6 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     ax.set_ylabel('Difference in Error Rate (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
     ax.legend(['sae','cnn','sae-lda','cnn-lda','LDA','LDA-corrupt','LDA-ch'])
-    # ax.set_ylim(0,80)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
     ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
