@@ -75,17 +75,32 @@ def plot_latent_dim(params,sess):
 
     return svae_hist, cnn_hist, vcnn_hist, ecnn_hist
 
-def plot_latent_rep(x_red, y):
+def create_dist(mu,std):
+    # Make data
+    subdev = 50
+    phi, theta = np.mgrid[0.0:np.pi:complex(0,subdev), 0.0:2.0 * np.pi:complex(0,subdev)]
+    x = 3 * std[0] * np.sin(phi) * np.cos(theta) + mu[0]
+    y = 3 * std[1] * np.sin(phi) * np.sin(theta) + mu[1]
+    z = 3 * std[2] * np.cos(phi) + mu[2]
+
+    return x,y,z
+
+def plot_latent_rep(x_red, class_in, fig,loc=0):
     # plot reduced dimensions in 3D
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
+    # fig = plt.figure()
+    ax = fig.add_subplot(2,2,loc,projection='3d')
     plt.tight_layout
-    col = ['k','b','r','g','c','y','m']
-    y = y.astype(int)
+    col = ['b','b','r','g','c','y','m']
+    class_in = class_in.astype(int)
     # Loop through classes
-    for cl in np.unique(y):
-        ind = np.squeeze(y) == cl
-        ax.plot3D(x_red[ind,0], x_red[ind,1], x_red[ind,2],'.', c=col[cl])
+    for cl in np.unique(class_in):
+        ind = np.squeeze(class_in) == cl
+        x_ind = x_red[ind,:]
+        mu = np.mean(x_ind, axis=0)
+        std = np.std(x_ind, axis=0)
+        ax.plot3D(x_ind[0:-1:5,0], x_ind[0:-1:5,1], x_ind[0:-1:5,2],'.', c=col[cl])
+        x, y, z = create_dist(mu,std)
+        # ax.plot_surface(x,y,z, color=col[cl], alpha=0.2, linewidth=1)
     
     return 
 
