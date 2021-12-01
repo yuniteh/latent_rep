@@ -1,6 +1,8 @@
 import pickle
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.patches import Ellipse
+
 
 def plot_all_noise(real_noise):
     out = np.squeeze(np.zeros((200*1000//8,5)))
@@ -77,32 +79,82 @@ def plot_latent_dim(params,sess):
 
 def create_dist(mu,std):
     # Make data
-    subdev = 50
+    subdev = 20
     phi, theta = np.mgrid[0.0:np.pi:complex(0,subdev), 0.0:2.0 * np.pi:complex(0,subdev)]
-    x = 3 * std[0] * np.sin(phi) * np.cos(theta) + mu[0]
-    y = 3 * std[1] * np.sin(phi) * np.sin(theta) + mu[1]
-    z = 3 * std[2] * np.cos(phi) + mu[2]
+    x = 2 * std[0] * np.sin(phi) * np.cos(theta) + mu[0]
+    y = 2 * std[1] * np.sin(phi) * np.sin(theta) + mu[1]
+    z = 2 * std[2] * np.cos(phi) + mu[2]
 
     return x,y,z
 
-def plot_latent_rep(x_red, class_in, fig,loc=0):
+def create_ellipse(mu1,mu2,std1,std2):
+    theta = np.linspace( 0 , 2 * np.pi , 150 )
+    
+    a = 2*std1 * np.cos(theta) + mu1
+    b = 2*std2 * np.sin(theta) + mu2
+    return a,b
+
+def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6,6),(-6,6)),lim_max=0,lim_min=0,std_lim=False):
     # plot reduced dimensions in 3D
     # fig = plt.figure()
-    ax = fig.add_subplot(2,2,loc,projection='3d')
-    plt.tight_layout
-    col = ['b','b','r','g','c','y','m']
+    if dim == 3:
+        ax = fig.add_subplot(2,2,loc,projection='3d')
+    else:
+        ax = fig.add_subplot(2,2,loc)
+    col = ['k','m','b','g','orange','r','pink']
+    cmaps = ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds', "RdPu"]
     class_in = class_in.astype(int)
+
+    if isinstance(lim_max,int):
+        lim_max = np.ones((3,))*-10000
+        lim_min = np.ones((3,))*10000
     # Loop through classes
     for cl in np.unique(class_in):
         ind = np.squeeze(class_in) == cl
         x_ind = x_red[ind,:]
-        mu = np.mean(x_ind, axis=0)
-        std = np.std(x_ind, axis=0)
-        ax.plot3D(x_ind[0:-1:5,0], x_ind[0:-1:5,1], x_ind[0:-1:5,2],'.', c=col[cl])
+        mu = np.mean(x_ind[:,:3], axis=0)
+        std = np.std(x_ind[:,:3], axis=0)
         x, y, z = create_dist(mu,std)
-        # ax.plot_surface(x,y,z, color=col[cl], alpha=0.2, linewidth=1)
+        if dim == 3:
+            ax.plot3D(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1], x_ind[0:-1:downsamp,2],'.', c=col[-cl],ms=5)
+            # ax.plot_surface(x,y,z, cmap=cmaps[-cl], alpha=0.4, linewidth=2)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_zticks([])
+
+            # a,b = create_ellipse(mu[0],mu[1],std[0],std[1])
+            # ax.plot3D(a,b,np.ones(a.shape)*mu[2], c='k',alpha=1,linewidth=1)
+
+            # a,b = create_ellipse(mu[1],mu[2],std[1],std[2])
+            # ax.plot3D(np.ones(a.shape)*mu[0],a,b, c='k',alpha=1,linewidth=1)
+
+            # a,b = create_ellipse(mu[0],mu[2],std[0],std[2])
+            # ax.plot3D(a,np.ones(a.shape)*mu[1],b, c='k',alpha=1,linewidth=1)
+        else:
+            ax.plot(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1],'.', c=col[-cl],ms=3)
+            # ax.plot(x,y,c=col[-cl],alpha=.5)
+            ellipse = Ellipse((mu[0],mu[1]),3*std[0],3*std[1],facecolor=col[-cl],alpha=.5)
+            ax.add_patch(ellipse)
+        cur_min = mu-2*std
+        cur_max = mu+2*std
+
+        lim_max[lim_max < cur_max] = cur_max[lim_max < cur_max]
+        lim_min[lim_min > cur_min] = cur_min[lim_min > cur_min]
+
+    if std_lim:
+        ax.set_xlim((lim_min[0],lim_max[0]))
+        ax.set_ylim((lim_min[1],lim_max[1]))
+        if dim == 3:
+            ax.set_zlim((lim_min[2],lim_max[2]))
+    else:
+        ax.set_xlim(lims[0])
+        ax.set_ylim(lims[1])
+        if dim == 3:
+            ax.set_zlim(lims[2])
     
-    return 
+    ax.dist = 9
+    
+    return lim_min, lim_max
 
 def plot_noise_ch(params, sess):
     if 'pos' in sess.ntest:
