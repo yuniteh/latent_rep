@@ -94,63 +94,6 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     print(ave_noise[:,10][...,np.newaxis].shape)
     all_temp = np.tile(ave_noise[:,10][...,np.newaxis],(1,15))
     ave_all_diff = np.divide((1-ave_noise) - (1-all_temp), 1)#(1-ave_clean[0,10]))
-    # # Plot accuracy vs. # noisy electrodes
-    # fig,ax = plt.subplots(1,3)
-    # c = ['k','r','m']
-    # c_i = 0
-    # for i in range(1,5):
-    #     ax[0].plot(100-100*ave_noise[:,i],'-o')
-    # for i in range(6,10):    
-    #     ax[1].plot(100-100*ave_noise[:,i],'-o')
-    # for i in [10,11,14]:
-    #     ax[2].plot(100-100*ave_noise[:,i],'-o',color=c[c_i])
-    #     c_i+=1    
-
-    # ax[0].set_ylabel('Accuracy (%)')
-    # fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
-    # ax[0].legend(['sae','cnn','vcnn','ecnn'])
-    # ax[1].legend(['sae-lda','cnn-lda','vcnn-lda','ecnn-lda'])
-    # ax[2].legend(['LDA','LDA-corrupt','LDA-ch'])
-    # ax[0].set_title('NN')
-    # ax[1].set_title('Aligned')
-    # ax[2].set_title('LDA')
-    # ax[1].set_yticks([])
-    # ax[2].set_yticks([])
-    # for i in range(0,3):
-    #     ax[i].set_ylim(0,80)
-    #     ax[i].set_xticks(range(0,5))
-    #     ax[i].set_xticklabels(['0','1','2','3','4'])
-
-    # fig.set_tight_layout(True)
-
-    # c = ['k','r','m']
-    # c_tab = ['tab:purple','tab:blue', 'tab:orange', 'tab:green','tab:red']
-
-    # # Plot accuracy vs. # noisy electrodes
-    # fig,ax = plt.subplots()
-    # c = ['k','r','m']
-    # c_i = 0
-    # for i in range(5):    
-    #     ax.plot(100-100*ave_noise[:,i],':o',color=c_tab[c_i])
-    #     c_i+=1
-    # c_i = 0
-    # for i in range(5,10):    
-    #     ax.plot(100-100*ave_noise[:,i],'-o',color=c_tab[c_i])
-    #     c_i+=1
-    # c_i = 0
-    # for i in [10,11,14]:
-    #     ax.plot(100-100*ave_noise[:,i],'--o',color=c[c_i])
-    #     c_i+=1    
-
-    # ax.set_ylabel('Error Rate (%)')
-    # fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
-    # ax.legend(['svae','sae','cnn','vcnn','ecnn','svae-lda','sae-lda','cnn-lda','vcnn-lda','ecnn-lda','LDA','LDA-corrupt','LDA-ch'])
-    # ax.set_ylim(0,80)
-    # ax.set_xticks(range(0,5))
-    # ax.set_xticklabels(['0','1','2','3','4'])
-    # ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
-
-    # fig.set_tight_layout(True)
 
     # Plot accuracy vs. # noisy electrodes
     fig,ax = plt.subplots()
