@@ -1,7 +1,44 @@
 import pickle
 import numpy as np
 from matplotlib import pyplot as plt
-import session
+
+def plot_all_noise(real_noise):
+    out = np.squeeze(np.zeros((200*1000//8,5)))
+    t = np.linspace(0,200//8,200*1000//8)
+    fig, ax = plt.subplots(5,1)
+    for ch in range(5):
+        it = 0
+        for i in range(0,1000,8):
+            out[it*200:it*200+200,ch] = real_noise[ch,i,:]
+            it += 1
+        ax[ch].plot(t,out[:,ch],linewidth=.5,color='k')
+        ax[ch].set_ylim([-5,5])
+        ax[ch].set_xlim([0,200//8])
+        if ch < 4:
+            ax[ch].set_xticks([])
+        # ax[ch].tight_layout()
+
+def plot_noisy(noisy_in, clean_in, y, cl=4):
+    ind = np.argmax(y,axis=1)
+    ind_p = np.squeeze(np.asarray(np.where(ind == cl)))
+
+    xnoise = noisy_in[ind_p,:,:,0]
+    xclean = clean_in[ind_p,:,:,0]
+    noise = xnoise-xclean
+    noiseind = np.argmax(np.max(noise,axis=2),axis=1)
+    noiseind[np.max(np.max(noise,axis=2),axis=1) == 0] = -1
+
+    std_all = np.max(xclean[:400,...],axis=2)
+    std_ch = std_all[np.arange(std_all.shape[0]),noiseind[400:]]
+    n = np.argmax(std_ch)+400
+
+    fig,ax = plt.subplots(3,1)
+    ax[0].plot(np.squeeze(xclean[n,noiseind[n],:]))
+    ax[1].plot(np.squeeze(xnoise[n,noiseind[n],:]))
+    ax[2].plot(np.squeeze(noise[n,noiseind[n],:]))
+
+    for i in range(3):
+        ax[i].set_ylim(-5,5)
 
 def plot_latent_dim(params,sess):
     all_acc = np.full([np.max(params[:,0]),10,4,6],np.nan)
@@ -83,83 +120,20 @@ def plot_noise_ch(params, sess):
     ave_clean = np.nanmean(ch_clean,axis=0)
 
     plot_electrode_results(ave_noise,ave_clean)
-
     return 
 
 def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     ave_clean[0,-1] = ave_clean[0,10]
     ave_noise = np.vstack([ave_clean[0,:],ave_noise])
+    all_temp = np.tile(ave_noise[:,10][...,np.newaxis],(1,15))
     ave_noise_diff = np.divide((1-ave_noise) - (1-ave_noise[0,:]), 1)#(1-ave_noise[0,:]))
     ave_clean_diff = np.divide((1-ave_noise) - (1-ave_clean[0,10]), 1)#(1-ave_clean[0,10]))
-    print(ave_noise[:,10][...,np.newaxis].shape)
-    all_temp = np.tile(ave_noise[:,10][...,np.newaxis],(1,15))
     ave_all_diff = np.divide((1-ave_noise) - (1-all_temp), 1)#(1-ave_clean[0,10]))
-    # # Plot accuracy vs. # noisy electrodes
-    # fig,ax = plt.subplots(1,3)
-    # c = ['k','r','m']
-    # c_i = 0
-    # for i in range(1,5):
-    #     ax[0].plot(100-100*ave_noise[:,i],'-o')
-    # for i in range(6,10):    
-    #     ax[1].plot(100-100*ave_noise[:,i],'-o')
-    # for i in [10,11,14]:
-    #     ax[2].plot(100-100*ave_noise[:,i],'-o',color=c[c_i])
-    #     c_i+=1    
-
-    # ax[0].set_ylabel('Accuracy (%)')
-    # fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
-    # ax[0].legend(['sae','cnn','vcnn','ecnn'])
-    # ax[1].legend(['sae-lda','cnn-lda','vcnn-lda','ecnn-lda'])
-    # ax[2].legend(['LDA','LDA-corrupt','LDA-ch'])
-    # ax[0].set_title('NN')
-    # ax[1].set_title('Aligned')
-    # ax[2].set_title('LDA')
-    # ax[1].set_yticks([])
-    # ax[2].set_yticks([])
-    # for i in range(0,3):
-    #     ax[i].set_ylim(0,80)
-    #     ax[i].set_xticks(range(0,5))
-    #     ax[i].set_xticklabels(['0','1','2','3','4'])
-
-    # fig.set_tight_layout(True)
-
-    # c = ['k','r','m']
-    # c_tab = ['tab:purple','tab:blue', 'tab:orange', 'tab:green','tab:red']
-
-    # # Plot accuracy vs. # noisy electrodes
-    # fig,ax = plt.subplots()
-    # c = ['k','r','m']
-    # c_i = 0
-    # for i in range(5):    
-    #     ax.plot(100-100*ave_noise[:,i],':o',color=c_tab[c_i])
-    #     c_i+=1
-    # c_i = 0
-    # for i in range(5,10):    
-    #     ax.plot(100-100*ave_noise[:,i],'-o',color=c_tab[c_i])
-    #     c_i+=1
-    # c_i = 0
-    # for i in [10,11,14]:
-    #     ax.plot(100-100*ave_noise[:,i],'--o',color=c[c_i])
-    #     c_i+=1    
-
-    # ax.set_ylabel('Error Rate (%)')
-    # fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
-    # ax.legend(['svae','sae','cnn','vcnn','ecnn','svae-lda','sae-lda','cnn-lda','vcnn-lda','ecnn-lda','LDA','LDA-corrupt','LDA-ch'])
-    # ax.set_ylim(0,80)
-    # ax.set_xticks(range(0,5))
-    # ax.set_xticklabels(['0','1','2','3','4'])
-    # ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
-
-    # fig.set_tight_layout(True)
 
     # Plot accuracy vs. # noisy electrodes
     fig,ax = plt.subplots()
     c = ['k','r','m']
     c_tab = ['tab:purple','tab:blue', 'tab:orange', 'tab:green','tab:red']
-    # c_i = 0
-    # for i in [1,2]:#,4]:    
-    #     ax.plot(100-100*ave_noise[:,i],':o',color=c_tab[c_i])
-    #     c_i+=1
     c_i = 0
     for i in [6,7]:#,9]:    
         ax.plot(100*ave_noise[:,i],'-o',color=c_tab[c_i])
@@ -171,7 +145,6 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
 
     ax.set_ylabel('Accuracy (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
-    # ax.legend(['sae','cnn','svae','sae-lda','cnn-lda','svae-lda','LDA','LDA-corrupt','LDA-ch'])
     ax.legend(['sae-lda','cnn-lda','LDA','LDA-corrupt','LDA-ch'])
     ax.set_ylim(0,80)
     ax.set_xticks(range(0,5))
@@ -199,7 +172,6 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     ax.set_ylabel('Difference in Error Rate (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
     ax.legend(['sae','cnn','svae','sae-lda','cnn-lda','svae-lda','LDA','LDA-corrupt','LDA-ch'])
-    # ax.set_ylim(0,80)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
     ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
@@ -225,7 +197,6 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     ax.set_ylabel('Difference in Error Rate (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
     ax.legend(['sae','cnn','svae','sae-lda','cnn-lda','svae-lda','LDA','LDA-corrupt','LDA-ch'])
-    # ax.set_ylim(0,80)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
     ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
@@ -251,7 +222,6 @@ def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
     ax.set_ylabel('Difference in Error Rate (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
     ax.legend(['sae','cnn','sae-lda','cnn-lda','LDA','LDA-corrupt','LDA-ch'])
-    # ax.set_ylim(0,80)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
     ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
@@ -287,7 +257,47 @@ def plot_pos_results(ave_pos):
 
     return
 
-def plot_summary(acc_clean,acc_gauss,acc_60hz, acc_flat):
+def plot_summary(acc_clean, acc_mix):
+    lda_ind = 10
+    all_ind = [11, 6, 7, 14]
+    labels = ['LDA-corrupt', 'SAE-LDA', 'CNN-LDA', 'LDA-ch']
+    acc_clean[...,-1] = acc_clean[...,10]
+
+    lda_mix = np.tile(acc_mix[...,lda_ind,np.newaxis],(1,1,len(all_ind)))
+    lda_clean = np.tile(acc_clean[...,lda_ind,np.newaxis],(1,1,len(all_ind)))
+
+    all_mix_diff = acc_mix[...,all_ind] - lda_mix
+    all_clean_diff = acc_clean[...,all_ind] - lda_clean
+
+    # averaged over noise levels, then noise channels, then subject
+    ave_diff_mix = np.nanmean(np.nanmean(all_mix_diff,axis=1),axis=0)
+    ave_diff_clean = np.nanmean(np.nanmean(all_clean_diff,axis=1),axis=0)
+
+    # separated by channels
+    diff_mix = np.nanmean(all_mix_diff,axis=0)
+    diff_clean = np.nanmean(all_clean_diff,axis=0)
+    print(diff_mix.shape)
+
+    fig, ax = plt.subplots()
+    c = ['r','tab:purple','tab:blue', 'm']
+
+    x = np.arange(len(all_ind))  # the label locations
+    width = 0.15
+    rects1 = ax.bar(x - 2*width, 100*diff_clean[0,:], width, color = c, edgecolor='k')
+    rects2 = ax.bar(x - width, 100*diff_mix[0,:], width, color = c, edgecolor='k')
+    rects3 = ax.bar(x, 100*diff_mix[1,:], width, color = c, edgecolor='k')
+    rects4 = ax.bar(x + width, 100*diff_mix[2,:], width, color = c, edgecolor='k')
+    rects5 = ax.bar(x + 2*width, 100*diff_mix[3,:], width, color = c, edgecolor='k')
+
+    ax.set_ylabel('Difference from Baseline LDA (%)')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.axhline(linewidth=.5,color='k')
+    ax.set_ylim([-25,50])
+
+    return 
+
+def plot_summary_old(acc_clean,acc_gauss,acc_60hz, acc_flat):
     lda_ind = 10
     cor_ind = 11
     sae_ind = 1
@@ -331,54 +341,5 @@ def plot_summary(acc_clean,acc_gauss,acc_60hz, acc_flat):
     ax.axhline(linewidth=.5,color='k')
     ax.set_ylim([-20,60])
     ax.legend()
-
-    return 
-
-def plot_summary_new(acc_clean, acc_mix):
-    lda_ind = 10
-    all_ind = [11, 6, 7, 14]
-    labels = ['LDA-corrupt', 'SAE-LDA', 'CNN-LDA', 'LDA-ch']
-    acc_clean = acc_clean
-    acc_mix = acc_mix
-
-    lda_mix = np.tile(acc_mix[...,lda_ind,np.newaxis],(1,1,len(all_ind)))
-    lda_clean = np.tile(acc_clean[...,lda_ind,np.newaxis],(1,1,len(all_ind)))
-
-    all_mix_diff = acc_mix[...,all_ind] - lda_mix
-    all_clean_diff = acc_clean[...,all_ind] - lda_clean
-
-    # averaged over noise levels, then noise channels, then subject
-    ave_diff_mix = np.nanmean(np.nanmean(all_mix_diff,axis=1),axis=0)
-    ave_diff_clean = np.nanmean(np.nanmean(all_clean_diff,axis=1),axis=0)
-
-    # separated by channels
-    diff_mix = np.nanmean(all_mix_diff,axis=0)
-    diff_clean = np.nanmean(all_clean_diff,axis=0)
-    print(diff_mix.shape)
-
-    fig, ax = plt.subplots()
-    c = ['r','tab:purple','tab:blue', 'm']
-
-    x = np.arange(len(all_ind))  # the label locations
-    width = 0.15
-    # rects1 = ax.bar(x - 3*width/2, 100*ave_diff_clean, width, label='clean')
-    # rects2 = ax.bar(x - width/2, 100*ave_diff_mix, width, label='gauss')
-    # rects3 = ax.bar(x + width/2, 100*ave_diff_flat, width, label='flat')
-    # # rects4 = ax.bar(x + 3*width/2, 100*ave_diff_60hz, width, label='60hz')
-    rects1 = ax.bar(x - 2*width, 100*diff_clean[0,:], width, color = c, edgecolor='k')
-    rects2 = ax.bar(x - width, 100*diff_mix[0,:], width, color = c, edgecolor='k')
-    rects3 = ax.bar(x, 100*diff_mix[1,:], width, color = c, edgecolor='k')
-    rects4 = ax.bar(x + width, 100*diff_mix[2,:], width, color = c, edgecolor='k')
-    rects5 = ax.bar(x + 2*width, 100*diff_mix[3,:], width, color = c, edgecolor='k')
-
-    # width = .3
-    # rects1 = ax.bar(x - width/2, 100*ave_diff_clean, width, label='clean')
-    # rects2 = ax.bar(x + width/2, 100*ave_diff_mix, width, label='noisy')
-
-    ax.set_ylabel('Difference from Baseline LDA (%)')
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.axhline(linewidth=.5,color='k')
-    ax.set_ylim([-25,50])
 
     return 

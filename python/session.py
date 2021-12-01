@@ -641,11 +641,7 @@ class Session():
                                 x_test_lda = prd.extract_feats(x_test_noise,ft=self.feat_type,emg_scale=emg_scale)
                                 with open(noisefile + '.p','wb') as f:
                                     pickle.dump([x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean],f) 
-                            if self.feat_type == 'feat':
-                                num_feat = 4
-                            elif self.feat_type == 'tdar':
-                                num_feat = 10
-                            x_temp = np.transpose(x_test_lda.reshape((x_test_lda.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
+                            x_temp = np.transpose(x_test_lda.reshape((x_test_lda.shape[0],num_feats,-1)),(0,2,1))[...,np.newaxis]
                             x_test_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
 
                             # Reshape for nonconvolutional SAE
@@ -736,6 +732,7 @@ class Session():
         return acc_all, acc_noise, acc_clean
     
     def reduce_latent(self, raw, params, sub, test_scale=1):
+        num_feat = 4
         # Load training and testing data
         x_train, x_test, x_valid, p_train, p_test, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,train_grp=self.train_grp)
         # get folder and file names
@@ -745,44 +742,44 @@ class Session():
         # Load saved data
         with open(filename + '.p', 'rb') as f:
             scaler, _, svae_enc_w, _, svae_clf_w, _, sae_enc_w, _, _, cnn_enc_w, _, _, vcnn_enc_w, _, \
-                _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = pickle.load(f)
+                _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,_ = pickle.load(f)
         with open(filename + '_red.p', 'rb') as f:
             v_svae, v_sae, v_cnn, v_vcnn, _, v, v_noise = pickle.load(f)
 
         noisefolder = self.create_foldername(ftype='testnoise')
-        noisefile = self.create_filename(noisefolder,sub=sub,ftype='testnoise',test_scale=test_scale)
+        noisefile = self.create_filename(noisefolder,sub=sub,ftype='testnoise',test_scale=1)
         
+        print(noisefile)
         if os.path.isfile(noisefile + '.p'):
             print('loading test data')
             with open(noisefile + '.p','rb') as f:
                 x_test_vae, x_test_clean_vae, x_test_lda, y_test_clean = pickle.load(f) 
-        
+
+        x_temp = np.transpose(x_test_lda.reshape((x_test_lda.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
+        x_test_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
+
         x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
         
         K.clear_session()
         _, svae_enc, _, svae_clf = dl.build_M2(self.latent_dim, y_test_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
         _, sae_enc, _ = dl.build_sae(self.latent_dim, y_test_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
         _, cnn_enc, _ = dl.build_cnn(self.latent_dim, y_test_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
-        _, vcnn_enc, _ = dl.build_vcnn_manual(self.latent_dim, y_test_clean.shape[1], input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
 
         # set weights from trained models
         svae_enc.set_weights(svae_enc_w)
         sae_enc.set_weights(sae_enc_w)
         cnn_enc.set_weights(cnn_enc_w)
-        vcnn_enc.set_weights(vcnn_enc_w)
         svae_clf.set_weights(svae_clf_w)
         
         # align to latent space
         _, x_test_svae = svae_clf.predict(x_test_vae)
         x_test_sae = sae_enc.predict(x_test_dlsae)
         x_test_cnn = cnn_enc.predict(x_test_vae)
-        _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
 
         # reduce training data
         x_test_svae_red = np.matmul(x_test_svae,v_svae)
         x_test_sae_red = np.matmul(x_test_sae,v_sae)
         x_test_cnn_red = np.matmul(x_test_cnn,v_cnn)
-        x_test_vcnn_red = np.matmul(x_test_vcnn,v_vcnn)
 
         x_test_lda_red = np.matmul(x_test_lda,v)
         x_test_noise_red = np.matmul(x_test_lda,v_noise)
@@ -791,7 +788,7 @@ class Session():
         y_test_clean = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
 
         # compile results
-        out_dict = {'x_test_svae_red':x_test_svae_red,'x_test_sae_red':x_test_sae_red,'x_test_cnn_red':x_test_cnn_red,'x_test_vcnn_red':x_test_vcnn_red, 'x_test_lda_red':x_test_lda_red, 'x_test_noise_red':x_test_noise_red, 'y_test':y_test_clean,'clean_size':clean_size}
+        out_dict = {'x_test_svae_red':x_test_svae_red,'x_test_sae_red':x_test_sae_red,'x_test_cnn_red':x_test_cnn_red, 'x_test_lda_red':x_test_lda_red, 'x_test_noise_red':x_test_noise_red, 'y_test':y_test_clean,'clean_size':clean_size}
 
         return out_dict
 
