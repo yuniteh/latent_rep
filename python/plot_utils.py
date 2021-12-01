@@ -2,6 +2,22 @@ import pickle
 import numpy as np
 from matplotlib import pyplot as plt
 
+def plot_all_noise(real_noise):
+    out = np.squeeze(np.zeros((200*1000//8,5)))
+    t = np.linspace(0,200//8,200*1000//8)
+    fig, ax = plt.subplots(5,1)
+    for ch in range(5):
+        it = 0
+        for i in range(0,1000,8):
+            out[it*200:it*200+200,ch] = real_noise[ch,i,:]
+            it += 1
+        ax[ch].plot(t,out[:,ch],linewidth=.5,color='k')
+        ax[ch].set_ylim([-5,5])
+        ax[ch].set_xlim([0,200//8])
+        if ch < 4:
+            ax[ch].set_xticks([])
+        # ax[ch].tight_layout()
+
 def plot_noisy(noisy_in, clean_in, y, cl=4):
     ind = np.argmax(y,axis=1)
     ind_p = np.squeeze(np.asarray(np.where(ind == cl)))
@@ -14,10 +30,9 @@ def plot_noisy(noisy_in, clean_in, y, cl=4):
 
     std_all = np.max(xclean[:400,...],axis=2)
     std_ch = std_all[np.arange(std_all.shape[0]),noiseind[400:]]
-    print(np.max(std_ch))
     n = np.argmax(std_ch)+400
 
-    fig4,ax = plt.subplots(3,1)
+    fig,ax = plt.subplots(3,1)
     ax[0].plot(np.squeeze(xclean[n,noiseind[n],:]))
     ax[1].plot(np.squeeze(xnoise[n,noiseind[n],:]))
     ax[2].plot(np.squeeze(noise[n,noiseind[n],:]))
@@ -105,7 +120,6 @@ def plot_noise_ch(params, sess):
     ave_clean = np.nanmean(ch_clean,axis=0)
 
     plot_electrode_results(ave_noise,ave_clean)
-
     return 
 
 def plot_electrode_results(ave_noise,ave_clean,ntrain='',ntest='',subtype='AB'):
