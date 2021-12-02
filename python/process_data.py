@@ -327,8 +327,8 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
     if noise_type == 'realmix':
         real_noise = np.delete(real_noise,(2),axis=0)
         # real_noise = np.delete(real_noise,(1),axis=0)
-    elif noise_type == 'realmixnew' or noise_type == 'realmixeven2':
-        real_noise = np.delete(real_noise,(3),axis=0)
+    elif noise_type == 'realmixnew' or noise_type == 'realmixeven':
+        real_noise = np.delete(real_noise,(2),axis=0)
         # real_noise = np.delete(real_noise,(1),axis=0)
     real_type = real_noise.shape[0]
 
@@ -483,7 +483,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[1,ch_noise[:,0],:] * emg_scale[i]
                     elif noise_type == 'realmove':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[-1,ch_noise[:,ch_ind],:] * emg_scale[i]
-                    elif noise_type == 'realmixeven2':
+                    elif noise_type == 'realmixeven':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[noise_all[:,ch_ind],ch_noise[:,ch_ind],:] * emg_scale[i]
                     elif noise_type[:7] == 'realmix':
                         temp[ch*ch_split:(ch+1)*ch_split,i,:] += real_noise[ch_level[:,ch_ind],ch_noise[:,ch_ind],:] * emg_scale[i]
