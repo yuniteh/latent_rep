@@ -197,7 +197,10 @@ def plot_noise_ch(params, sess):
     return 
 
 def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB'):
-    custom_palette = sns.color_palette("Paired")
+    line_col = sns.color_palette("Paired")
+    eb_col = sns.color_palette("Paired")
+    line_col[2:4] = eb_col[4:6]
+    line_col[4:6] = eb_col[2:4]
     n_subs = np.sum(~np.isnan(acc_clean[:,0,0]))
     acc_clean[:,0,-1] = acc_clean[:,0,10]
     acc_noise = np.hstack([acc_clean[:,0,:][:,np.newaxis,:],acc_noise])
@@ -215,24 +218,30 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB'):
     fig,ax = plt.subplots()
     c = ['k','r','m']
     c_tab = ['tab:purple','tab:blue', 'tab:orange', 'tab:green','tab:red']
-    print('hi')
-    # c_tab =  ['tab:purple','tab:blue','k','r','m']
     c_i = 0
     xtemp = np.linspace(0, ave_noise.shape[0]-1, num=41, endpoint=True)
     xnew = np.concatenate((xtemp,np.flip(xtemp),xtemp[[0]]))
-    for i in [6,7,10,11,14]:#,9]:    
-        ax.fill(fill_x[:2*ave_noise.shape[0]+1],fill_space[:2*ave_noise.shape[0]+1,i],color=custom_palette[c_i],alpha=.5,ec=None)
-        ax.plot(ave_noise[:,i],'-o',color=custom_palette[c_i+1],ms=4)
-        # f1 = interp1d(fill_x[:ave_noise.shape[0]], fill_space[:ave_noise.shape[0],i], fill_value="extrapolate", kind='quadratic')
-        # f2 = interp1d(fill_x[ave_noise.shape[0]:2*ave_noise.shape[0]], fill_space[ave_noise.shape[0]:2*ave_noise.shape[0],i], fill_value="extrapolate", kind='quadratic')
-        # y = np.concatenate((f1(xtemp),f2(np.flip(xtemp)),f1(xtemp[[0]])))
-        # ax.fill(xnew,y,color=c_tab[c_i],alpha=.3,ec=None)
-        c_i+=2 
+    for j in range(2):
+        c_i = 0
+        for i in [6,7,10,11,14]:#,9]:    
+            if j == 0:
+                ax.fill(fill_x[:2*ave_noise.shape[0]+1],fill_space[:2*ave_noise.shape[0]+1,i],color=line_col[c_i],alpha=.5,ec=None)
+            else:
+                ax.plot(ave_noise[:,i],'-o',color=line_col[c_i+1],ms=4)
+            # f1 = interp1d(fill_x[:ave_noise.shape[0]], fill_space[:ave_noise.shape[0],i], fill_value="extrapolate", kind='quadratic')
+            # f2 = interp1d(fill_x[ave_noise.shape[0]:2*ave_noise.shape[0]], fill_space[ave_noise.shape[0]:2*ave_noise.shape[0],i], fill_value="extrapolate", kind='quadratic')
+            # y = np.concatenate((f1(xtemp),f2(np.flip(xtemp)),f1(xtemp[[0]])))
+            # ax.fill(xnew,y,color=c_tab[c_i],alpha=.3,ec=None)
+            c_i+=2
 
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.set_aspect(.1)
     ax.set_ylabel('Accuracy (%)')
     fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
     ax.legend(['sae-lda','cnn-lda','LDA','LDA-corrupt','LDA-ch'])
-    ax.set_ylim(0,100)
+    ax.grid(1,axis='y',color='lightgrey',linewidth=.5)
+    ax.set_ylim(20,85)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
     ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
