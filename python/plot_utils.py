@@ -77,24 +77,24 @@ def plot_latent_dim(params,sess):
 
     return svae_hist, cnn_hist, vcnn_hist, ecnn_hist
 
-def create_dist(mu,std):
+def create_dist(mu,std,mult):
     # Make data
     subdev = 20
     phi, theta = np.mgrid[0.0:np.pi:complex(0,subdev), 0.0:2.0 * np.pi:complex(0,subdev)]
-    x = 2 * std[0] * np.sin(phi) * np.cos(theta) + mu[0]
-    y = 2 * std[1] * np.sin(phi) * np.sin(theta) + mu[1]
-    z = 2 * std[2] * np.cos(phi) + mu[2]
+    x = mult * std[0] * np.sin(phi) * np.cos(theta) + mu[0]
+    y = mult * std[1] * np.sin(phi) * np.sin(theta) + mu[1]
+    z = mult * std[2] * np.cos(phi) + mu[2]
 
     return x,y,z
 
 def create_ellipse(mu1,mu2,std1,std2):
     theta = np.linspace( 0 , 2 * np.pi , 150 )
     
-    a = 2*std1 * np.cos(theta) + mu1
-    b = 2*std2 * np.sin(theta) + mu2
+    a = 1*std1 * np.cos(theta) + mu1
+    b = 1*std2 * np.sin(theta) + mu2
     return a,b
 
-def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6,6),(-6,6)),lim_max=0,lim_min=0,std_lim=False):
+def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6,6),(-6,6)),lim_max=0,lim_min=0,std_lim=True,mult=3):
     # plot reduced dimensions in 3D
     # fig = plt.figure()
     if dim == 3:
@@ -114,13 +114,15 @@ def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6
         x_ind = x_red[ind,:]
         mu = np.mean(x_ind[:,:3], axis=0)
         std = np.std(x_ind[:,:3], axis=0)
-        x, y, z = create_dist(mu,std)
+        x, y, z = create_dist(mu,std,mult)
         if dim == 3:
-            ax.plot3D(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1], x_ind[0:-1:downsamp,2],'.', c=col[-cl],ms=5)
-            # ax.plot_surface(x,y,z, cmap=cmaps[-cl], alpha=0.4, linewidth=2)
-            ax.set_xticks([])
-            ax.set_yticks([])
-            ax.set_zticks([])
+            if std_lim:
+                ax.plot_surface(x,y,z, cmap=cmaps[-cl], alpha=0.4, linewidth=2)
+            else:
+                ax.plot3D(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1], x_ind[0:-1:downsamp,2],'.', c=col[-cl],ms=3)
+            # ax.set_xticks([])
+            # ax.set_yticks([])
+            # ax.set_zticks([])
 
             # a,b = create_ellipse(mu[0],mu[1],std[0],std[1])
             # ax.plot3D(a,b,np.ones(a.shape)*mu[2], c='k',alpha=1,linewidth=1)
@@ -131,15 +133,18 @@ def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6
             # a,b = create_ellipse(mu[0],mu[2],std[0],std[2])
             # ax.plot3D(a,np.ones(a.shape)*mu[1],b, c='k',alpha=1,linewidth=1)
         else:
-            ax.plot(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1],'.', c=col[-cl],ms=3)
-            # ax.plot(x,y,c=col[-cl],alpha=.5)
-            ellipse = Ellipse((mu[0],mu[1]),3*std[0],3*std[1],facecolor=col[-cl],alpha=.5)
-            ax.add_patch(ellipse)
-        cur_min = mu-2*std
-        cur_max = mu+2*std
+            if std_lim:
+                ellipse = Ellipse((mu[0],mu[1]),mult*std[0],mult*std[1],facecolor=col[-cl],alpha=.5)
+                ax.add_patch(ellipse)
+            else:
+                ax.plot(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1],'.', c=col[-cl],ms=3)
+        
+        if std_lim:
+            cur_min = mu-mult*std
+            cur_max = mu+mult*std
 
-        lim_max[lim_max < cur_max] = cur_max[lim_max < cur_max]
-        lim_min[lim_min > cur_min] = cur_min[lim_min > cur_min]
+            lim_max[lim_max < cur_max] = cur_max[lim_max < cur_max]
+            lim_min[lim_min > cur_min] = cur_min[lim_min > cur_min]
 
     if std_lim:
         ax.set_xlim((lim_min[0],lim_max[0]))

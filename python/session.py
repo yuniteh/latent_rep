@@ -733,8 +733,8 @@ class Session():
     
     def reduce_latent(self, raw, params, sub, test_scale=1, traintest='testnoise'):
         num_feat = 4
+        # x_train, _, _, _, _, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.dt,load=True,train_grp=self.train_grp)
         # get folder and file names
-
         foldername = self.create_foldername()
         filename = self.create_filename(foldername, sub = sub)
         print(filename)
@@ -760,7 +760,7 @@ class Session():
                 with open(noisefile + '.p','rb') as f:
                     _, x_test_vae, _, _, _, y_train_clean, _, x_test_lda, y_test_clean, x_test_noise_lda, y_test_noise = pickle.load(f)
 
-        x_temp = np.transpose(x_test_lda.reshape((x_test_lda.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
+        x_temp = np.transpose(x_test_noise_lda.reshape((x_test_noise_lda.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
         x_test_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
 
         x_test_dlsae = x_test_vae.reshape(x_test_vae.shape[0],-1)
@@ -782,18 +782,18 @@ class Session():
         x_test_cnn_red = np.matmul(x_test_cnn,v_cnn)
 
         x_test_lda_red = np.matmul(x_test_lda,v)
-        x_test_noise_red = np.matmul(x_test_noise_lda,v_noise)
-
-        y_test_clean = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
-        y_test_noise = np.argmax(y_test_noise, axis=1)[...,np.newaxis]
-
+        x_test_noise_red = np.matmul(x_test_noise_lda,v_noise)        
+        
         if traintest == 'testnoise':
-            clean_size = int(x_test_vae.shape[0]/2)    
+            clean_size = int(x_test_vae.shape[0]/2)  
+            y_test_clean = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
+            y_test_noise = np.argmax(y_test_noise, axis=1)[...,np.newaxis]  
 
             # compile results
-            out_dict = {'x_test_sae_red':x_test_sae_red,'x_test_cnn_red':x_test_cnn_red, 'x_test_lda_red':x_test_lda_red, 'x_test_noise_red':x_test_noise_red, 'y_test':y_test_clean,'clean_size':clean_size, 'clean_size_lda': clean_size}
+            out_dict = {'x_test_sae_red':x_test_sae_red,'x_test_cnn_red':x_test_cnn_red, 'x_test_lda_red':x_test_lda_red, 'x_test_noise_red':x_test_noise_red, 'y_test':y_test_clean,'y_test_noise':y_test_clean,'clean_size':clean_size, 'clean_size_lda': clean_size}
         else:
-            out_dict =  {'x_test_sae_red':x_test_sae_red,'x_test_cnn_red':x_test_cnn_red, 'x_test_lda_red':x_test_lda_red, 'x_test_noise_red':x_test_noise_red, 'y_test':y_test_clean, 'y_test_noise':y_test_noise,'clean_size_lda':x_test_vae.shape[0],'clean_size':x_test_vae.shape[0]}
+
+            out_dict =  {'x_test_sae_red':x_test_sae_red,'x_test_cnn_red':x_test_cnn_red, 'x_test_lda_red':x_test_lda_red, 'x_test_noise_red':x_test_noise_red, 'y_test':y_test_clean, 'y_test_noise':y_test_noise,'clean_size_lda':x_test_lda.shape[0],'clean_size':x_test_lda.shape[0]}
 
         return out_dict
 
