@@ -209,19 +209,15 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB'):
     ave_noise = np.nanmean(100*acc_noise,axis=0)
 
     all_std = np.nanstd(100*acc_noise,axis=0)/n_subs
-    fill_space = np.concatenate((ave_noise+all_std, np.flip(ave_noise-all_std,axis=0), ave_noise+all_std))
-    fill_x = np.concatenate((np.arange(ave_noise.shape[0]),np.flip(np.arange(ave_noise.shape[0])),np.arange(ave_noise.shape[0])))
-
+    
     # Plot accuracy vs. # noisy electrodes
     fig,ax = plt.subplots()
     c_i = 0
-    xtemp = np.linspace(0, ave_noise.shape[0]-1, num=41, endpoint=True)
-    xnew = np.concatenate((xtemp,np.flip(xtemp),xtemp[[0]]))
     for j in range(2):
         c_i = 0
         for i in [6,7,10,11,14]:#,9]:    
             if j == 0:
-                ax.fill(fill_x[:2*ave_noise.shape[0]+1],fill_space[:2*ave_noise.shape[0]+1,i],color=line_col[c_i],alpha=.5,ec=None)
+                ax.fill_between(np.arange(ave_noise.shape[0]),ave_noise[:,i]+all_std[:,i],ave_noise[:,i]-all_std[:,i],color=line_col[c_i],alpha=.5,ec=None)
             else:
                 ax.plot(ave_noise[:,i],'-o',color=line_col[c_i+1],ms=4)
             c_i+=2
@@ -236,7 +232,7 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB'):
     ax.set_ylim(20,85)
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
-    ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
+    # ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
 
     fig.set_tight_layout(True)
 
