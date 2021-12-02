@@ -201,14 +201,12 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB'):
     eb_col = sns.color_palette("Paired")
     line_col[2:4] = eb_col[4:6]
     line_col[4:6] = eb_col[2:4]
+
     n_subs = np.sum(~np.isnan(acc_clean[:,0,0]))
+
     acc_clean[:,0,-1] = acc_clean[:,0,10]
     acc_noise = np.hstack([acc_clean[:,0,:][:,np.newaxis,:],acc_noise])
-    ave_clean = np.nanmean(100*acc_clean,axis=0)
     ave_noise = np.nanmean(100*acc_noise,axis=0)
-    # ave_clean[0,-1] = ave_clean[0,10]
-    # ave_noise = np.vstack([ave_clean[0,:],ave_noise])
-    all_temp = np.tile(ave_noise[:,10][...,np.newaxis],(1,15))
 
     all_std = np.nanstd(100*acc_noise,axis=0)/n_subs
     fill_space = np.concatenate((ave_noise+all_std, np.flip(ave_noise-all_std,axis=0), ave_noise+all_std))
@@ -216,8 +214,6 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB'):
 
     # Plot accuracy vs. # noisy electrodes
     fig,ax = plt.subplots()
-    c = ['k','r','m']
-    c_tab = ['tab:purple','tab:blue', 'tab:orange', 'tab:green','tab:red']
     c_i = 0
     xtemp = np.linspace(0, ave_noise.shape[0]-1, num=41, endpoint=True)
     xnew = np.concatenate((xtemp,np.flip(xtemp),xtemp[[0]]))
@@ -228,10 +224,6 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB'):
                 ax.fill(fill_x[:2*ave_noise.shape[0]+1],fill_space[:2*ave_noise.shape[0]+1,i],color=line_col[c_i],alpha=.5,ec=None)
             else:
                 ax.plot(ave_noise[:,i],'-o',color=line_col[c_i+1],ms=4)
-            # f1 = interp1d(fill_x[:ave_noise.shape[0]], fill_space[:ave_noise.shape[0],i], fill_value="extrapolate", kind='quadratic')
-            # f2 = interp1d(fill_x[ave_noise.shape[0]:2*ave_noise.shape[0]], fill_space[ave_noise.shape[0]:2*ave_noise.shape[0],i], fill_value="extrapolate", kind='quadratic')
-            # y = np.concatenate((f1(xtemp),f2(np.flip(xtemp)),f1(xtemp[[0]])))
-            # ax.fill(xnew,y,color=c_tab[c_i],alpha=.3,ec=None)
             c_i+=2
 
     ax.spines['top'].set_visible(False)
