@@ -8,25 +8,33 @@ import matplotlib as mpl
 
 
 def plot_all_noise(real_noise):
-    out = np.squeeze(np.zeros((200*1000//8,5)))
+    out = np.squeeze(np.zeros((200*1000//8,4)))
     t = np.linspace(0,200//8,200*1000//8)
-    fig, ax = plt.subplots(5,1)
-    for ch in range(5):
+    fig, ax = plt.subplots(4,1)
+    ch_i = 0
+    for ch in [0,1,2,4]:
         it = 0
         for i in range(0,1000,8):
-            out[it*200:it*200+200,ch] = real_noise[ch,i,:]
+            out[it*200:it*200+200,ch_i] = real_noise[ch,i,:]
             it += 1
-        ax[ch].plot(t,out[:,ch],linewidth=.5,color='k')
-        ax[ch].set_ylim([-5,5])
-        ax[ch].set_xlim([0,200//8])
-        if ch < 4:
-            ax[ch].set_xticks([])
+        ax[ch_i].plot(t,out[:,ch_i],linewidth=.5,color='k')
+        ax[ch_i].set_ylim([-5,5])
+        ax[ch_i].set_xlim([10,15])
+        if ch_i < 3:
+            ax[ch_i].set_xticks([])
+        else:    
+            ax[ch_i].set_xticklabels(['0','1','2','3','4','5'])
         # ax[ch].tight_layout()
+        ch_i += 1
 
 def plot_noisy(noisy_in, clean_in, y, cl=4, iter=0, gs=0):
     c = np.flip(plt.cm.Blues(np.linspace(0.1,0.9,7)),axis=0)
     c2 = np.flip(plt.cm.Purples(np.linspace(0.1,0.9,7)),axis=0)
     c3 = np.flip(plt.cm.Reds(np.linspace(0.1,0.9,7)),axis=0)
+
+    c = np.asarray(sns.color_palette("Set2"))
+    c1 = np.flip(np.asarray(sns.light_palette(c[1])),axis=0)
+    c2 = np.flip(np.asarray(sns.light_palette(c[2])),axis=0)
     # print(c)
     # c = c(0.5)
     # print(c)
@@ -47,14 +55,14 @@ def plot_noisy(noisy_in, clean_in, y, cl=4, iter=0, gs=0):
 
     if iter == 0:
         ax = plt.subplot(gs[3:5,0])
-        ax.plot(np.squeeze(xclean[n,noiseind[n],:]),color=c3[0])
+        ax.plot(np.squeeze(xclean[n,noiseind[n],:]),color=c[0])
         ax.set_ylim(-5.2,5.2)
         ax.set_xlim(0,200)
         ax.set_yticklabels('')
         ax.set_xlabel('Time')
     
     ax2 = plt.subplot(gs[2*iter:2+2*iter,1])
-    ax2.plot(np.squeeze(noise[n,noiseind[n],:]),color=c[iter])
+    ax2.plot(np.squeeze(noise[n,noiseind[n],:]),color=c1[iter])
     ax2.set_yticklabels('')
     ax2.set_xlim(0,200)
     
@@ -266,11 +274,6 @@ def plot_noise_ch(params, sess):
     return 
 
 def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',gs=0):
-    mpl.rc('font', family='serif') 
-    mpl.rc('font', serif='Palatino Linotype') 
-    mpl.rc('font', size=12)
-
-
     line_col = sns.color_palette("Paired")
     eb_col = sns.color_palette("Paired")
     # line_col[2:4] = eb_col[4:6]
