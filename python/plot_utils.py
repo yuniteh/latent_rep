@@ -147,8 +147,10 @@ def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6
         ax = fig.add_subplot(2,2,loc,projection='3d')
     else:
         ax = fig.add_subplot(2,2,loc)
-    col = ['k','m','b','g','orange','r','pink']
+    col = ['b','g','orange','r','pink','k','m']
     cmaps = ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds', "RdPu"]
+    col = np.asarray(sns.color_palette("Accent"))
+    col[[3,4],:] = col[[4,3],:]
     class_in = class_in.astype(int)
 
     if isinstance(lim_max,int):
@@ -161,11 +163,19 @@ def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6
         mu = np.mean(x_ind[:,:3], axis=0)
         std = np.std(x_ind[:,:3], axis=0)
         x, y, z = create_dist(mu,std,mult)
+                
+        if std_lim:
+            cur_min = mu-mult*std
+            cur_max = mu+mult*std
+
+            lim_max[lim_max < cur_max] = cur_max[lim_max < cur_max]
+            lim_min[lim_min > cur_min] = cur_min[lim_min > cur_min]
+
         if dim == 3:
             if std_lim:
                 ax.plot_surface(x,y,z, cmap=cmaps[-cl], alpha=0.4, linewidth=2)
             else:
-                ax.plot3D(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1], x_ind[0:-1:downsamp,2],'.', c=col[-cl],ms=3)
+                ax.plot3D(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1], x_ind[0:-1:downsamp,2],'.', c=col[cl]*.9,ms=3)
             # ax.set_xticks([])
             # ax.set_yticks([])
             # ax.set_zticks([])
@@ -180,17 +190,10 @@ def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6
             # ax.plot3D(a,np.ones(a.shape)*mu[1],b, c='k',alpha=1,linewidth=1)
         else:
             if std_lim:
-                ellipse = Ellipse((mu[0],mu[1]),mult*std[0],mult*std[1],facecolor=col[-cl],alpha=.5)
+                ellipse = Ellipse((mu[0],mu[1]),mult*std[0],mult*std[1],facecolor=col[cl],alpha=.5)
                 ax.add_patch(ellipse)
             else:
-                ax.plot(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1],'.', c=col[-cl],ms=3)
-        
-        if std_lim:
-            cur_min = mu-mult*std
-            cur_max = mu+mult*std
-
-            lim_max[lim_max < cur_max] = cur_max[lim_max < cur_max]
-            lim_min[lim_min > cur_min] = cur_min[lim_min > cur_min]
+                ax.plot(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1],'.', c=col[cl],ms=3)
 
     if std_lim:
         ax.set_xlim((lim_min[0],lim_max[0]))
