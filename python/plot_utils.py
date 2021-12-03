@@ -152,6 +152,7 @@ def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6
     col = np.asarray(sns.color_palette("Accent"))
     col[[3,4],:] = col[[4,3],:]
     class_in = class_in.astype(int)
+    x_red = x_red[:,:3]
 
     if isinstance(lim_max,int):
         lim_max = np.ones((3,))*-10000
@@ -164,14 +165,14 @@ def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6
         std = np.std(x_ind[:,:3], axis=0)
         x, y, z = create_dist(mu,std,mult)
                 
-        if std_lim:
-            cur_min = mu-mult*std
-            cur_max = mu+mult*std
+        cur_min = mu-mult*std
+        cur_max = mu+mult*std
 
-            lim_max[lim_max < cur_max] = cur_max[lim_max < cur_max]
-            lim_min[lim_min > cur_min] = cur_min[lim_min > cur_min]
+        lim_max[lim_max < cur_max] = cur_max[lim_max < cur_max]
+        lim_min[lim_min > cur_min] = cur_min[lim_min > cur_min]
 
         if dim == 3:
+            x_ind[(x_ind[...,:3] < cur_min)|(x_ind[...,:3] > cur_max)] = np.nan
             if std_lim:
                 ax.plot_surface(x,y,z, cmap=cmaps[-cl], alpha=0.4, linewidth=2)
             else:
@@ -195,17 +196,38 @@ def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6
             else:
                 ax.plot(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1],'.', c=col[cl],ms=3)
 
-    if std_lim:
+    if 1:# std_lim:
         ax.set_xlim((lim_min[0],lim_max[0]))
         ax.set_ylim((lim_min[1],lim_max[1]))
         if dim == 3:
             ax.set_zlim((lim_min[2],lim_max[2]))
+            # ax.set_zticklabels([])
+            ax.zaxis.set_ticks_position('none')  
+
     else:
         ax.set_xlim(lims[0])
         ax.set_ylim(lims[1])
         if dim == 3:
             ax.set_zlim(lims[2])
-    
+            # ax.set_zticklabels([])
+            ax.zaxis.set_ticks_position('none')  
+
+    ax.xaxis.set_rotate_label(True)
+    ax.yaxis.set_rotate_label(True)
+    ax.zaxis.set_rotate_label(True)
+
+    ax.set_xlabel('LDA1',labelpad=.001,linespacing=1)
+    ax.set_ylabel('LDA2',labelpad=.001,linespacing=1)
+    ax.set_zlabel('LDA3',labelpad=.001,linespacing=1)
+
+    # ax.xaxis.set(label='none')       
+    # ax.yaxis.set_ticks_position('none')   
+    # Hide axes ticks
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
+
+
     ax.dist = 9
     
     return lim_min, lim_max
