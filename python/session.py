@@ -701,7 +701,7 @@ class Session():
             pickle.dump([acc_all, acc_clean, acc_noise],f)
 
         out = {'acc_all':acc_all, 'acc_noise':acc_noise, 'acc_clean':acc_clean}
-        return out, x_test_noise, x_test_clean, y_test_clean
+        return out #, x_test_noise, x_test_clean, y_test_clean
 
     def eval_mod(self, x_test, y_test, clean_size, mod, eval_type):
         if clean_size == 0:

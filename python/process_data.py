@@ -328,7 +328,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
         real_noise = np.delete(real_noise,(2),axis=0)
         # real_noise = np.delete(real_noise,(1),axis=0)
     elif noise_type == 'realmixnew' or noise_type == 'realmixeven':
-        real_noise = np.delete(real_noise,(2),axis=0)
+        real_noise = np.delete(real_noise,(3),axis=0)
         # real_noise = np.delete(real_noise,(1),axis=0)
     real_type = real_noise.shape[0]
 
@@ -360,7 +360,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
                             for i in range(ch_split):
                                 while np.array([x == ch_level[i,0] for x in ch_level[i,:]]).all():
                                     ch_level[i,:] = np.random.randint(real_type,size = num_noise)
-                    elif noise_type == 'realmixeven2':
+                    elif noise_type == 'realmixeven':
                         noise_combo = np.array([x for x in product(np.arange(real_type),repeat=num_noise)])
                         rep_noise = ch_split//noise_combo.shape[0]
                         noise_all = np.tile(noise_combo,(rep_noise,1))
