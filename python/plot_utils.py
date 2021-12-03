@@ -43,29 +43,32 @@ def plot_noisy(noisy_in, clean_in, y, cl=4, iter=0, gs=0):
         ax = plt.subplot(gs[3:5,0])
         ax.plot(np.squeeze(xclean[n,noiseind[n],:]))
         ax.set_ylim(-5.2,5.2)
+        ax.set_xlim(0,200)
         ax.set_yticklabels('')
     
     ax2 = plt.subplot(gs[2*iter:2+2*iter,1])
     ax2.plot(np.squeeze(noise[n,noiseind[n],:]))
     ax2.set_yticklabels('')
+    ax2.set_xlim(0,200)
     
     ax3 = plt.subplot(gs[2*iter:2+2*iter,2])
     ax3.plot(np.squeeze(xnoise[n,noiseind[n],:]))
     ax3.set_yticklabels('')
+    ax3.set_xlim(0,200)
 
     # ax.set_xticklabels('')
-    ax2.set_ylim(-5.2,5.2)
-    ax3.set_ylim(-5.2,5.2)
+    ax2.set_ylim(-5.5,5.5)
+    ax3.set_ylim(-5.5,5.5)
 
     if iter == 3:
         ax2.set_xlabel('Time')
         ax3.set_xlabel('Time')
     else:
+        ax2.set_xticklabels('')
+        ax3.set_xticklabels('')
         ax2.xaxis.set_ticks_position('none') 
         ax3.xaxis.set_ticks_position('none')
         
-
-
     # fig,ax = plt.subplots(3,1)
     # ax[0].plot(np.squeeze(xclean[n,noiseind[n],:]))
     # ax[1].plot(np.squeeze(xnoise[n,noiseind[n],:]))
