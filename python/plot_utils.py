@@ -23,13 +23,15 @@ def plot_all_noise(real_noise):
             ax[ch].set_xticks([])
         # ax[ch].tight_layout()
 
-def plot_noisy(noisy_in, clean_in, y, cl=4):
+def plot_noisy(noisy_in, clean_in, y, cl=4, iter=0, gs=0):
     ind = np.argmax(y,axis=1)
     ind_p = np.squeeze(np.asarray(np.where(ind == cl)))
 
     xnoise = noisy_in[ind_p,:,:,0]
     xclean = clean_in[ind_p,:,:,0]
     noise = xnoise-xclean
+    noise[noise > 5] = 5
+    noise[noise < -5] = -5
     noiseind = np.argmax(np.max(noise,axis=2),axis=1)
     noiseind[np.max(np.max(noise,axis=2),axis=1) == 0] = -1
 
@@ -37,13 +39,41 @@ def plot_noisy(noisy_in, clean_in, y, cl=4):
     std_ch = std_all[np.arange(std_all.shape[0]),noiseind[400:]]
     n = np.argmax(std_ch)+400
 
-    fig,ax = plt.subplots(3,1)
-    ax[0].plot(np.squeeze(xclean[n,noiseind[n],:]))
-    ax[1].plot(np.squeeze(xnoise[n,noiseind[n],:]))
-    ax[2].plot(np.squeeze(noise[n,noiseind[n],:]))
+    if iter == 0:
+        ax = plt.subplot(gs[3:5,0])
+        ax.plot(np.squeeze(xclean[n,noiseind[n],:]))
+        ax.set_ylim(-5.2,5.2)
+        ax.set_yticklabels('')
+    
+    ax2 = plt.subplot(gs[2*iter:2+2*iter,1])
+    ax2.plot(np.squeeze(noise[n,noiseind[n],:]))
+    ax2.set_yticklabels('')
+    
+    ax3 = plt.subplot(gs[2*iter:2+2*iter,2])
+    ax3.plot(np.squeeze(xnoise[n,noiseind[n],:]))
+    ax3.set_yticklabels('')
 
-    for i in range(3):
-        ax[i].set_ylim(-5.5,5.5)
+    # ax.set_xticklabels('')
+    ax2.set_ylim(-5.2,5.2)
+    ax3.set_ylim(-5.2,5.2)
+
+    if iter == 3:
+        ax2.set_xlabel('Time')
+        ax3.set_xlabel('Time')
+    else:
+        ax2.xaxis.set_ticks_position('none') 
+        ax3.xaxis.set_ticks_position('none')
+        
+
+
+    # fig,ax = plt.subplots(3,1)
+    # ax[0].plot(np.squeeze(xclean[n,noiseind[n],:]))
+    # ax[1].plot(np.squeeze(xnoise[n,noiseind[n],:]))
+    # ax[2].plot(np.squeeze(noise[n,noiseind[n],:]))
+
+    # for i in range(3):
+    #     ax[i].set_ylim(-5.2,5.2)
+    #     ax[i].set_xticklabels('')
 
 def plot_latent_dim(params,sess):
     all_acc = np.full([np.max(params[:,0]),10,4,6],np.nan)
