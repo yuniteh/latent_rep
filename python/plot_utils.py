@@ -5,27 +5,39 @@ from matplotlib.patches import Ellipse
 from scipy.interpolate import interp1d
 import seaborn as sns
 import matplotlib as mpl
+from matplotlib import gridspec
 
 
 def plot_all_noise(real_noise):
     out = np.squeeze(np.zeros((200*1000//8,4)))
     t = np.linspace(0,200//8,200*1000//8)
-    fig, ax = plt.subplots(4,1)
+    # fig, ax = plt.subplots(4,1, figsize = (4,3.7))
+    fig = plt.figure(figsize=(12, 4)) 
+    gs = gridspec.GridSpec(8, 3)
+    print('hi')
+
     ch_i = 0
-    for ch in [0,1,2,4]:
+    for ch in [0,2,1,4]:
         it = 0
         for i in range(0,1000,8):
             out[it*200:it*200+200,ch_i] = real_noise[ch,i,:]
             it += 1
-        ax[ch_i].plot(t,out[:,ch_i],linewidth=.5,color='k')
-        ax[ch_i].set_ylim([-5,5])
-        ax[ch_i].set_xlim([10,15])
+        ax = plt.subplot(gs[2*ch_i:2+2*ch_i,1])
+        ax.plot(t,out[:,ch_i],linewidth=.5,color='k')
+        ax.set_ylim([-5.5,5.5])
+        ax.set_xlim([10,13])
         if ch_i < 3:
-            ax[ch_i].set_xticks([])
+            ax.set_xticks([])
         else:    
-            ax[ch_i].set_xticklabels(['0','1','2','3','4','5'])
+            ax.set_xticks([10,11,12,13])
+            ax.set_xticklabels(['0','1','2','3'])
+            ax.set_xlabel('Time (s)')
+        # ax.set_yticklabels('')
+        # ax.yaxis.set_ticks_position('none')
         # ax[ch].tight_layout()
         ch_i += 1
+    fig.subplots_adjust(left=0.1, right=.9, bottom=0.2, top=.9)
+
 
 def plot_noisy(noisy_in, clean_in, y, cl=4, iter=0, gs=0):
     c = np.flip(plt.cm.Blues(np.linspace(0.1,0.9,7)),axis=0)
@@ -307,10 +319,10 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',g
     ax.set_ylabel('Accuracy (%)')
     ax.set_xlabel('Number of Noisy Electrodes')
     # fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
-    # ax.legend(['sae-lda','cnn-lda','LDA','LDA-corrupt','LDA-ch'])
+    ax.legend(['SAE-LDA','CNN-LDA','LDA+','LDA-','LDA'])
     ax.set_axisbelow(True)
     ax.yaxis.grid(1,color='lightgrey',linewidth=.5)
-    ax.set_ylim(20,85)
+    ax.set_ylim(20,90)
     ax.set_xlim([-.1,4.1])
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
@@ -368,7 +380,7 @@ def plot_summary(acc_clean, acc_mix,gs=0):
     ax.set_xticks(xticks)
     ax.set_xticklabels(['0','1','2','3','4'])
     ax.axhline(linewidth=.5,color='k')
-    ax.set_ylim([-25,50])
+    ax.set_ylim([-30,50])
     ax.set_axisbelow(True)
     ax.yaxis.grid(1,color='lightgrey',linewidth=.5)
 
