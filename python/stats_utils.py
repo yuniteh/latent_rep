@@ -47,10 +47,21 @@ def get_mods(df):
 def run_fit(df,ctrl=10):
     md = smf.mixedlm("acc ~ C(mod,Treatment(" + str(ctrl) + ")) + C(mod,Treatment(" + str(ctrl) + "))*elec", df,groups=df["sub"])
 
+    all_md = {}
+
     mdf = md.fit()
     print(mdf.summary())
+    all_md['main'] = mdf
 
-    return mdf
+    for i in np.unique(df['elec']):
+        print(i)
+        new_df = df[df['elec'] == i]
+        md2 = smf.mixedlm("acc ~ C(mod,Treatment(" + str(ctrl) + "))", new_df, groups=new_df["sub"])
+        mdf2 = md2.fit()
+        print(mdf2.summary())
+        all_md[str(i)] = mdf2
+
+    return all_md
 
 def get_coefs(mdf):
     coef = mdf.params

@@ -330,7 +330,7 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
     elif noise_type == 'realmixnew' or noise_type == 'realmixeven':
         real_noise = np.delete(real_noise,(3),axis=0)
         # real_noise = np.delete(real_noise,(1),axis=0)
-    real_type = real_noise.shape[0]
+        real_type = real_noise.shape[0]
 
     # repeat twice if adding gauss and flat
     for rep_i in range(rep):   

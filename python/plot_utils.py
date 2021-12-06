@@ -5,28 +5,48 @@ from matplotlib.patches import Ellipse
 from scipy.interpolate import interp1d
 import seaborn as sns
 import matplotlib as mpl
+from matplotlib import gridspec
 
 
 def plot_all_noise(real_noise):
-    out = np.squeeze(np.zeros((200*1000//8,5)))
+    out = np.squeeze(np.zeros((200*1000//8,4)))
     t = np.linspace(0,200//8,200*1000//8)
-    fig, ax = plt.subplots(5,1)
-    for ch in range(5):
+    # fig, ax = plt.subplots(4,1, figsize = (4,3.7))
+    fig = plt.figure(figsize=(12, 4)) 
+    gs = gridspec.GridSpec(8, 3)
+    print('hi')
+
+    ch_i = 0
+    for ch in [0,2,1,4]:
         it = 0
         for i in range(0,1000,8):
-            out[it*200:it*200+200,ch] = real_noise[ch,i,:]
+            out[it*200:it*200+200,ch_i] = real_noise[ch,i,:]
             it += 1
-        ax[ch].plot(t,out[:,ch],linewidth=.5,color='k')
-        ax[ch].set_ylim([-5,5])
-        ax[ch].set_xlim([0,200//8])
-        if ch < 4:
-            ax[ch].set_xticks([])
+        ax = plt.subplot(gs[2*ch_i:2+2*ch_i,1])
+        ax.plot(t,out[:,ch_i],linewidth=.5,color='k')
+        ax.set_ylim([-5.5,5.5])
+        ax.set_xlim([10,13])
+        if ch_i < 3:
+            ax.set_xticks([])
+        else:    
+            ax.set_xticks([10,11,12,13])
+            ax.set_xticklabels(['0','1','2','3'])
+            ax.set_xlabel('Time (s)')
+        # ax.set_yticklabels('')
+        # ax.yaxis.set_ticks_position('none')
         # ax[ch].tight_layout()
+        ch_i += 1
+    fig.subplots_adjust(left=0.1, right=.9, bottom=0.2, top=.9)
+
 
 def plot_noisy(noisy_in, clean_in, y, cl=4, iter=0, gs=0):
     c = np.flip(plt.cm.Blues(np.linspace(0.1,0.9,7)),axis=0)
     c2 = np.flip(plt.cm.Purples(np.linspace(0.1,0.9,7)),axis=0)
     c3 = np.flip(plt.cm.Reds(np.linspace(0.1,0.9,7)),axis=0)
+
+    c = np.asarray(sns.color_palette("Set2"))
+    c1 = np.flip(np.asarray(sns.light_palette(c[1])),axis=0)
+    c2 = np.flip(np.asarray(sns.light_palette(c[2])),axis=0)
     # print(c)
     # c = c(0.5)
     # print(c)
@@ -47,14 +67,14 @@ def plot_noisy(noisy_in, clean_in, y, cl=4, iter=0, gs=0):
 
     if iter == 0:
         ax = plt.subplot(gs[3:5,0])
-        ax.plot(np.squeeze(xclean[n,noiseind[n],:]),color=c3[0])
+        ax.plot(np.squeeze(xclean[n,noiseind[n],:]),color=c[0])
         ax.set_ylim(-5.2,5.2)
         ax.set_xlim(0,200)
         ax.set_yticklabels('')
         ax.set_xlabel('Time')
     
     ax2 = plt.subplot(gs[2*iter:2+2*iter,1])
-    ax2.plot(np.squeeze(noise[n,noiseind[n],:]),color=c[iter])
+    ax2.plot(np.squeeze(noise[n,noiseind[n],:]),color=c1[iter])
     ax2.set_yticklabels('')
     ax2.set_xlim(0,200)
     
@@ -147,9 +167,12 @@ def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6
         ax = fig.add_subplot(2,2,loc,projection='3d')
     else:
         ax = fig.add_subplot(2,2,loc)
-    col = ['k','m','b','g','orange','r','pink']
+    col = ['b','g','orange','r','pink','k','m']
     cmaps = ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds', "RdPu"]
+    col = np.asarray(sns.color_palette("Accent"))
+    col[[3,4],:] = col[[4,3],:]
     class_in = class_in.astype(int)
+    x_red = x_red[:,:3]
 
     if isinstance(lim_max,int):
         lim_max = np.ones((3,))*-10000
@@ -161,11 +184,19 @@ def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6
         mu = np.mean(x_ind[:,:3], axis=0)
         std = np.std(x_ind[:,:3], axis=0)
         x, y, z = create_dist(mu,std,mult)
+                
+        cur_min = mu-mult*std
+        cur_max = mu+mult*std
+
+        lim_max[lim_max < cur_max] = cur_max[lim_max < cur_max]
+        lim_min[lim_min > cur_min] = cur_min[lim_min > cur_min]
+
         if dim == 3:
+            x_ind[(x_ind[...,:3] < cur_min)|(x_ind[...,:3] > cur_max)] = np.nan
             if std_lim:
                 ax.plot_surface(x,y,z, cmap=cmaps[-cl], alpha=0.4, linewidth=2)
             else:
-                ax.plot3D(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1], x_ind[0:-1:downsamp,2],'.', c=col[-cl],ms=3)
+                ax.plot3D(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1], x_ind[0:-1:downsamp,2],'.', c=col[cl]*.9,ms=3)
             # ax.set_xticks([])
             # ax.set_yticks([])
             # ax.set_zticks([])
@@ -180,29 +211,43 @@ def plot_latent_rep(x_red, class_in, fig,loc=0,downsamp=1,dim=3,lims=((-6,6),(-6
             # ax.plot3D(a,np.ones(a.shape)*mu[1],b, c='k',alpha=1,linewidth=1)
         else:
             if std_lim:
-                ellipse = Ellipse((mu[0],mu[1]),mult*std[0],mult*std[1],facecolor=col[-cl],alpha=.5)
+                ellipse = Ellipse((mu[0],mu[1]),mult*std[0],mult*std[1],facecolor=col[cl],alpha=.5)
                 ax.add_patch(ellipse)
             else:
-                ax.plot(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1],'.', c=col[-cl],ms=3)
-        
-        if std_lim:
-            cur_min = mu-mult*std
-            cur_max = mu+mult*std
+                ax.plot(x_ind[0:-1:downsamp,0], x_ind[0:-1:downsamp,1],'.', c=col[cl],ms=3)
 
-            lim_max[lim_max < cur_max] = cur_max[lim_max < cur_max]
-            lim_min[lim_min > cur_min] = cur_min[lim_min > cur_min]
-
-    if std_lim:
+    if 1:# std_lim:
         ax.set_xlim((lim_min[0],lim_max[0]))
         ax.set_ylim((lim_min[1],lim_max[1]))
         if dim == 3:
             ax.set_zlim((lim_min[2],lim_max[2]))
+            # ax.set_zticklabels([])
+            ax.zaxis.set_ticks_position('none')  
+
     else:
         ax.set_xlim(lims[0])
         ax.set_ylim(lims[1])
         if dim == 3:
             ax.set_zlim(lims[2])
-    
+            # ax.set_zticklabels([])
+            ax.zaxis.set_ticks_position('none')  
+
+    ax.xaxis.set_rotate_label(True)
+    ax.yaxis.set_rotate_label(True)
+    ax.zaxis.set_rotate_label(True)
+
+    ax.set_xlabel('LDA1',labelpad=.001,linespacing=1)
+    ax.set_ylabel('LDA2',labelpad=.001,linespacing=1)
+    ax.set_zlabel('LDA3',labelpad=.001,linespacing=1)
+
+    # ax.xaxis.set(label='none')       
+    # ax.yaxis.set_ticks_position('none')   
+    # Hide axes ticks
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
+
+
     ax.dist = 9
     
     return lim_min, lim_max
@@ -241,11 +286,6 @@ def plot_noise_ch(params, sess):
     return 
 
 def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',gs=0):
-    mpl.rc('font', family='serif') 
-    mpl.rc('font', serif='Palatino Linotype') 
-    mpl.rc('font', size=12)
-
-
     line_col = sns.color_palette("Paired")
     eb_col = sns.color_palette("Paired")
     # line_col[2:4] = eb_col[4:6]
@@ -279,10 +319,10 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',g
     ax.set_ylabel('Accuracy (%)')
     ax.set_xlabel('Number of Noisy Electrodes')
     # fig.text(0.5, 0, 'Number of Noisy Electrodes', ha='center')
-    # ax.legend(['sae-lda','cnn-lda','LDA','LDA-corrupt','LDA-ch'])
+    ax.legend(['SAE-LDA','CNN-LDA','LDA+','LDA-','LDA'])
     ax.set_axisbelow(True)
     ax.yaxis.grid(1,color='lightgrey',linewidth=.5)
-    ax.set_ylim(20,85)
+    ax.set_ylim(20,90)
     ax.set_xlim([-.1,4.1])
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
@@ -340,7 +380,7 @@ def plot_summary(acc_clean, acc_mix,gs=0):
     ax.set_xticks(xticks)
     ax.set_xticklabels(['0','1','2','3','4'])
     ax.axhline(linewidth=.5,color='k')
-    ax.set_ylim([-25,50])
+    ax.set_ylim([-30,50])
     ax.set_axisbelow(True)
     ax.yaxis.grid(1,color='lightgrey',linewidth=.5)
 

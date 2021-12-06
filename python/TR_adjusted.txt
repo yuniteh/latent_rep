@@ -1,0 +1,35 @@
+Intercept                        1.132534e-05
+C(mod, Treatment(10))[T.6.0]     1.745368e-02
+C(mod, Treatment(10))[T.7.0]     3.518900e+00
+C(mod, Treatment(10))[T.11.0]    1.488685e-18
+C(mod, Treatment(10))[T.14.0]    5.000000e+00
+Group Var                        8.347420e-01
+dtype: float64
+Intercept                        5.743287e-46
+C(mod, Treatment(10))[T.6.0]     2.202267e-13
+C(mod, Treatment(10))[T.7.0]     2.567971e-20
+C(mod, Treatment(10))[T.11.0]    2.440445e-06
+C(mod, Treatment(10))[T.14.0]    1.055525e-22
+Group Var                        1.068316e+00
+dtype: float64
+Intercept                        2.477240e-70
+C(mod, Treatment(10))[T.6.0]     6.121022e-23
+C(mod, Treatment(10))[T.7.0]     2.191008e-35
+C(mod, Treatment(10))[T.11.0]    1.248546e-12
+C(mod, Treatment(10))[T.14.0]    4.489646e-44
+Group Var                        9.759711e-01
+dtype: float64
+Intercept                        2.971688e-95
+C(mod, Treatment(10))[T.6.0]     2.092628e-20
+C(mod, Treatment(10))[T.7.0]     1.679865e-34
+C(mod, Treatment(10))[T.11.0]    3.299135e-13
+C(mod, Treatment(10))[T.14.0]    1.391063e-47
+Group Var                        9.911616e-01
+dtype: float64
+Intercept                        1.720030e-127
+C(mod, Treatment(10))[T.6.0]      3.306856e-12
+C(mod, Treatment(10))[T.7.0]      2.231522e-21
+C(mod, Treatment(10))[T.11.0]     4.690349e-08
+C(mod, Treatment(10))[T.14.0]     7.753696e-35
+Group Var                         1.124347e+00
+dtype: float64
