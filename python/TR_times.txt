@@ -59,3 +59,15 @@ TR
   'sae_a_time': 0.816817045211792,
   'cnn_a_time': 0.935483455657959},
  {}]
+
+
+5.35 ms ± 37.1 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+5.58 ms ± 70.6 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+6.48 µs ± 46.9 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+6.67 µs ± 118 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+328 µs ± 4.01 µs per loop (mean ± std. dev. of 7 runs, 1000 loops each)
+
+5.54 ms ± 38.1 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+5.75 ms ± 38.7 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+6.59 µs ± 64.4 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)
+6.65 µs ± 68.8 ns per loop (mean ± std. dev. of 7 runs, 100000 loops each)

@@ -21,6 +21,7 @@ import time
 from numpy.linalg import eig, inv
 from types import SimpleNamespace 
 import keras.backend as K
+import timeit
 
 class Session():
     def __init__(self,**settings):
@@ -313,7 +314,7 @@ class Session():
 
                 if mod == 'all' or any("sae" in s for s in mod):
                     sae_start = time.time()
-                    sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=self.batch_size,verbose=0)
+                    sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=self.batch_size,verbose=0,use_multiprocessing=True, workers=12)
                     sae_time = time.time() - sae_start
                     print('sae time: ' + str(sae_time))
                     out_dict['sae_time'] = sae_time
@@ -325,7 +326,7 @@ class Session():
 
                 if mod == 'all' or any("cnn" in s for s in mod):
                     cnn_start = time.time()
-                    cnn_hist = cnn.fit(x_train_noise_vae, y_train_clean,epochs=30,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=self.batch_size,verbose=0)
+                    cnn_hist = cnn.fit(x_train_noise_vae, y_train_clean,epochs=30,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=self.batch_size,verbose=0,use_multiprocessing=True, workers=12)
                     cnn_time = time.time() - cnn_start
                     print('cnn time: ' + str(cnn_time))
                     out_dict['cnn_time'] = cnn_time
@@ -495,6 +496,11 @@ class Session():
         return out_dict
 
     def loop_test(self, raw, params):
+        sae_time = [None] * np.max(params[:,0])
+        cnn_time = [None] * np.max(params[:,0])
+        lda_time = [None] * np.max(params[:,0])
+        aug_time = [None] * np.max(params[:,0])
+        
         # set number of models to test
         mod_tot = 15
         # set testing noise type
@@ -537,7 +543,7 @@ class Session():
             num_feats = 10
 
         # loop through subjects
-        for sub in range(1,2):#np.max(params[:,0])+1):            
+        for sub in range(1,np.max(params[:,0])+1):            
             # index based on training group and subject
             ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
 
@@ -710,34 +716,62 @@ class Session():
                             x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_vae','x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_ecnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
                             y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
                             mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
+
+                            ## for timing
+                            sae_start = time.time()
+                            x_temp_sae = sae_enc(x_test_dlsae[[0],...].astype('float32')).numpy()
+                            print(x_temp_sae)
+                            temp_out = predict(x_temp_sae, w_sae, c_sae)
+                            sae_time[sub-1] = time.time() - sae_start
+
+                            cnn_start = time.time()
+                            x_temp_cnn = cnn_enc(x_test_vae[[0],...].astype('float32')).numpy()
+                            temp_out = predict(x_temp_cnn, w_cnn, c_cnn)
+                            cnn_time[sub-1] = time.time() - cnn_start
+
+                            # lda_start = time.time()
+                            # temp_out = predict(x_test_lda[[0],...], w, c)
+                            lda_temp = timeit.timeit(lambda: predict(x_test_lda[[0],...], w, c),number= 100)
+                            print(lda_temp)
+                            # print(temp_time)
+                            # print(lda_start)
+                            # print(time.time())
+                            lda_time[sub-1] = lda_temp
+
+                            aug_start = time.time()
+                            temp_out = predict(x_test_lda[[0],...], w_noise, c_noise)
+                            aug_time[sub-1] = time.time() - aug_start
                             
                             # need to figure out what n_test = 0 is
                             if self.n_test == 0:
                                 max_i = len(mods_all) - 1
                             else:
                                 max_i = len(mods_all)
-                            for i in range(max_i):
-                                acc_all[sub-1,cv-1,test_scale - 1,i], acc_noise[sub-1,cv-1,test_scale - 1,i], acc_clean[sub-1,cv-1,test_scale - 1,i] = self.eval_mod(eval(x_test_all[i]), eval(y_test_all[i]), clean_size, mods_all[i], mods_type[i])
-                            print(acc_all[sub-1,cv-1,test_scale - 1,:])
+                            # for i in range(max_i):
+                            #     acc_all[sub-1,cv-1,test_scale - 1,i], acc_noise[sub-1,cv-1,test_scale - 1,i], acc_clean[sub-1,cv-1,test_scale - 1,i] = self.eval_mod(eval(x_test_all[i]), eval(y_test_all[i]), clean_size, mods_all[i], mods_type[i])
+                            # print(acc_all[sub-1,cv-1,test_scale - 1,:])
                         else:
                             acc_all[sub-1,cv-1,test_scale - 1,:], acc_noise[sub-1,cv-1,test_scale - 1,:], acc_clean[sub-1,cv-1,test_scale - 1,:] = np.nan, np.nan, np.nan
                 
                 # Save subject specific cv results
                 subresults = self.create_filename(resultsfolder, cv, sub)
-                print(np.squeeze(acc_noise[sub-1,...]))
-                print(np.squeeze(acc_clean[sub-1,...]))
+                # print(np.squeeze(acc_noise[sub-1,...]))
+                # print(np.squeeze(acc_clean[sub-1,...]))
                 print('saving sub results: ' + subresults + '_' + self.n_test + '_subresults.p')
-                with open(subresults + '_' + self.n_test + '_subresults.p', 'wb') as f:
-                    pickle.dump([acc_all[sub-1,...], acc_noise[sub-1,...], acc_clean[sub-1,...]],f)
+                # with open(subresults + '_' + self.n_test + '_subresults.p', 'wb') as f:
+                #     pickle.dump([acc_all[sub-1,...], acc_noise[sub-1,...], acc_clean[sub-1,...]],f)
         
         # save results for all subjects, need to figure out n_test = 0
         allresults = self.create_filename(resultsfolder, cv, sub, ftype='allresults')
-        print('saving all results: ' + allresults + '_' + self.n_test + '_results.p')
-        with open(allresults + '_' + self.n_test + '_results.p', 'wb') as f:
-            pickle.dump([acc_all, acc_clean, acc_noise],f)
+        # print('saving all results: ' + allresults + '_' + self.n_test + '_results.p')
+        # with open(allresults + '_' + self.n_test + '_results.p', 'wb') as f:
+        #     pickle.dump([acc_all, acc_clean, acc_noise],f)
 
-        out = {'acc_all':acc_all, 'acc_noise':acc_noise, 'acc_clean':acc_clean}
-        return out , x_test_noise, x_test_clean, y_test_clean
+        # out = {'acc_all':acc_all, 'acc_noise':acc_noise, 'acc_clean':acc_clean}
+        # return out , x_test_noise, x_test_clean, y_test_clean
+        out = {'sae_time': sae_time, 'cnn_time':cnn_time, 'lda_time': lda_time, 'aug_time': aug_time}
+
+        return out
 
     def eval_mod(self, x_test, y_test, clean_size, mod, eval_type):
         if clean_size == 0:
