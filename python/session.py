@@ -89,6 +89,7 @@ class Session():
 
     def loop_cv(self, raw, params, sub=1, mod='all'):
         np.set_printoptions(precision=3,suppress=True)
+        out_dict = {}
         i_tot = 14
         filename = 0
         if self.dt != 'cv':
@@ -186,8 +187,13 @@ class Session():
 
                         x_train = x_train*emg_scale
                         x_valid = x_valid*emg_scale
-                
+
+                        noise_start = time.time()
                         x_train_noise, x_train_clean, y_train_clean = prd.add_noise(x_train, p_train, sub, self.n_train, self.train_scale)
+                        noise_time = time.time() - noise_start 
+                        print('add noise time: ' + str(noise_time))
+                        out_dict['noise_time'] = noise_time
+
                         x_valid_noise, x_valid_clean, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, self.n_train, self.train_scale)
                         # if not adding noise, copy clean training data
                         if not self.noise:
@@ -306,14 +312,24 @@ class Session():
                     vcnn_clf_w = vcnn_clf.get_weights()
 
                 if mod == 'all' or any("sae" in s for s in mod):
-                    sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=self.batch_size)
+                    sae_start = time.time()
+                    sae_hist = sae.fit(x_train_noise_sae, y_train_clean,epochs=30,validation_data = [x_valid_noise_sae, y_valid_clean],batch_size=self.batch_size,verbose=0)
+                    sae_time = time.time() - sae_start
+                    print('sae time: ' + str(sae_time))
+                    out_dict['sae_time'] = sae_time
+
                     sae_w = sae.get_weights()
                     sae_enc_w = sae_enc.get_weights()
                     sae_clf_w = sae_clf.get_weights()
                     sae_hist = sae_hist.history
 
                 if mod == 'all' or any("cnn" in s for s in mod):
-                    cnn_hist = cnn.fit(x_train_noise_vae, y_train_clean,epochs=30,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=self.batch_size)
+                    cnn_start = time.time()
+                    cnn_hist = cnn.fit(x_train_noise_vae, y_train_clean,epochs=30,validation_data = [x_valid_noise_vae, y_valid_clean],batch_size=self.batch_size,verbose=0)
+                    cnn_time = time.time() - cnn_start
+                    print('cnn time: ' + str(cnn_time))
+                    out_dict['cnn_time'] = cnn_time
+
                     cnn_w = cnn.get_weights()
                     cnn_enc_w = cnn_enc.get_weights()
                     cnn_clf_w = cnn_clf.get_weights()
@@ -344,8 +360,6 @@ class Session():
 
                     # align input data
                     _, x_train_svae = svae_clf.predict(x_train_noise_vae)
-                    x_train_sae = sae_enc.predict(x_train_noise_sae)
-                    x_train_cnn = cnn_enc.predict(x_train_noise_vae)
                     _, _, x_train_vcnn = vcnn_enc.predict(x_train_noise_vae)
                     _,_,_, x_train_ecnn = ecnn_enc.predict(x_train_noise_vae)
 
@@ -354,15 +368,37 @@ class Session():
 
                     # Train ENC-LDA
                     w_svae, c_svae,_, _, v_svae = train_lda(x_train_svae,y_train_aligned)
+
+                    sae_a_start = time.time()
+                    x_train_sae = sae_enc.predict(x_train_noise_sae)
                     w_sae, c_sae,_, _, v_sae = train_lda(x_train_sae,y_train_aligned)
+                    sae_a_time = time.time() - sae_a_start
+                    print('aligned sae time: ' + str(sae_a_time))
+                    out_dict['sae_a_time'] = sae_a_time
+
+                    cnn_a_start = time.time()
+                    x_train_cnn = cnn_enc.predict(x_train_noise_vae)
                     w_cnn, c_cnn,_, _, v_cnn = train_lda(x_train_cnn,y_train_aligned)
+                    cnn_a_time = time.time() - cnn_a_start
+                    print('aligned cnn time: ' + str(cnn_a_time))
+                    out_dict['cnn_a_time'] = cnn_a_time
+
                     w_vcnn, c_vcnn, _, _, v_vcnn = train_lda(x_train_vcnn,y_train_aligned)
                     w_ecnn, c_ecnn, _, _, v_ecnn = train_lda(x_train_ecnn,y_train_aligned)
 
                 # Train LDA
                 if mod == 'all' or any("lda" in s for s in mod):
+                    lda_start = time.time()
                     w,c, mu, C, v = train_lda(x_train_lda,y_train_lda)
+                    lda_time = time.time() - lda_start
+                    print('lda time: ' + str(lda_time))
+                    out_dict['lda_time'] = lda_time
+
+                    aug_lda_start = time.time()
                     w_noise,c_noise, _, _, v_noise = train_lda(x_train_noise_lda,y_train_noise_lda)
+                    aug_lda_time = time.time() - aug_lda_start
+                    print('aug lda time: ' + str(aug_lda_time))
+                    out_dict['aug lda time'] = aug_lda_time
                 
                 # Train QDA
                 if mod == 'all' or any("qda" in s for s in mod):
@@ -440,7 +476,7 @@ class Session():
                     w_gen_al, c_gen_al, _, _, _ = train_lda(x_train_aug_align,y_train_all)
 
                 # Pickle variables
-                if mod != 'none':
+                if 0:#mod != 'none':
                     with open(filename + '.p', 'wb') as f:
                         pickle.dump([scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, \
                             ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise, emg_scale],f)
@@ -456,7 +492,7 @@ class Session():
                         with open(filename + '_red.p', 'wb') as f:
                             pickle.dump([v_svae, v_sae, v_cnn, v_vcnn, v_ecnn, v, v_noise],f)
 
-        return
+        return out_dict
 
     def loop_test(self, raw, params):
         # set number of models to test

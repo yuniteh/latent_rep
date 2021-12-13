@@ -12,6 +12,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import regularizers
 from tensorflow.keras import optimizers
 import tensorflow as tf
+import time
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
 def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
