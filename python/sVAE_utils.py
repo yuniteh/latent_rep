@@ -752,7 +752,6 @@ def build_cnn(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
 
     opt = optimizers.Adam(learning_rate=lr)
     vae.compile(optimizer=opt, loss='categorical_crossentropy',experimental_run_tf_function=False,metrics=['accuracy'])
-    vae.summary()
     return vae, encoder, clf_supervised
 
 def build_cnn_ext(latent_dim, n_class, input_type='feat',sparse='True',lr=0.001):
@@ -856,7 +855,6 @@ def build_sae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
 
     opt = optimizers.Adam(learning_rate=lr)
     vae.compile(optimizer=opt, loss='categorical_crossentropy',experimental_run_tf_function=False,metrics=['accuracy'])
-    vae.summary()
     return vae, encoder, clf_supervised
 
 

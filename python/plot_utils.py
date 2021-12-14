@@ -311,7 +311,7 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',g
 
     for i in [6,7,11,14,10]:#,9]:    
         ax.fill_between(np.arange(5),ave_noise[:,i]+all_std[:,i],ave_noise[:,i]-all_std[:,i],color=line_col[c_i],alpha=.5,ec=None)
-        ax.plot(ave_noise[:,i],'-o',color=line_col[c_i+1],ms=4)
+        ax.plot(ave_noise[:,i],'-o',color=line_col[c_i+1],ms=4,linewidth=.75)
         c_i+=2
 
     ax.spines['top'].set_visible(False)
@@ -327,7 +327,7 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',g
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
     # ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
-    return
+    return ave_noise, all_std
 
 def plot_summary(acc_clean, acc_mix,gs=0):
     n_subs = np.sum(~np.isnan(acc_clean[:,0,0]))
