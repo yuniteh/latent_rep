@@ -12,6 +12,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import regularizers
 from tensorflow.keras import optimizers
 import tensorflow as tf
+import time
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
 def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
@@ -294,8 +295,8 @@ def build_M2S2(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     x = BatchNormalization()(x)
 
     if sparse:
-        z_mean = Dense(latent_dim, name="z_mean", activity_regularizer=regularizers.l1(10e-5))(x)
-        z_log_var = Dense(latent_dim, name="z_log_var", activity_regularizer=regularizers.l1(10e-5),kernel_initializer='zeros',bias_initializer='zeros')(x)
+        z_mean = Dense(latent_dim, name="z_mean", activity_regularizer=regularizers.l1(10e-5),activation="relu")(x)
+        z_log_var = Dense(latent_dim, name="z_log_var", activity_regularizer=regularizers.l1(10e-5),kernel_initializer='zeros',bias_initializer='zeros',activation="relu")(x)
     else:
         z_mean = Dense(latent_dim, name="z_mean")(x)
         z_log_var = Dense(latent_dim, name="z_log_var")(x)        
@@ -855,6 +856,7 @@ def build_sae(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     opt = optimizers.Adam(learning_rate=lr)
     vae.compile(optimizer=opt, loss='categorical_crossentropy',experimental_run_tf_function=False,metrics=['accuracy'])
     return vae, encoder, clf_supervised
+
 
 def build_sae_var(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
     
