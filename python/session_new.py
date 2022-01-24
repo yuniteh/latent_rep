@@ -25,57 +25,42 @@ class Session():
     def __init__(self,**settings):
         self.sub_type = settings.get('sub_type','AB')
         self.train_grp = settings.get('train_grp',2)
-        self.dt = settings.get('dt',0)
-        self.mod_dt = settings.get('mod_dt','')
-        self.feat_type = settings.get('feat_type','feat')
-        self.load = settings.get('load',True)
-        self.noise = settings.get('noise',True)
-        self.start_cv = settings.get('start_cv',1)
-        self.max_cv = settings.get('max_cv',5)
-        self.sparsity = settings.get('sparsity',True)
-        self.batch_size = settings.get('batch_size',32)
-        self.latent_dim = settings.get('latent_dim',10)
-        self.epochs = settings.get('epochs',100)
-        self.lr = settings.get('lr',0.001)
         self.train_scale = settings.get('train_scale',5)
-        self.n_train = settings.get('n_train','gauss')
-        self.n_test = settings.get('n_test','gauss')
-        self.train_load = settings.get('train_load',True)
-        self.test_dt = settings.get('test_dt','')
+        self.train = settings.get('train','fullallmix4')
+        self.cv_type = settings.get('cv_type','manual')
+        self.feat_type = settings.get('feat_type','feat')
 
-    def create_foldername(self,ftype=''):
-        if self.dt == 0:
-            today = date.today()
-            self.dt = today.strftime("%m%d")
-        # Set folder
-        if ftype == 'train':
-            foldername = 'noisedata_' + self.dt + '_' + self.mod_dt + '_' + self.feat_type
-        elif ftype == 'test':
-            foldername = 'testdata_' + self.dt + '_' + self.mod_dt + '_' + self.test_dt + '_' + self.feat_type
-        elif ftype =='results':
-            foldername = 'results_' + str(self.train_grp) + '_' + self.dt + '_' + self.mod_dt + '_' + self.test_dt
-        else:
-            foldername = 'models_' + str(self.train_grp) + '_' + self.dt
-            if self.mod_dt != 0:
-                foldername += '_' + self.mod_dt
-        if not os.path.exists(foldername):
-            os.makedirs(foldername)
+    def prep_train_data(self, raw, params, sub):
+        x_train, _, x_valid, p_train, _, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.cv_type,load=True,train_grp=self.train_grp)
 
-        return foldername
+        emg_scale = np.ones((np.size(x_train,1),1))
+        for i in range(np.size(x_train,1)):
+            emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
+        x_train = x_train*emg_scale
+        x_valid = x_valid*emg_scale
 
-    def create_filename(self,foldername,cv=0,sub=0,ftype='',test_scale=0):
-        # train noise file
-        if ftype == 'train':
-            filename = foldername + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_train) + '_' + str(self.train_scale)
-        elif ftype == 'test':
-            filename = foldername + '/' + self.sub_type + str(sub) + '_grp_' + str(self.train_grp) + '_' + str(self.n_test) + '_' + str(test_scale)
-        elif ftype =='results':
-            filename = foldername + '/' + self.sub_type + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
-        # model file
-        else:
-            filename = foldername + '/' + self.sub_type + str(sub) + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
-        if self.dt == 'cv':
-            filename += '_cv_' + str(cv)
-        
-        return filename
+        x_train_noise, _, y_train_clean = prd.add_noise(x_train, p_train, sub, self.train, self.train_scale)
+        x_valid_noise, _, y_valid_clean = prd.add_noise(x_valid, p_valid, sub, self.train, self.train_scale)
+
+        # shuffle data to make even batches
+        x_train_noise, y_train_clean = shuffle(x_train_noise, y_train_clean, random_state = 0)
+
+        # Extract features
+        scaler = MinMaxScaler(feature_range=(0,1))
+        x_train_noise_cnn, scaler = prd.extract_scale(x_train_noise,scaler,self.scaler_load,ft=self.feat_type,emg_scale=emg_scale) 
+        x_valid_noise_cnn, _ = prd.extract_scale(x_valid_noise,scaler,ft=self.feat_type,emg_scale=emg_scale)
+        x_train_noise_cnn = x_train_noise_cnn.astype('float32')
+        x_valid_noise_cnn = x_valid_noise_cnn.astype('float32')
+
+        # reshape data for nonconvolutional network
+        x_train_noise_mlp = x_train_noise_cnn.reshape(x_train_noise_cnn.shape[0],-1)
+        x_valid_noise_mlp = x_valid_noise_cnn.reshape(x_valid_noise_cnn.shape[0],-1)
+
+        # create batches
+        trainmlp_ds = tf.data.Dataset.from_tensor_slices((x_train_noise_mlp, y_train_clean)).batch(128)
+        testmlp_ds = tf.data.Dataset.from_tensor_slices((x_valid_noise_mlp, y_valid_clean)).batch(128)
+        traincnn_ds = tf.data.Dataset.from_tensor_slices((x_train_noise_cnn, y_train_clean)).batch(128)
+        testcnn_ds = tf.data.Dataset.from_tensor_slices((x_valid_noise_cnn, y_valid_clean)).batch(128)
+
+        return trainmlp_ds, testmlp_ds, traincnn_ds, testcnn_ds, y_train_clean, y_valid_clean
 
