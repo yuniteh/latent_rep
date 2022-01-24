@@ -21,7 +21,7 @@ from numpy.linalg import eig, inv
 from types import SimpleNamespace 
 import keras.backend as K
 
-class Session():
+class Sess():
     def __init__(self,**settings):
         self.sub_type = settings.get('sub_type','AB')
         self.train_grp = settings.get('train_grp',2)
@@ -29,6 +29,7 @@ class Session():
         self.train = settings.get('train','fullallmix4')
         self.cv_type = settings.get('cv_type','manual')
         self.feat_type = settings.get('feat_type','feat')
+        self.scaler_load = settings.get('scaler_load',True)
 
     def prep_train_data(self, raw, params, sub):
         x_train, _, x_valid, p_train, _, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.cv_type,load=True,train_grp=self.train_grp)
