@@ -71,7 +71,6 @@ def process_save_noise(foldername):
 def truncate(data):
     data[data > 5] = 5
     data[data < -5] = -5
-    # data[np.abs(data) > 5] = np.divide(data[np.abs(data)>5],np.abs(data[np.abs(data)>5]))*5
     return data
 
 def sub_train_test(feat,params,sub,train_grp,test_grp):
@@ -506,6 +505,9 @@ def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[
 
     clean = clean[...,np.newaxis]
     noisy = noisy[...,np.newaxis]
+
+    noisy = truncate(noisy)
+    clean = truncate(clean)
     return noisy,clean,y
 
 def add_noise_old(raw, params, sub, n_type='flat', scale=5):
