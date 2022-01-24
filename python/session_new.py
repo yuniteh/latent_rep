@@ -24,12 +24,24 @@ import keras.backend as K
 class Sess():
     def __init__(self,**settings):
         self.sub_type = settings.get('sub_type','AB')
+        self.sub = settings.get('sub',1)
+        
         self.train_grp = settings.get('train_grp',2)
         self.train_scale = settings.get('train_scale',5)
         self.train = settings.get('train','fullallmix4')
         self.cv_type = settings.get('cv_type','manual')
         self.feat_type = settings.get('feat_type','feat')
         self.scaler_load = settings.get('scaler_load',True)
+
+        self.test_grp = settings.get('test_grp',4)
+        self.test = settings.get('test','partposrealmixeven14')
+
+        self.emg_scale = settings.get('emg_scale',1)
+        self.scaler = settings.get('scaler',MinMaxScaler(feature_range=(0,1)))
+    
+    def update(self,**settings):
+        for k in settings:
+            setattr(self, k, settings[k])
 
     def prep_train_data(self, raw, params, sub):
         x_train, _, x_valid, p_train, _, p_valid = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.cv_type,load=True,train_grp=self.train_grp)
@@ -64,4 +76,17 @@ class Sess():
         testcnn_ds = tf.data.Dataset.from_tensor_slices((x_valid_noise_cnn, y_valid_clean)).batch(128)
 
         return trainmlp_ds, testmlp_ds, traincnn_ds, testcnn_ds, y_train_clean, y_valid_clean
+
+    def prep_test_data(self,raw,params,sub):
+        with open('real_noise/all_real_noise.p', 'rb') as f:
+            real_noise_temp, _ = pickle.load(f)
+
+        _, x_test, _, _, p_test, _ = prd.train_data_split(raw,params,sub,self.sub_type,dt=self.cv_type,train_grp=self.test_grp)
+        clean_size = int(np.size(x_test,axis=0))
+        x_test = x_test*emg_scale
+
+        x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.test, 1, real_noise=real_noise_temp, emg_scale = emg_scale)
+        x_test_cnn, _ = prd.extract_scale(x_test_noise,scaler,ft=self.feat_type,emg_scale=emg_scale)
+        x_test_cnn = x_test_cnn.astype('float32')
+        x_test_mlp = x_test_cnn.reshape(x_test_cnn.shape[0],-1)
 
