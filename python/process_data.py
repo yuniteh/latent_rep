@@ -632,32 +632,35 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
 
     mav=np.sum(np.absolute(raw),axis=2)/N
 
-    last = np.roll(raw, 1, axis=2)
-    next = np.roll(raw, -1, axis=2)
+    if ft != 'mav':
+        last = np.roll(raw, 1, axis=2)
+        next = np.roll(raw, -1, axis=2)
 
-    # zero crossings
-    zero_change = (next[...,:-1]*raw[...,:-1] < 0) & (np.absolute(next[...,:-1]-raw[...,:-1])>(emg_scale*z_th))
-    zc = np.sum(zero_change, axis=2)
+        # zero crossings
+        zero_change = (next[...,:-1]*raw[...,:-1] < 0) & (np.absolute(next[...,:-1]-raw[...,:-1])>(emg_scale*z_th))
+        zc = np.sum(zero_change, axis=2)
 
-    # slope sign change
-    next_s = next[...,1:-1] - raw[...,1:-1]
-    last_s = raw[...,1:-1] - last[...,1:-1]
-    sign_change = ((next_s > 0) & (last_s < 0)) | ((next_s < 0) & (last_s > 0))
-    th_check = (np.absolute(next_s) >(emg_scale*s_th)) & (np.absolute(last_s) > (emg_scale*s_th))
-    ssc = np.sum(sign_change & th_check, axis=2)
+        # slope sign change
+        next_s = next[...,1:-1] - raw[...,1:-1]
+        last_s = raw[...,1:-1] - last[...,1:-1]
+        sign_change = ((next_s > 0) & (last_s < 0)) | ((next_s < 0) & (last_s > 0))
+        th_check = (np.absolute(next_s) >(emg_scale*s_th)) & (np.absolute(last_s) > (emg_scale*s_th))
+        ssc = np.sum(sign_change & th_check, axis=2)
 
-    # waveform length
-    wl = np.sum(np.absolute(next[...,:-1] - raw[...,:-1]), axis=2)
+        # waveform length
+        wl = np.sum(np.absolute(next[...,:-1] - raw[...,:-1]), axis=2)
 
-    # feat_out = 0
-    feat_out = np.concatenate([mav,zc,ssc,wl],-1)
-    
-    if ft == 'tdar':
-        AR = np.zeros((samp,raw.shape[1],order))
-        for ch in range(raw.shape[1]):
-            AR[:,ch,:] = np.squeeze(matAR_ch(raw[:,ch,:],order))
-        reg_out = np.real(AR.transpose(0,2,1)).reshape((samp,-1))
-        feat_out = np.hstack([feat_out,reg_out])
+        # feat_out = 0
+        feat_out = np.concatenate([mav,zc,ssc,wl],-1)
+        
+        if ft == 'tdar':
+            AR = np.zeros((samp,raw.shape[1],order))
+            for ch in range(raw.shape[1]):
+                AR[:,ch,:] = np.squeeze(matAR_ch(raw[:,ch,:],order))
+            reg_out = np.real(AR.transpose(0,2,1)).reshape((samp,-1))
+            feat_out = np.hstack([feat_out,reg_out])
+    else:
+        feat_out = mav
     return feat_out
 
 def extract_scale(x,scaler,load=True, ft='feat',emg_scale=[1,1,1,1,1,1]):
@@ -666,6 +669,8 @@ def extract_scale(x,scaler,load=True, ft='feat',emg_scale=[1,1,1,1,1,1]):
         num_feat = 4
     elif ft == 'tdar':
         num_feat = 10
+    elif ft == 'mav':
+        num_feat = 1
     x_temp = np.transpose(extract_feats(x,ft=ft,emg_scale=emg_scale).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
     
     # scale features
