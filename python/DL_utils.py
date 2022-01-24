@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, BatchNormalization
 from tensorflow.keras import Model
+import numpy as np
 
 ## Encoders
 class MLPenc(Model):
@@ -110,3 +111,9 @@ class CNN(Model):
   def call(self, x):
     x = self.enc(x)
     return self.clf(x)
+
+def eval_nn(x, y, mod, clean):
+    y_pred = np.argmax(mod(x).numpy(),axis=1)
+    clean_acc = np.sum(y_pred[:clean] == np.argmax(y[:clean,...],axis=1))/y_pred[:clean].size
+    noise_acc = np.sum(y_pred[clean:] == np.argmax(y[clean:,...],axis=1))/y_pred[clean:].size
+    return clean_acc, noise_acc
