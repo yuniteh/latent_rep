@@ -68,6 +68,11 @@ def process_save_noise(foldername):
     
     return
 
+def truncate(data):
+    data[data > 5] = 5
+    data[data < -5] = -5
+    # data[np.abs(data) > 5] = np.divide(data[np.abs(data)>5],np.abs(data[np.abs(data)>5]))*5
+    return data
 
 def sub_train_test(feat,params,sub,train_grp,test_grp):
     # Index EMG data
