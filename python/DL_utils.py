@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, BatchNormalization
 from tensorflow.keras import Model
+import numpy as np
 
 ## Encoders
 class MLPenc(Model):
@@ -110,3 +111,67 @@ class CNN(Model):
   def call(self, x):
     x = self.enc(x)
     return self.clf(x)
+
+def eval_nn(x, y, mod, clean):
+    y_pred = np.argmax(mod(x).numpy(),axis=1)
+    clean_acc = np.sum(y_pred[:clean] == np.argmax(y[:clean,...],axis=1))/y_pred[:clean].size
+    noise_acc = np.sum(y_pred[clean:] == np.argmax(y[clean:,...],axis=1))/y_pred[clean:].size
+    return clean_acc, noise_acc
+
+## TRAIN TEST MLP
+@tf.function
+def train_mlp(x, y, mlp, loss_fn, optimizer, train_loss, train_accuracy):
+    with tf.GradientTape() as tape:
+        y_out = mlp(x)
+        loss = loss_fn(y, y_out)
+    gradients = tape.gradient(loss, mlp.trainable_variables)
+    optimizer.apply_gradients(zip(gradients, mlp.trainable_variables))
+
+    train_loss(loss)
+    train_accuracy(y, y_out)
+
+@tf.function
+def test_mlp(x, y, mlp, loss_fn, test_loss, test_accuracy):
+    y_out = mlp(x)
+    t_loss = loss_fn(y, y_out)
+
+    test_loss(t_loss)
+    test_accuracy(y, y_out)
+
+@tf.function
+def train_mlpbeta(x, y, mlp_beta, loss_fn, optimizer, train_loss, train_accuracy):
+    with tf.GradientTape() as tape:
+        y_out = mlp_beta(x)
+        loss = loss_fn(y, y_out)
+    gradients = tape.gradient(loss, mlp_beta.trainable_variables)
+    optimizer.apply_gradients(zip(gradients, mlp_beta.trainable_variables))
+
+    train_loss(loss)
+    train_accuracy(y, y_out)
+
+@tf.function
+def test_mlpbeta(x, y, mlp_beta, loss_fn, test_loss, test_accuracy):
+    y_out = mlp_beta(x)
+    t_loss = loss_fn(y, y_out)
+
+    test_loss(t_loss)
+    test_accuracy(y, y_out)
+
+@tf.function
+def train_cnn(x, y, cnn, loss_fn, optimizer, train_loss, train_accuracy):
+    with tf.GradientTape() as tape:
+        y_out = cnn(x)
+        loss = loss_fn(y, y_out)
+    gradients = tape.gradient(loss, cnn.trainable_variables)
+    optimizer.apply_gradients(zip(gradients, cnn.trainable_variables))
+
+    train_loss(loss)
+    train_accuracy(y, y_out)
+
+@tf.function
+def test_cnn(x, y, cnn, loss_fn, test_loss, test_accuracy):
+    y_out = cnn(x)
+    t_loss = loss_fn(y, y_out)
+
+    test_loss(t_loss)
+    test_accuracy(y, y_out)

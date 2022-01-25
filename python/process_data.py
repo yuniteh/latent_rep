@@ -14,6 +14,7 @@ from itertools import combinations, product
 import time
 import json
 import pickle
+import tensorflow as tf
 from scipy.fftpack import fft, ifft
 
 
@@ -72,6 +73,55 @@ def truncate(data):
     data[data > 5] = 5
     data[data < -5] = -5
     return data
+
+def prep_train_data(d, raw, params):
+    x_train, _, x_valid, p_train, _, p_valid = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,load=True,train_grp=d.train_grp)
+
+    emg_scale = np.ones((np.size(x_train,1),1))
+    for i in range(np.size(x_train,1)):
+        emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
+    x_train = x_train*emg_scale
+    x_valid = x_valid*emg_scale
+
+    x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.sub, d.train, d.train_scale)
+    x_valid_noise, _, y_valid_clean = add_noise(x_valid, p_valid, d.sub, d.train, d.train_scale)
+
+    # shuffle data to make even batches
+    x_train_noise, y_train_clean = shuffle(x_train_noise, y_train_clean, random_state = 0)
+
+    # Extract features
+    scaler = MinMaxScaler(feature_range=(0,1))
+    x_train_noise_cnn, scaler = extract_scale(x_train_noise,scaler,d.scaler_load,ft=d.feat_type,emg_scale=emg_scale) 
+    x_valid_noise_cnn, _ = extract_scale(x_valid_noise,scaler,ft=d.feat_type,emg_scale=emg_scale)
+    x_train_noise_cnn = x_train_noise_cnn.astype('float32')
+    x_valid_noise_cnn = x_valid_noise_cnn.astype('float32')
+
+    # reshape data for nonconvolutional network
+    x_train_noise_mlp = x_train_noise_cnn.reshape(x_train_noise_cnn.shape[0],-1)
+    x_valid_noise_mlp = x_valid_noise_cnn.reshape(x_valid_noise_cnn.shape[0],-1)
+
+    # create batches
+    trainmlp = tf.data.Dataset.from_tensor_slices((x_train_noise_mlp, y_train_clean)).batch(128)
+    validmlp = tf.data.Dataset.from_tensor_slices((x_valid_noise_mlp, y_valid_clean)).batch(128)
+    traincnn = tf.data.Dataset.from_tensor_slices((x_train_noise_cnn, y_train_clean)).batch(128)
+    validcnn = tf.data.Dataset.from_tensor_slices((x_valid_noise_cnn, y_valid_clean)).batch(128)
+
+    d.emg_scale = emg_scale
+    d.scaler = scaler
+
+    return trainmlp, validmlp, traincnn, validcnn, y_train_clean, y_valid_clean, x_train_noise_mlp, x_train_noise_cnn
+
+def prep_test_data(d,raw,params,real_noise_temp):
+    _, x_test, _, _, p_test, _ = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,train_grp=d.test_grp)
+    clean_size = int(np.size(x_test,axis=0))
+    x_test = x_test*d.emg_scale
+
+    x_test_noise, _, y_test_clean = add_noise(x_test, p_test, d.sub, d.test, 1, real_noise=real_noise_temp, emg_scale = d.emg_scale)
+    x_test_cnn, _ = extract_scale(x_test_noise,d.scaler,ft=d.feat_type,emg_scale=d.emg_scale)
+    x_test_cnn = x_test_cnn.astype('float32')
+    x_test_mlp = x_test_cnn.reshape(x_test_cnn.shape[0],-1)
+
+    return x_test_cnn, x_test_mlp, y_test_clean, clean_size
 
 def sub_train_test(feat,params,sub,train_grp,test_grp):
     # Index EMG data
