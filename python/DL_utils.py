@@ -83,30 +83,30 @@ class CLF(Model):
 
 ## Full models
 class MLP(Model):
-  def __init__(self):
+  def __init__(self, n_class=7):
     super(MLP, self).__init__()
     self.enc = MLPenc()
-    self.clf = CLF()
+    self.clf = CLF(n_class)
   
   def call(self, x):
     x = self.enc(x)
     return self.clf(x)
 
 class MLPbeta(Model):
-  def __init__(self):
+  def __init__(self, n_class=7):
     super(MLPbeta, self).__init__()
     self.enc = MLPenc_beta()
-    self.clf = CLF()
+    self.clf = CLF(n_class)
   
   def call(self, x):
     x = self.enc(x)
     return self.clf(x)
   
 class CNN(Model):
-  def __init__(self):
+  def __init__(self, n_class=7):
     super(CNN, self).__init__()
     self.enc = CNNenc()
-    self.clf = CLF()
+    self.clf = CLF(n_class)
   
   def call(self, x):
     x = self.enc(x)

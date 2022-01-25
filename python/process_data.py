@@ -75,6 +75,9 @@ def truncate(data):
     return data
 
 def prep_train_data(d, raw, params):
+    # with open('noisedata_all_emgs.p','rb') as f:
+    #     scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, y_valid_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda = pickle.load(f)
+
     x_train, _, x_valid, p_train, _, p_valid = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,load=True,train_grp=d.train_grp)
 
     emg_scale = np.ones((np.size(x_train,1),1))
@@ -128,7 +131,9 @@ def prep_test_data(d,raw,params,real_noise_temp):
     x_test_cnn = x_test_cnn.astype('float32')
     x_test_mlp = x_test_cnn.reshape(x_test_cnn.shape[0],-1)
 
-    return x_test_cnn, x_test_mlp, y_test_clean, clean_size
+    x_test_lda = extract_feats(x_test_noise,ft=d.feat_type,emg_scale=d.emg_scale)
+
+    return x_test_cnn, x_test_mlp, x_test_lda, y_test_clean, clean_size
 
 def sub_train_test(feat,params,sub,train_grp,test_grp):
     # Index EMG data
