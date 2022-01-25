@@ -104,10 +104,15 @@ def prep_train_data(d, raw, params):
     x_valid_noise_mlp = x_valid_noise_cnn.reshape(x_valid_noise_cnn.shape[0],-1)
 
     # create batches
-    trainmlp = tf.data.Dataset.from_tensor_slices((x_train_noise_mlp, y_train_clean)).batch(128)
-    validmlp = tf.data.Dataset.from_tensor_slices((x_valid_noise_mlp, y_valid_clean)).batch(128)
-    traincnn = tf.data.Dataset.from_tensor_slices((x_train_noise_cnn, y_train_clean)).batch(128)
-    validcnn = tf.data.Dataset.from_tensor_slices((x_valid_noise_cnn, y_valid_clean)).batch(128)
+    trainmlp = tf.data.Dataset.from_tensor_slices((x_train_noise_mlp, y_train_clean)).shuffle(x_train_noise_mlp.shape[0],reshuffle_each_iteration=True).batch(128)
+    validmlp = tf.data.Dataset.from_tensor_slices((x_valid_noise_mlp, y_valid_clean)).shuffle(x_train_noise_mlp.shape[0],reshuffle_each_iteration=True).batch(128)
+    traincnn = tf.data.Dataset.from_tensor_slices((x_train_noise_cnn, y_train_clean)).shuffle(x_train_noise_cnn.shape[0],reshuffle_each_iteration=True).batch(128)
+    validcnn = tf.data.Dataset.from_tensor_slices((x_valid_noise_cnn, y_valid_clean)).shuffle(x_train_noise_cnn.shape[0],reshuffle_each_iteration=True).batch(128)
+
+    # trainmlp = tf.data.Dataset.from_tensor_slices((x_train_noise_mlp, y_train_clean)).batch(128)
+    # validmlp = tf.data.Dataset.from_tensor_slices((x_valid_noise_mlp, y_valid_clean)).batch(128)
+    # traincnn = tf.data.Dataset.from_tensor_slices((x_train_noise_cnn, y_train_clean)).batch(128)
+    # validcnn = tf.data.Dataset.from_tensor_slices((x_valid_noise_cnn, y_valid_clean)).batch(128)
 
     d.emg_scale = emg_scale
     d.scaler = scaler
