@@ -75,9 +75,6 @@ def truncate(data):
     return data
 
 def prep_train_data(d, raw, params):
-    # with open('noisedata_all_emgs.p','rb') as f:
-    #     scaler, x_train_noise_vae, x_train_clean_vae, x_valid_noise_vae, x_valid_clean_vae, y_train_clean, y_valid_clean, x_train_lda, y_train_lda, x_train_noise_lda, y_train_noise_lda = pickle.load(f)
-
     x_train, _, x_valid, p_train, _, p_valid = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,load=True,train_grp=d.train_grp)
 
     emg_scale = np.ones((np.size(x_train,1),1))
@@ -117,9 +114,8 @@ def prep_train_data(d, raw, params):
     y_train_lda = y_train[...,np.newaxis] - 1
     x_train_lda = extract_feats(x_train,ft=d.feat_type,emg_scale=emg_scale)
     x_train_aug = extract_feats(x_train_noise,ft=d.feat_type,emg_scale=emg_scale)
-    y_train_aug = np.argmax(y_train_clean, axis=1)[...,np.newaxis]
 
-    return trainmlp, validmlp, traincnn, validcnn, y_train_clean, y_valid_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug, y_train_aug
+    return trainmlp, validmlp, traincnn, validcnn, y_train_clean, y_valid_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug
 
 def prep_test_data(d,raw,params,real_noise_temp):
     _, x_test, _, _, p_test, _ = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,train_grp=d.test_grp)
