@@ -119,12 +119,36 @@ def eval_nn(x, y, mod, clean):
     return clean_acc, noise_acc
 
 ## TRAIN TEST MLP
+def get_train():
+    @tf.function
+    def train_step(x, y, mod, optimizer, train_loss, train_accuracy):
+        with tf.GradientTape() as tape:
+            y_out = mod(x,training=True)
+            loss = tf.keras.losses.categorical_crossentropy(y,y_out)
+        gradients = tape.gradient(loss, mod.trainable_variables)
+        optimizer.apply_gradients(zip(gradients, mod.trainable_variables))
+
+        train_loss(loss)
+        train_accuracy(y, y_out)
+    
+    return train_step
+
+def get_test():
+    @tf.function
+    def test_step(x, y, mod, test_loss, test_accuracy):
+        y_out = mod(x)
+        t_loss = tf.keras.losses.categorical_crossentropy(y,y_out)
+
+        test_loss(t_loss)
+        test_accuracy(y, y_out)
+    
+    return test_step
+
 @tf.function
-def train_mlp(x, y, mlp, loss_fn, optimizer, train_loss, train_accuracy):
+def train_mlp(x, y, mlp, optimizer, train_loss, train_accuracy):
     with tf.GradientTape() as tape:
         y_out = mlp(x,training=True)
         loss = tf.keras.losses.categorical_crossentropy(y,y_out)
-        # loss = loss_fn(y, y_out)
     gradients = tape.gradient(loss, mlp.trainable_variables)
     optimizer.apply_gradients(zip(gradients, mlp.trainable_variables))
 
@@ -132,19 +156,18 @@ def train_mlp(x, y, mlp, loss_fn, optimizer, train_loss, train_accuracy):
     train_accuracy(y, y_out)
 
 @tf.function
-def test_mlp(x, y, mlp, loss_fn, test_loss, test_accuracy):
+def test_mlp(x, y, mlp, test_loss, test_accuracy):
     y_out = mlp(x)
-    t_loss = loss_fn(y, y_out)
+    t_loss = tf.keras.losses.categorical_crossentropy(y,y_out)
 
     test_loss(t_loss)
     test_accuracy(y, y_out)
 
 @tf.function
-def train_mlpbeta(x, y, mlp_beta, loss_fn, optimizer, train_loss, train_accuracy):
+def train_mlpbeta(x, y, mlp_beta, optimizer, train_loss, train_accuracy):
     with tf.GradientTape() as tape:
         y_out = mlp_beta(x,training=True)
         loss = tf.keras.losses.categorical_crossentropy(y,y_out)
-        # loss = loss_fn(y, y_out)
     gradients = tape.gradient(loss, mlp_beta.trainable_variables)
     optimizer.apply_gradients(zip(gradients, mlp_beta.trainable_variables))
 
@@ -152,18 +175,17 @@ def train_mlpbeta(x, y, mlp_beta, loss_fn, optimizer, train_loss, train_accuracy
     train_accuracy(y, y_out)
 
 @tf.function
-def test_mlpbeta(x, y, mlp_beta, loss_fn, test_loss, test_accuracy):
+def test_mlpbeta(x, y, mlp_beta, test_loss, test_accuracy):
     y_out = mlp_beta(x)
-    t_loss = loss_fn(y, y_out)
+    t_loss = tf.keras.losses.categorical_crossentropy(y,y_out)
 
     test_loss(t_loss)
     test_accuracy(y, y_out)
 
 @tf.function
-def train_cnn(x, y, cnn, loss_fn, optimizer, train_loss, train_accuracy):
+def train_cnn(x, y, cnn, optimizer, train_loss, train_accuracy):
     with tf.GradientTape() as tape:
         y_out = cnn(x,training=True)
-        # loss = loss_fn(y, y_out)
         loss = tf.keras.losses.categorical_crossentropy(y,y_out)
     gradients = tape.gradient(loss, cnn.trainable_variables)
     optimizer.apply_gradients(zip(gradients, cnn.trainable_variables))
@@ -172,9 +194,9 @@ def train_cnn(x, y, cnn, loss_fn, optimizer, train_loss, train_accuracy):
     train_accuracy(y, y_out)
 
 @tf.function
-def test_cnn(x, y, cnn, loss_fn, test_loss, test_accuracy):
+def test_cnn(x, y, cnn, test_loss, test_accuracy):
     y_out = cnn(x)
-    t_loss = loss_fn(y, y_out)
+    t_loss = tf.keras.losses.categorical_crossentropy(y,y_out)
 
     test_loss(t_loss)
     test_accuracy(y, y_out)
