@@ -694,8 +694,6 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
         raw = np.squeeze(raw)
     N=raw.shape[2]
     samp = raw.shape[0]
-    # th_array = np.multiply(emg_scale,th)
-    # th = cp.deepcopy(th_array)
     z_th = 0.025
     s_th = 0.015
 
