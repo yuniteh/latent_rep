@@ -101,15 +101,21 @@ def prep_train_data(d, raw, params):
     x_valid_noise_mlp = x_valid_noise_cnn.reshape(x_valid_noise_cnn.shape[0],-1)
 
     # create batches
-    trainmlp = tf.data.Dataset.from_tensor_slices((x_train_noise_mlp, y_train_clean)).batch(128)
-    validmlp = tf.data.Dataset.from_tensor_slices((x_valid_noise_mlp, y_valid_clean)).batch(128)
-    traincnn = tf.data.Dataset.from_tensor_slices((x_train_noise_cnn, y_train_clean)).batch(128)
-    validcnn = tf.data.Dataset.from_tensor_slices((x_valid_noise_cnn, y_valid_clean)).batch(128)
+    trainmlp = tf.data.Dataset.from_tensor_slices((x_train_noise_mlp, y_train_clean)).shuffle(x_train_noise_mlp.shape[0],reshuffle_each_iteration=True).batch(128)
+    validmlp = tf.data.Dataset.from_tensor_slices((x_valid_noise_mlp, y_valid_clean)).shuffle(x_train_noise_mlp.shape[0],reshuffle_each_iteration=True).batch(128)
+    traincnn = tf.data.Dataset.from_tensor_slices((x_train_noise_cnn, y_train_clean)).shuffle(x_train_noise_cnn.shape[0],reshuffle_each_iteration=True).batch(128)
+    validcnn = tf.data.Dataset.from_tensor_slices((x_valid_noise_cnn, y_valid_clean)).shuffle(x_train_noise_cnn.shape[0],reshuffle_each_iteration=True).batch(128)
 
     d.emg_scale = emg_scale
     d.scaler = scaler
 
-    return trainmlp, validmlp, traincnn, validcnn, y_train_clean, y_valid_clean, x_train_noise_mlp, x_train_noise_cnn
+    # LDA data
+    y_train = p_train[:,4]
+    y_train_lda = y_train[...,np.newaxis] - 1
+    x_train_lda = extract_feats(x_train,ft=d.feat_type,emg_scale=emg_scale)
+    x_train_aug = extract_feats(x_train_noise,ft=d.feat_type,emg_scale=emg_scale)
+
+    return trainmlp, validmlp, traincnn, validcnn, y_train_clean, y_valid_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug
 
 def prep_test_data(d,raw,params,real_noise_temp):
     _, x_test, _, _, p_test, _ = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,train_grp=d.test_grp)
@@ -121,7 +127,9 @@ def prep_test_data(d,raw,params,real_noise_temp):
     x_test_cnn = x_test_cnn.astype('float32')
     x_test_mlp = x_test_cnn.reshape(x_test_cnn.shape[0],-1)
 
-    return x_test_cnn, x_test_mlp, y_test_clean, clean_size
+    x_test_lda = extract_feats(x_test_noise,ft=d.feat_type,emg_scale=d.emg_scale)
+
+    return x_test_cnn, x_test_mlp, x_test_lda, y_test_clean, clean_size
 
 def sub_train_test(feat,params,sub,train_grp,test_grp):
     # Index EMG data
@@ -682,8 +690,6 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
         raw = np.squeeze(raw)
     N=raw.shape[2]
     samp = raw.shape[0]
-    # th_array = np.multiply(emg_scale,th)
-    # th = cp.deepcopy(th_array)
     z_th = 0.025
     s_th = 0.015
 

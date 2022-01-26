@@ -32,6 +32,7 @@ class Sess():
         self.cv_type = settings.get('cv_type','manual')
         self.feat_type = settings.get('feat_type','feat')
         self.scaler_load = settings.get('scaler_load',True)
+        self.epochs = settings.get('epochs',30)
 
         self.test_grp = settings.get('test_grp',4)
         self.test = settings.get('test','partposrealmixeven14')

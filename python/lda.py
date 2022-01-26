@@ -7,10 +7,19 @@ from numpy.linalg import eig, inv
 
 
 # train and predict for data: (samples,feat), label: (samples, 1)
-def eval_lda(w, c, x_test, y_test):
-    out = predict(x_test, w, c)
-    acc = np.sum(out.reshape(y_test.shape) == y_test)/y_test.shape[0]
-    return acc
+def eval_lda(w, c, x_test, y_test, clean_size=None):
+    if clean_size:
+        clean_out = predict(x_test[:clean_size,...], w, c)
+        noise_out = predict(x_test[clean_size:,...], w, c)
+        clean_acc = np.sum(clean_out.reshape(y_test[:clean_size,...].shape) == y_test[:clean_size,...])/y_test[:clean_size,...].shape[0]
+        noise_acc = np.sum(noise_out.reshape(y_test[clean_size:,...].shape) == y_test[clean_size:,...])/y_test[clean_size:,...].shape[0]
+
+        return clean_acc, noise_acc
+    else:
+        out = predict(x_test, w, c)
+        acc = np.sum(out.reshape(y_test.shape) == y_test)/y_test.shape[0]
+        
+        return acc
 
 def eval_lda_ch(mu_class, C, n_type, x, y, ft = 'feat',emg_scale=[1,1,1,1,1,1]):
     # Index subject and training group
