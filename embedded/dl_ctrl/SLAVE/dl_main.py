@@ -60,6 +60,8 @@ rampTime = 500
 # Define the starting ramp numerators and denominators.
 ramp_numerator = np.zeros((1, numModes), dtype=float, order='F')
 ramp_denominator = np.ones((1, numModes), dtype=float, order='F') * (rampTime / pce.get_var('DAQ_FRINC'))
+# Neural network architectures
+mlp_arch = ['relu','bn','relu','bn','relu','bn','den','bn','softmax']
 
 def dispose():
     pass
@@ -138,7 +140,6 @@ def run():
 
         # IF FLAG == NO MOVEMENT
         elif (flag == 0):
-            print 'here'
             if (armflag != 0):
                 print('COLLECTING ' + classmap[flag])
                 # Prepare data for the 'no movement' class. Create means and covariance matricies.
@@ -189,6 +190,10 @@ def run():
             pce.set_var('CLASS_EST', class_est)
             # Print message with class estimation
             print('FORWARD - ' + str(class_est))
+
+            # NN forward pass
+            nn_w = pce.get_var('NN_W').to_np_array()[]
+            nn_out = nn_pass(feat_data, nn_w, mlp_arch)
                     
         # DO NOTHING
         # In the event that no classes have been trained, print a message to the PCE log.
@@ -458,3 +463,33 @@ def saveWeights(dir, name):
 def clearWeights():
     np.savetxt(datadir + '/wg.csv', [], fmt='%.20f', delimiter=',')
     np.savetxt(datadir + '/cg.csv', [], fmt='%.20f', delimiter=',')
+
+#######################################################################################################################
+# Functions    : dense, bn, nn_pass(args)
+# args        : x_in: input, w: layer weights, fxn: activation fxn, arch: string of layer type or act fxn
+# Description : forward pass through trained nn
+#######################################################################################################################
+def dense(x_in, w, fxn = 'relu'):
+    out = (x_in @ w[0]) + w[1]
+    if fxn == 'relu':
+        out *= (out > 0)
+    elif fxn == 'softmax':
+        out = np.exp(out) / np.sum(np.exp(out), axis=1)[...,np.newaxis]
+    return out
+
+def bn(x_in, w):
+    out = ((w[0] * (x_in - w[2])) / np.sqrt(w[3] + 0.001)) + w[1]
+    return out
+
+def nn_pass(x, w, arch):
+    i = 0 
+    for l in arch:
+        if l == 'bn':
+            w_layer = w[i:i+4]
+            x = bn(x, w_layer)
+            i += 4
+        else:
+            w_layer = w[i:i+2]
+            x = dense(x, w_layer, fxn = l)
+            i += 2
+    return x
