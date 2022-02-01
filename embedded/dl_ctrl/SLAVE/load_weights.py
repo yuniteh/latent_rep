@@ -40,4 +40,4 @@ else:
 
 mvc = np.genfromtxt(str(sys.argv[1]) + 'mvc.csv', delimiter=',')
 pce.set_var('MVC',mvc.astype(float, order='F'))
-print 'COMPLETE'
+print('COMPLETE')
