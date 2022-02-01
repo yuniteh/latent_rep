@@ -1,0 +1,84 @@
+# Prepare the environment for starting the PCE
+
+################################################################################
+# SOURCE THE DEFINITIONS FILE(S) TO PROVIDE ACCESS TO CONSTANTS.
+################################################################################
+source /config/common
+source ${FILE_DEVICE_ROUTING}
+load_active_device_settings
+
+# Define path to active mode directory for external reference.
+export ACTIVEMODEPATH="$(determine_absolute_path_to_active_mode_dir)"
+
+# set up logging
+export LOGFILE=${PATH_CAPS_LOGS}/${FNAME_LOG_PCE}
+export CONSOLELOG=Y
+
+# Setting for suppressing logging of sequence breaks
+#export LOGSEQBRKOFF=X
+
+# PCE begins started or stopped
+export PCEBEGINSSTOPPED=X
+
+# PCE begins with motors disabled
+export REMOTESTARTUPMOTORDISABLE=X
+
+# set battery monitoring
+#export PCEBATTERYMONITOR=X
+# certain i/o boards use different dividers; uncomment next export if necessary
+#export PCEBATTERYMONITORFULLMV=1248
+
+# read in saved PCE configuration variables
+export PCEREADSAVEDVARS=X
+
+# write out updated PCE configuration variables
+export PCEWRITESAVEDVARS=X
+
+# set file recording buffer sizes
+export PCEDAQRECDBUFSIZE=100000000
+export PCEVARRECDBUFSIZE=50000000
+
+# output execution time for each step
+#export PCETIMEEACHSTEP=X
+
+# auto clear slave commands at PCE stop
+export PCEAUTOCLEARSLAVEFUNC=X
+
+# disable socket switch hibernation
+export SSDISABLEHIBERNATE=X
+
+# Set the number of physical channels supported by the PCE
+# >> NOTE:  This variable defaults to the maximum supported IFF not defined.
+# >> The current maximum number of physical channels supported is '64'.
+#export PCENUMBPHYSCHAN=32
+
+# Define the number of speed bins to use with user stats.
+# ** NOTE:  Changes to this value will require [backup and] 
+#           deleting of all current user stats.
+# If not defined, the default value is presumed to be '20'.
+#export PCEUSERSTATSNUMBBINS=20
+
+# Define the number of archive files to retain for user stats.
+# If not defined, the default value is presumed to be '10'.
+#export PCEUSERSTATSNUMBARCHIVES=10
+
+# look for serial device name.
+# kernel versions 2.6.37 and above use ttyOx.
+# kernel versions lower than 2.6.37 use ttySx.
+
+# device name for serial port
+export CAPS_SERIAL_PORT=${SERIAL_PORT}
+
+# device name for CAN port
+export DAQEMBPORTNAMECAN=${PIC_CAN_PORT}
+
+# device name for APS port
+export DAQEMBPORTNAMEAPS=${CAPS_SERIAL_PORT}
+
+# baud rate for CAN over UART
+export CANBAUDRATE=${PIC_CAN_BAUD}
+
+# add slave folder to Python search path
+export PYTHONPATH="$(determine_python_path_for_active_mode):${PYTHONPATH}"
+
+
