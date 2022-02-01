@@ -1,0 +1,42 @@
+#!/bin/bash
+################################################################################
+# THIS MODE-GROUP SCRIPT WILL BE INVOKED EVERY TIME THE SYSTEM BOOTS AND THE 
+# ACTIVE MODE IS WITHIN THE "<caps/lower_limb>" DIRECTORY.
+# 
+# SCRIPT WILL BE CALLED AT THE TAIL END OF SYSTEM INITIALIZATION (JUST PRIOR TO 
+# CALLING THE RELEVANT MODE-SPECIFIC "customize" SCRIPT).
+# 
+# YOU CAN CONTROL WHETHER THE THE SCRIPT IS INVOKED 'BEFORE' OR 'AFTER' THE 
+# APPLICATION LIST IS PROCESSED BY MODIFYING THE VALUE FOR THE 'run_customize' 
+# PARAMETER IN THE 'device-settings' FILE (TYPICALLY SET TO 'AFTER').
+# 
+# YOU MAY PUT ANY LINUX COMMAND YOU WISH HERE (INCLUDING CALLS TO OTHER 
+# SCRIPTS).
+# ------------------------------------------------------------------------------
+# Parameter(s)  => None.
+# ------------------------------------------------------------------------------
+# Exit-Code(s)  => None.
+# ------------------------------------------------------------------------------
+# Return(s)     => None.
+################################################################################
+
+
+################################################################################
+# SOURCE THE '</config>/common' FILE TO GAIN ACCESS TO CONSTANTS. THIS FILE CAN
+# BE USED TO SIMPLIFY COMMANDS [E.G. "python ${PATH_CAPS_SLAVE}/script_name"] OR
+# TO ACCESS FILES RELATIVE TO THIS SCRIPTS DIRECTORY (${MODE_DIRECTORY}/...).
+################################################################################
+source /config/common
+
+# Wait for PCE to launch before invoking PCE dependent scripts [max timeout of
+# ~30 seconds in function].
+delay_until_pce_running
+
+# Check the return code from the previous function call [$? == return code] and 
+# verify success [== 0] before invoking pce-dependent scripts.
+if [ ! $? -eq 0 ]; then
+    exit $?
+fi
+
+# Invoke Python script(s) to structure PCE.
+python ${MODE_DIRECTORY}/HELPER_SCRIPTS/UDPStreamer.py &

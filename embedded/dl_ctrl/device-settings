@@ -1,0 +1,111 @@
+#!/bin/bash
+################################################################################
+# DEFINES SYSTEM OPERATION && PERFORMANCE SETTINGS FOR MODE.
+# ------------------------------------------------------------------------------
+# NOTE(S):
+# > NAME:           caps->lower_limb->vr_cmu
+# > PROVIDES:       CAPS setup for lower-limb research for Carnegie Mellon.
+# > CONNECTIVITY:   Creates an access point connection for others to connect to.
+# ------------------------------------------------------------------------------
+# Parameter(s)  => None.
+# ------------------------------------------------------------------------------
+# Exit-Code(s)  => None.
+# ------------------------------------------------------------------------------
+# Return(s)     => None.
+################################################################################
+
+
+################################################################################
+# SOURCE THE DEFINITIONS FILE TO PROVIDE ACCESS TO CONSTANTS.
+# PLEASE SEE THE SOURCED FILE "</config/device>/options" FOR FULL DETAILS ON 
+# AVAILABLE OPTIONS.
+################################################################################
+source /config/common
+source ${FILE_DEVICE_OPTIONS}
+source ${FILE_DEVICE_ROUTING}
+
+
+################################################################################
+##                                CONNECTIONS                                 ##
+################################################################################
+## vvvv PRIMARY CONNECTION USED. vvvv
+export connect_01_type="${connect_type_wifi_access_point_as_host}"              # [DEFINE] CONNECTION-01 -> WIFI -> ACCESS POINT [HOST FOR NETWORK].
+export connect_01_ssid="caps_network-DL-Yuni"                                   # [DEFINE] CONNECTION-01 -> NAME OF NETWORK.
+export connect_01_ip_addr="192.168.20.2"                                        # [DEFINE] CONNECTION-01 -> IP ADDRESS TO USE.
+export connect_01_pswd="12345678"                                               # [DEFINE] CONNECTION-01 -> Password for network.
+## vvvv SECONDARY CONNECTION USED. vvvv
+export connect_02_type="${connect_type_usb_tethered}"                           # [DEFINE] CONNECTION-02 -> USB -> TETHERED.
+export connect_02_ip_addr="192.168.20.2"                                        # [DEFINE] CONNECTION-02 -> IP ADDRESS TO USE.
+## vvvv AD HOC CONNECTION FALLBACK. vvvv
+export connect_03_type="${connect_type_wifi_ad_hoc}"                            # [DEFINE] CONNECTION-03 -> WIFI -> AD-HOC
+export connect_03_ssid="caps_network-virtual_limb_02"                           # [DEFINE] CONNECTION-03 -> NAME OF NETWORK.
+export connect_03_ip_addr="192.168.21.1"                                        # [DEFINE] CONNECTION-03 -> IP ADDRESS TO USE.
+
+
+################################################################################
+##                              MONITOR SCRIPTS                               ##
+################################################################################
+export monitor_01_cmd="${monitor_cmd_connections_poll}"                         # [DEFINE] MONITOR-01 -> COMMAND  -> POLL KNOWN CONNECTED DEVICES.
+export monitor_01_interval="${INTERVAL_5_SECONDS}"                              # [DEFINE] MONITOR-01 -> INTERVAL TO WAIT BETWEEN COMMAND ITERATIONS.
+#### 
+export monitor_02_cmd="${monitor_cmd_led_control_status}"                       # [DEFINE] MONITOR-02 -> COMMAND  -> CONTROL STATUS LED ON LINUX BOARD.
+export monitor_02_interval="${INTERVAL_3_SECONDS}"                              # [DEFINE] MONITOR-02 -> INTERVAL TO WAIT BETWEEN COMMAND ITERATIONS.
+#### 
+export monitor_03_cmd="${monitor_cmd_connections_refresh_device_list}"          # [DEFINE] MONITOR-03 -> COMMAND  -> REFRESH LIST OF KNOWN DEVICES ON NETWORK.
+export monitor_03_interval="${INTERVAL_30_SECONDS}"                             # [DEFINE] MONITOR-03 -> INTERVAL TO WAIT BETWEEN COMMAND ITERATIONS.
+
+
+################################################################################
+##                               CPU SETTINGS                                 ##
+################################################################################
+export cpu_frequency="${cpu_frequency_max}"                                     # [DEFINE] CLOCK SPEED [PROCESSING] LEVEL.
+
+
+################################################################################
+##                           REAL TIME CLOCK [RTC]                            ##
+################################################################################
+export check_rtc_at_boot="${check_rtc_at_boot_disabled}"                        # [DEFINE] IF RTC SHOULD BE TESTED JUST PRIOR TO LAUNCHING APPLICATIONS.
+
+
+################################################################################
+##                               RUN CUSTOMIZE                                ##
+################################################################################
+export run_customize="${run_customize_after_app_list}"                          # [DEFINE] RUN THE CUSTOMIZE SCRIPT(S) JUST AFTER RUNNING THE APPLICATION LIST.
+
+
+################################################################################
+##                                  APP LIST                                  ##
+################################################################################
+app_list[0]="${app_list_caps}"                                                  # [DEFINE] ADD SUPPORT FOR RUNNING CAPS AT BOOT.
+
+
+################################################################################
+##                  APP-SETTINGS => CAPS => USER STATISTICS                   ##
+################################################################################
+export verify_userstats="${verify_userstats_disabled}"                          # [DEFINE] DISABLE CHECK FOR USERSTATS IN 'pce-initialized.sh'.
+
+
+################################################################################
+##                APP-SETTINGS => CAPS => RESISTOR ID SETTINGS                ##
+################################################################################
+export resistor_id_support="${resistor_id_support_disabled}"                    # [DEFINE] RESISTOR ID SUPPORT.
+
+
+################################################################################
+##             APP-SETTINGS => CAPS => USER FILE PARSING SETTINGS             ##
+################################################################################
+export usr_param_record_vars="${parse_parameter_enabled}"                      # [DEFINE] SUPPORT FOR PARSING RECORD VARS FOR PVD FILES @ BOOT.
+export usr_param_slave_support="${parse_parameter_enabled}"                    # [DEFINE] SUPPORT FOR PARSING SLAVE SUPPORT SETTINGS @ BOOT.
+
+
+################################################################################
+##              APP-SETTINGS => CAPS => DATA MANAGEMENT SETTINGS              ##
+################################################################################
+export data_mgmt_archival="${data_mgmt_archival_support_enabled}"               # [DEFINE] SUPPORT FOR ARCHIVING DATA AFTER DBT.
+export data_mgmt_archival_clean_all="${data_mgmt_archival_clean_disabled}"      # [DEFINE] SUPPORT FOR DELETING ORIGINAL FILES AFTER ARCHIVING OCCURS [FOR ALL ARCHIVALS].
+export data_mgmt_archival_clean_dbt_fail="${data_mgmt_archival_clean_disabled}" # [DEFINE] SUPPORT FOR DELETING ORIGINAL FILES AFTER ARCHIVING OCCURS [FOR FAILED DBT SESSIONS].
+export data_mgmt_cleanup_daq="${data_mgmt_cleanup_disabled}"                    # [DEFINE] THE [MAX] NUMBER OF FOLDERS OR FILES TO RETAIN IN A SECTION DURING THE <..\DATA\DAQ> FOLDER CLEANUP.
+export data_mgmt_cleanup_pvd="${data_mgmt_cleanup_disabled}"                    # [DEFINE] THE [MAX] NUMBER OF FOLDERS OR FILES TO RETAIN IN A SECTION DURING THE <..\DATA\PVD> FOLDER CLEANUP.
+export data_mgmt_max_disk="${data_mgmt_max_disk_usage_medium}"                  # [DEFINE] THE [MAX] AMOUNT OF DISK USAGE ALLOWED BEFORE CLEANUP OCCURS.
+
+
