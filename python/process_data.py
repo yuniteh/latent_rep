@@ -82,46 +82,38 @@ def truncate(data):
     data[data < -5] = -5
     return data
 
-def prep_train_caps(d, x_train, params):
+def prep_train_caps(x_train, params):
     x_train, p_train = shuffle(x_train, params, random_state = 0)
     
     emg_scale = np.ones((np.size(x_train,1),1))
     for i in range(np.size(x_train,1)):
         emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
-    x_train = x_train*emg_scale
+    x_train *= emg_scale
 
-    x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.sub, d.train, d.train_scale)
+    x_train_noise, _, y_train_clean = add_noise_caps(x_train, p_train)
 
     # shuffle data to make even batches
     x_train_noise, y_train_clean = shuffle(x_train_noise, y_train_clean, random_state = 0)
 
     # Extract features
     scaler = MinMaxScaler(feature_range=(0,1))
-    x_train_noise_cnn, scaler = extract_scale(x_train_noise,scaler,d.scaler_load,ft=d.feat_type,emg_scale=emg_scale) 
-    x_valid_noise_cnn, _ = extract_scale(x_valid_noise,scaler,ft=d.feat_type,emg_scale=emg_scale)
+    x_train_noise_cnn, scaler = extract_scale(x_train_noise,scaler,False,ft='feat',emg_scale=emg_scale) 
     x_train_noise_cnn = x_train_noise_cnn.astype('float32')
-    x_valid_noise_cnn = x_valid_noise_cnn.astype('float32')
 
     # reshape data for nonconvolutional network
     x_train_noise_mlp = x_train_noise_cnn.reshape(x_train_noise_cnn.shape[0],-1)
-    x_valid_noise_mlp = x_valid_noise_cnn.reshape(x_valid_noise_cnn.shape[0],-1)
 
     # create batches
     trainmlp = tf.data.Dataset.from_tensor_slices((x_train_noise_mlp, y_train_clean)).shuffle(x_train_noise_mlp.shape[0],reshuffle_each_iteration=True).batch(128)
-    validmlp = tf.data.Dataset.from_tensor_slices((x_valid_noise_mlp, y_valid_clean)).shuffle(x_train_noise_mlp.shape[0],reshuffle_each_iteration=True).batch(128)
     traincnn = tf.data.Dataset.from_tensor_slices((x_train_noise_cnn, y_train_clean)).shuffle(x_train_noise_cnn.shape[0],reshuffle_each_iteration=True).batch(128)
-    validcnn = tf.data.Dataset.from_tensor_slices((x_valid_noise_cnn, y_valid_clean)).shuffle(x_train_noise_cnn.shape[0],reshuffle_each_iteration=True).batch(128)
-
-    d.emg_scale = emg_scale
-    d.scaler = scaler
 
     # LDA data
-    y_train = p_train[:,4]
+    y_train = p_train[:,0]
     y_train_lda = y_train[...,np.newaxis] - 1
-    x_train_lda = extract_feats(x_train,ft=d.feat_type,emg_scale=emg_scale)
-    x_train_aug = extract_feats(x_train_noise,ft=d.feat_type,emg_scale=emg_scale)
+    x_train_lda = extract_feats(x_train,ft='feat',emg_scale=emg_scale)
+    x_train_aug = extract_feats(x_train_noise,ft='feat',emg_scale=emg_scale)
 
-    return trainmlp, validmlp, traincnn, validcnn, y_train_clean, y_valid_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug
+    return trainmlp, traincnn, y_train_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug, emg_scale, scaler
 
 def prep_train_data(d, raw, params):
     x_train, _, x_valid, p_train, _, p_valid = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,load=True,train_grp=d.train_grp)
