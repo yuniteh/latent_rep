@@ -7,25 +7,30 @@
 import sys
 import pcepy.pce as pce
 import numpy as np
-import cPickle
+# import pickle
+import csv
+from os import listdir
+from os.path import isfile, join
 
 if sys.argv[2] == 'LR':
     print('Loading linear regression weights...')
     w = np.genfromtxt(str(sys.argv[1]) + 'w.csv', delimiter=',')
     pce.set_var('W', w.astype(float, order='F'))
 elif sys.argv[2] == 'MLP':
+    folder = str(sys.argv[1])
     print('Loading MLP weights...')
-    print(str(sys.argv[1]))
-    with open(str(sys.argv[1]), 'rb') as f:
-        w, arch, emg_scale, x_min, x_max = cPickle.load(f)
-    
-    for layer in arch:
-        pce.set_var(layer, w[layer])
-    
-    pce.set_var('ARCH', arch)
-    pce.set_var('EMG_SCALE', emg_scale)
-    pce.set_var('X_MIN', x_min)
-    pce.set_var('X_MAX', x_max)
+    print(folder)
+    files = [f for f in listdir(folder) if isfile(join(folder, f))]
+    for file in files:
+        temp = np.genfromtxt(join(folder,file), delimiter=',')
+        print(temp.shape)
+        if file[:-4] != 'ARCH':
+            if file[:-4] == 'scale':
+                pce.set_var('EMG_SCALE', temp[:,0].astype(float, order='F'))
+                pce.set_var('X_MIN', temp[:,1].astype(float, order='F'))
+                pce.set_var('X_MAX', temp[:,2].astype(float, order='F'))
+            else:
+                pce.set_var(file[:-4], temp.astype(float, order='F'))
 else:
     numClasses = 5
     out_map = pce.get_var('OUT_MAP').to_np_array()
