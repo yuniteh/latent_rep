@@ -7,7 +7,7 @@
 import sys
 import pcepy.pce as pce
 import numpy as np
-import pickle
+import cPickle
 
 if sys.argv[2] == 'LR':
     print('Loading linear regression weights...')
@@ -15,8 +15,9 @@ if sys.argv[2] == 'LR':
     pce.set_var('W', w.astype(float, order='F'))
 elif sys.argv[2] == 'MLP':
     print('Loading MLP weights...')
+    print(str(sys.argv[1]))
     with open(str(sys.argv[1]), 'rb') as f:
-        w, arch, emg_scale, x_min, x_max = pickle.load(f)
+        w, arch, emg_scale, x_min, x_max = cPickle.load(f)
     
     for layer in arch:
         pce.set_var(layer, w[layer])
@@ -47,6 +48,7 @@ else:
     pce.set_var('CG_ADAPT',cg.astype(float, order='F'))
     pce.set_var('MID',mid.astype(float, order='F'))
 
-mvc = np.genfromtxt(str(sys.argv[1]) + 'mvc.csv', delimiter=',')
-pce.set_var('MVC',mvc.astype(float, order='F'))
+if sys.argv[2] != 'MLP':
+    mvc = np.genfromtxt(str(sys.argv[1]) + 'mvc.csv', delimiter=',')
+    pce.set_var('MVC',mvc.astype(float, order='F'))
 print('COMPLETE')
