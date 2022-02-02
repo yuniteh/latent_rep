@@ -826,7 +826,7 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
         wl = np.sum(np.absolute(next[...,:-1] - raw[...,:-1]), axis=2)
 
         # feat_out = 0
-        feat_out = np.concatenate([mav,zc,ssc,wl],-1)
+        feat_out = np.concatenate([mav,wl,zc,ssc],-1)
         
         if ft == 'tdar':
             AR = np.zeros((samp,raw.shape[1],order))
