@@ -97,7 +97,7 @@ def prep_train_caps(x_train, params):
 
     # Extract features
     scaler = MinMaxScaler(feature_range=(0,1))
-    x_train_noise_cnn, scaler, x_min, x_max = extract_scale(x_train_noise,scaler,False,ft='feat',emg_scale=emg_scale,caps=True) 
+    x_train_noise_cnn, scaler, x_min, x_max = extract_scale(x_train_noise,scaler,False,ft='feat',caps=True) 
     x_train_noise_cnn = x_train_noise_cnn.astype('float32')
 
     # reshape data for nonconvolutional network

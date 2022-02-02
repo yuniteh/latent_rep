@@ -7,8 +7,6 @@
 import sys
 import pcepy.pce as pce
 import numpy as np
-# import pickle
-import csv
 from os import listdir
 from os.path import isfile, join
 
@@ -24,10 +22,10 @@ elif sys.argv[2] == 'MLP':
     for file in files:
         if file[:-4] != 'ARCH':
             temp = np.genfromtxt(join(folder,file), delimiter=',')
-            if file[:-4] == 'scale':
+            if file[:-4] == 'scales':
                 pce.set_var('EMG_SCALE', temp[:,0].astype(float, order='F'))
-                pce.set_var('X_MIN', temp[:,1].astype(float, order='F'))
-                pce.set_var('X_MAX', temp[:,2].astype(float, order='F'))
+                pce.set_var('X_MIN', temp[:4,1].astype(float, order='F'))
+                pce.set_var('X_MAX', temp[:4,2].astype(float, order='F'))
             else:
                 pce.set_var(file[:-4], temp.astype(float, order='F'))
         else:
