@@ -97,7 +97,7 @@ def prep_train_caps(x_train, params):
 
     # Extract features
     scaler = MinMaxScaler(feature_range=(0,1))
-    x_train_noise_cnn, scaler = extract_scale(x_train_noise,scaler,False,ft='feat',emg_scale=emg_scale) 
+    x_train_noise_cnn, scaler, x_min, x_max = extract_scale(x_train_noise,scaler,False,ft='feat',emg_scale=emg_scale,caps=True) 
     x_train_noise_cnn = x_train_noise_cnn.astype('float32')
 
     # reshape data for nonconvolutional network
@@ -113,7 +113,7 @@ def prep_train_caps(x_train, params):
     x_train_lda = extract_feats(x_train,ft='feat',emg_scale=emg_scale)
     x_train_aug = extract_feats(x_train_noise,ft='feat',emg_scale=emg_scale)
 
-    return trainmlp, traincnn, y_train_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug, emg_scale, scaler
+    return trainmlp, traincnn, y_train_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug, emg_scale, scaler, x_min, x_max
 
 def prep_train_data(d, raw, params):
     x_train, _, x_valid, p_train, _, p_valid = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,load=True,train_grp=d.train_grp)
@@ -838,7 +838,7 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
         feat_out = mav
     return feat_out
 
-def extract_scale(x,scaler,load=True, ft='feat',emg_scale=[1,1,1,1,1,1]):
+def extract_scale(x,scaler,load=True, ft='feat',emg_scale=[1,1,1,1,1,1],caps=False):
     # extract features 
     if ft == 'feat':
         num_feat = 4
@@ -854,7 +854,14 @@ def extract_scale(x,scaler,load=True, ft='feat',emg_scale=[1,1,1,1,1,1]):
     else:
         x_vae = scaler.fit_transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
     
-    return x_vae, scaler
+    x_test = x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)
+    x_min = x_test.min(axis=0)
+    x_max = x_test.max(axis=0)
+    
+    if caps:
+        return x_vae, scaler, x_min, x_max
+    else:
+        return x_vae, scaler, x_min, x_max
 
 def matAR(data,order):
     datalen = len(data)
