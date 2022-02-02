@@ -62,7 +62,7 @@ rampTime = 500
 ramp_numerator = np.zeros((1, numModes), dtype=float, order='F')
 ramp_denominator = np.ones((1, numModes), dtype=float, order='F') * (rampTime / pce.get_var('DAQ_FRINC'))
 # Neural network architectures
-mlp_arch = ['relu','bn','relu','bn','relu','bn','den','bn','softmax']
+mlp_arch = ['RELU1','BN1','RELU2','BN2','RELU3','BN3','DEN','BN4','SOFTMAX']
 # Test loading
 print('ho')
 

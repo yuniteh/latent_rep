@@ -22,15 +22,19 @@ elif sys.argv[2] == 'MLP':
     print(folder)
     files = [f for f in listdir(folder) if isfile(join(folder, f))]
     for file in files:
-        temp = np.genfromtxt(join(folder,file), delimiter=',')
-        print(temp.shape)
         if file[:-4] != 'ARCH':
+            temp = np.genfromtxt(join(folder,file), delimiter=',')
             if file[:-4] == 'scale':
                 pce.set_var('EMG_SCALE', temp[:,0].astype(float, order='F'))
                 pce.set_var('X_MIN', temp[:,1].astype(float, order='F'))
                 pce.set_var('X_MAX', temp[:,2].astype(float, order='F'))
             else:
                 pce.set_var(file[:-4], temp.astype(float, order='F'))
+        else:
+            temp = np.genfromtxt(join(folder,file),dtype='str', delimiter=',')
+            temp = "/".join(temp)
+            pce.set_var(file[:-4], temp)
+    
 else:
     numClasses = 5
     out_map = pce.get_var('OUT_MAP').to_np_array()
