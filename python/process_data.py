@@ -797,7 +797,7 @@ def extract_feats_fast(raw):
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     return feat_out
 
-def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
+def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=1):
     if raw.shape[-1] == 1:
         raw = np.squeeze(raw)
     N=raw.shape[2]
@@ -838,7 +838,7 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
         feat_out = mav
     return feat_out
 
-def extract_scale(x,scaler,load=True, ft='feat',emg_scale=[1,1,1,1,1,1],caps=False):
+def extract_scale(x,scaler,load=True, ft='feat',emg_scale=1,caps=False):
     # extract features 
     if ft == 'feat':
         num_feat = 4

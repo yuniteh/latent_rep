@@ -530,7 +530,7 @@ def extract_feats(raw,th=0.01,ft='feat'):
     next = np.roll(raw, -1, axis=1)
 
     # zero crossings
-    zero_change = (next[...,:-1]*raw[...,:-1] < 0) & (np.absolute(next[...,:-1]-raw[...,:-1])>(emg_scale*z_th))
+    zero_change = (next[...,:-1]*raw[...,:-1] < 0) & (np.absolute(next[...,:-1]-raw[...,:-1])>z_th)
     zc = np.sum(zero_change, axis=1)
 
     # slope sign change
