@@ -7,6 +7,7 @@
 import sys
 import pcepy.pce as pce
 import numpy as np
+import pickle
 
 if sys.argv[2] == 'LR':
     print('Loading linear regression weights...')
@@ -14,8 +15,16 @@ if sys.argv[2] == 'LR':
     pce.set_var('W', w.astype(float, order='F'))
 elif sys.argv[2] == 'MLP':
     print('Loading MLP weights...')
-    w = np.genfromtxt(str(sys.argv[1]) + 'w.csv')
-    pce.set_var('NN_W', w.astype(float, order='F'))
+    with open(str(sys.argv[1]), 'rb') as f:
+        w, arch, emg_scale, x_min, x_max = pickle.load(f)
+    
+    for layer in arch:
+        pce.set_var(layer, w[layer])
+    
+    pce.set_var('ARCH', arch)
+    pce.set_var('EMG_SCALE', emg_scale)
+    pce.set_var('X_MIN', x_min)
+    pce.set_var('X_MAX', x_max)
 else:
     numClasses = 5
     out_map = pce.get_var('OUT_MAP').to_np_array()

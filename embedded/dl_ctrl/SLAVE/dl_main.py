@@ -4,7 +4,7 @@
 # FUNCTION        : Adapt upper limb data using an LDA classifier. To be used with Unity project.
 # DEPENDENCIES    : None
 # SLAVE STEP      : Replace Classify
-__author__ = 'lhargrove & rwoodward & yteh'
+#_author__ = 'lhargrove & rwoodward & yteh'
 ########################################################################################################################
 
 # Import all the required modules. These are helper functions that will allow us to get variables from CAPS PC
@@ -13,6 +13,7 @@ import csv
 import pcepy.pce as pce
 import pcepy.feat as feat
 import numpy as np
+import pickle
 
 # Class dictionary
 classmap = {0: 'NO MOVEMENT',
@@ -62,203 +63,206 @@ ramp_numerator = np.zeros((1, numModes), dtype=float, order='F')
 ramp_denominator = np.ones((1, numModes), dtype=float, order='F') * (rampTime / pce.get_var('DAQ_FRINC'))
 # Neural network architectures
 mlp_arch = ['relu','bn','relu','bn','relu','bn','den','bn','softmax']
+# Test loading
+print('ho')
 
 def dispose():
     pass
 
 ############################################# MAIN FUNCTION LOOP #######################################################
 def run():
+    print('hi')
     # Try/catch to see if data already exists.
-    try:
-        pce.get_var('TRAIN_FLAG')
-    except:
-        # Initialise all variables.
-        initialiseVariables()
+    # try:
+    #     pce.get_var('TRAIN_FLAG')
+    # except:
+    #     # Initialise all variables.
+    #     initialiseVariables()
 
-    # Don't do anything if PCE is training.
-    if pce.get_var('TRAIN_STATUS') != 1:
+    # # Don't do anything if PCE is training.
+    # if pce.get_var('TRAIN_STATUS') != 1:
     
-        # Get global variables.
-        # global adaptNMCounter                                                 #yt
-        # Define local variables.
-        flag = int(pce.get_var('TRAIN_FLAG'))
-        dnt_on = int(pce.get_var('DNT_ON'))
-        N_R = pce.get_var('N_R').to_np_array()
-        class_est = 0
-        armflag = int(pce.get_var('ARM_FLAG'))
+    #     # Get global variables.
+    #     # global adaptNMCounter                                                 #yt
+    #     # Define local variables.
+    #     flag = int(pce.get_var('TRAIN_FLAG'))
+    #     dnt_on = int(pce.get_var('DNT_ON'))
+    #     N_R = pce.get_var('N_R').to_np_array()
+    #     class_est = 0
+    #     armflag = int(pce.get_var('ARM_FLAG'))
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # PROCESS DATA
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get raw DAQ data for the .
-        raw_DAQ = np.array(pce.get_var('DAQ_DATA').to_np_array()[0:numEMG,:], order='F')
-        # Get converted DAQ data between +/- voltRange.
-        raw_conv = (raw_DAQ.astype(float) / (np.power(2, 16) - 1)) * (voltRange * 2) - voltRange
+    #     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #     # PROCESS DATA
+    #     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #     # Get raw DAQ data for the .
+    #     raw_DAQ = np.array(pce.get_var('DAQ_DATA').to_np_array()[0:numEMG,:], order='F')
+    #     # Get converted DAQ data between +/- voltRange.
+    #     raw_conv = (raw_DAQ.astype(float) / (np.power(2, 16) - 1)) * (voltRange * 2) - voltRange
         
-        # Get channel MAV.
-        if CAPSMAV:
-            chan_mav = pce.get_var('CHAN_MAV').to_np_array()[0:numEMG]
-        else:
-            # Get the absolute value of the data window.
-            raw_abs = np.abs(raw_conv)
-            # Get the average of the window.
-            chan_mav = np.transpose([np.average(raw_abs, axis=1)])
+    #     # Get channel MAV.
+    #     if CAPSMAV:
+    #         chan_mav = pce.get_var('CHAN_MAV').to_np_array()[0:numEMG]
+    #     else:
+    #         # Get the absolute value of the data window.
+    #         raw_abs = np.abs(raw_conv)
+    #         # Get the average of the window.
+    #         chan_mav = np.transpose([np.average(raw_abs, axis=1)])
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # CLASSIFICATION
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Extract features from raw data
-        feat_data = feat.extract(featVal, raw_DAQ)
+    #     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #     # CLASSIFICATION
+    #     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #     # Extract features from raw data
+    #     feat_data = feat.extract(featVal, raw_DAQ)
 
-        if pce.get_var('SAVE') == 1:
-            dir_full = pce.get_var('DAQ_OUT_FNAME')
-            dir = dir_full.split('/')
-            daqname = dir[-1]
-            dir = daqname.split('.')
-            name = dir[0]
-            ind = dir_full.rfind('/')
-            ind = dir_full[0:ind].rfind('/')
-            print(dir_full[0:ind])
+    #     if pce.get_var('SAVE') == 1:
+    #         dir_full = pce.get_var('DAQ_OUT_FNAME')
+    #         dir = dir_full.split('/')
+    #         daqname = dir[-1]
+    #         dir = daqname.split('.')
+    #         name = dir[0]
+    #         ind = dir_full.rfind('/')
+    #         ind = dir_full[0:ind].rfind('/')
+    #         print(dir_full[0:ind])
             
-            saveWeights(dir_full[0:ind],name)
-            pce.set_var('SAVE', 0)
+    #         saveWeights(dir_full[0:ind],name)
+    #         pce.set_var('SAVE', 0)
 
-        # IF FLAG == RESET
-        if (flag == 999):
-            print('RESET')
-            # All variables will be initialised back to 0 (or their initial values).
-            initialiseVariables()
+    #     # IF FLAG == RESET
+    #     if (flag == 999):
+    #         print('RESET')
+    #         # All variables will be initialised back to 0 (or their initial values).
+    #         initialiseVariables()
                             
-        # IF FLAG == INITIAL CLASS TRAINER ACTIVATED
-        elif (pce.get_var('CLASS_ACTIVE') == 0) & ((flag >= 0) & (flag < 99)):
-            N_T = pce.get_var('N_T').to_np_array()
-            # Reset the temp training counter for the specific class.
-            N_T[0, flag] = 0
-            pce.set_var('N_T', N_T)
-            # Toggle the class_active variable to 1.
-            pce.set_var('CLASS_ACTIVE', 1)            
+    #     # IF FLAG == INITIAL CLASS TRAINER ACTIVATED
+    #     elif (pce.get_var('CLASS_ACTIVE') == 0) & ((flag >= 0) & (flag < 99)):
+    #         N_T = pce.get_var('N_T').to_np_array()
+    #         # Reset the temp training counter for the specific class.
+    #         N_T[0, flag] = 0
+    #         pce.set_var('N_T', N_T)
+    #         # Toggle the class_active variable to 1.
+    #         pce.set_var('CLASS_ACTIVE', 1)            
 
-        # IF FLAG == NO MOVEMENT
-        elif (flag == 0):
-            if (armflag != 0):
-                print('COLLECTING ' + classmap[flag])
-                # Prepare data for the 'no movement' class. Create means and covariance matricies.
-                classPreparer(flag, feat_data, chan_mav, 'THRESH_VAL', 0, dnt_on)
-            else:
-                pce.set_var('COLLECTING',0)
+    #     # IF FLAG == NO MOVEMENT
+    #     elif (flag == 0):
+    #         if (armflag != 0):
+    #             print('COLLECTING ' + classmap[flag])
+    #             # Prepare data for the 'no movement' class. Create means and covariance matricies.
+    #             classPreparer(flag, feat_data, chan_mav, 'THRESH_VAL', 0, dnt_on)
+    #         else:
+    #             pce.set_var('COLLECTING',0)
 
-        # IF FLAG == ANY OTHER CLASS
-        elif (99 > flag >= 1) & (N_R[0, 0] >= 1): 
-            # Compare the current channel MAV against the no movement threshold, if it exceeds then continue.
-            if (armflag != 0) & (np.average(chan_mav) > (thresX * pce.get_var('THRESH_VAL'))):
-                print('COLLECTING ' + classmap[flag])
-                # Prepare data for any movement other than 'no movement'. Create means and covariance matricies.
-                classPreparer(flag, feat_data, chan_mav, ('CLASS_MAV' + str(flag)), 0, dnt_on)
-            else:
-                pce.set_var('COLLECTING',0)
+    #     # IF FLAG == ANY OTHER CLASS
+    #     elif (99 > flag >= 1) & (N_R[0, 0] >= 1): 
+    #         # Compare the current channel MAV against the no movement threshold, if it exceeds then continue.
+    #         if (armflag != 0) & (np.average(chan_mav) > (thresX * pce.get_var('THRESH_VAL'))):
+    #             print('COLLECTING ' + classmap[flag])
+    #             # Prepare data for any movement other than 'no movement'. Create means and covariance matricies.
+    #             classPreparer(flag, feat_data, chan_mav, ('CLASS_MAV' + str(flag)), 0, dnt_on)
+    #         else:
+    #             pce.set_var('COLLECTING',0)
 
-        # CLASSIFY AND FORWARD PASS
-        # To classify the flag must be 0, 'no motion' data must be collected (N_R[0,0] >= 1).
-        elif (flag == -1) & (N_R[0, 0] >= 1.0):
-            out_map = pce.get_var('OUT_MAP').to_np_array()
-            # Check that there is a new class to train.
-            if pce.get_var('NEW_CLASS') == 1:
-                print('TRAINING')
-                # Create vector with just the values of classes trained (for remapping purposes).
-                classList = np.nonzero(N_R)[1]
-                # Update out_map.
-                out_map[0,0:len(classList)] = classList
-                pce.set_var('OUT_MAP', out_map)
-                # If channel data is poor, the LDA will fail to classify and will throw a singular matrix error. Catch this error.
-                try:
-                    # Train using an LDA classifier.
-                    (wg_data, cg_data) = makeLDAClassifier(classList)   
-                    # Add weights to WG and CG arrays and set to PCE.
-                    updateWgAndCg(wg_data, cg_data, classList)
-                    # Toggle new_class parameter.
-                    pce.set_var('NEW_CLASS', 0)
-                except: 
-                    print('ERROR: Bad pooled covariance data resulting in singular matrix.')
-            # Get weights. Remove non-trained columns.
-            wg_data = pce.get_var('WG_DATA').to_np_array()[:, out_map.tolist()[0]]
-            cg_data = pce.get_var('CG_DATA').to_np_array()[0, out_map.tolist()[0]]
-            # Forward pass to get estimate.
-            lda_out = (np.dot(feat_data, wg_data) + cg_data)
-            # Take argmax and remap for class value (i.e. 0 for 'no movement')
-            class_est =  float(out_map[0, (np.argmax(lda_out))])
-            # Set estimate to PCE.
-            pce.set_var('CLASS_EST', class_est)
-            # Print message with class estimation
-            print('FORWARD - ' + str(class_est))
+    #     # CLASSIFY AND FORWARD PASS
+    #     # To classify the flag must be 0, 'no motion' data must be collected (N_R[0,0] >= 1).
+    #     elif (flag == -1) & (N_R[0, 0] >= 1.0):
+    #         out_map = pce.get_var('OUT_MAP').to_np_array()
+    #         # Check that there is a new class to train.
+    #         if pce.get_var('NEW_CLASS') == 1:
+    #             print('TRAINING')
+    #             # Create vector with just the values of classes trained (for remapping purposes).
+    #             classList = np.nonzero(N_R)[1]
+    #             # Update out_map.
+    #             out_map[0,0:len(classList)] = classList
+    #             pce.set_var('OUT_MAP', out_map)
+    #             # If channel data is poor, the LDA will fail to classify and will throw a singular matrix error. Catch this error.
+    #             try:
+    #                 # Train using an LDA classifier.
+    #                 (wg_data, cg_data) = makeLDAClassifier(classList)   
+    #                 # Add weights to WG and CG arrays and set to PCE.
+    #                 updateWgAndCg(wg_data, cg_data, classList)
+    #                 # Toggle new_class parameter.
+    #                 pce.set_var('NEW_CLASS', 0)
+    #             except: 
+    #                 print('ERROR: Bad pooled covariance data resulting in singular matrix.')
+    #         # Get weights. Remove non-trained columns.
+    #         wg_data = pce.get_var('WG_DATA').to_np_array()[:, out_map.tolist()[0]]
+    #         cg_data = pce.get_var('CG_DATA').to_np_array()[0, out_map.tolist()[0]]
+    #         # Forward pass to get estimate.
+    #         lda_out = (np.dot(feat_data, wg_data) + cg_data)
+    #         # Take argmax and remap for class value (i.e. 0 for 'no movement')
+    #         class_est =  float(out_map[0, (np.argmax(lda_out))])
+    #         # Set estimate to PCE.
+    #         pce.set_var('CLASS_EST', class_est)
+    #         # Print message with class estimation
+    #         print('FORWARD - ' + str(class_est))
 
-            # NN forward pass
-            nn_w = pce.get_var('NN_W').to_np_array()[]
-            nn_out = nn_pass(feat_data, nn_w, mlp_arch)
+    #         # NN forward pass
+    #         nn_w = pce.get_var('NN_W').to_np_array()[]
+    #         nn_out = nn_pass(feat_data, nn_w, mlp_arch)
                     
-        # DO NOTHING
-        # In the event that no classes have been trained, print a message to the PCE log.
-        # This statement is purely for debugging/logging purposes. It can be removed if necessary.
-        else:
-            print('NO ACTION')
+    #     # DO NOTHING
+    #     # In the event that no classes have been trained, print a message to the PCE log.
+    #     # This statement is purely for debugging/logging purposes. It can be removed if necessary.
+    #     else:
+    #         print('NO ACTION')
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # PROPORTIONAL CONTROL
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if useEnhanced:
-            # Enhanced Technique.
-            # Get total number of windows per class.
-            N_C = pce.get_var('N_C').to_np_array()
-            # Get summation of class/channel MAV.
-            s_control = pce.get_var('S_CONTROL').to_np_array()
-            # Determine average.
-            s_controlAvg = s_control * (1 / N_C)
-            # Calculate C from the equation.
-            c_control = np.sum(np.square(s_controlAvg), axis=0)
-            # Calculate proportional control.
-            X = np.square((1 / c_control) * (np.sum(s_controlAvg * chan_mav, axis=0)))
-        else:
-            # Incumbent Technique.
-            X = np.ones((1, numModes)) * np.average(chan_mav)
-        # Pre-filled matrix may contain NaN's and Inf's. If they exist make them zeros.
-        for i in range(0, X.shape[0]):
-            if (np.isnan(X[i]) or np.isinf(X[i])):
-                X[i] = 0.0
+    #     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #     # PROPORTIONAL CONTROL
+    #     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #     if useEnhanced:
+    #         # Enhanced Technique.
+    #         # Get total number of windows per class.
+    #         N_C = pce.get_var('N_C').to_np_array()
+    #         # Get summation of class/channel MAV.
+    #         s_control = pce.get_var('S_CONTROL').to_np_array()
+    #         # Determine average.
+    #         s_controlAvg = s_control * (1 / N_C)
+    #         # Calculate C from the equation.
+    #         c_control = np.sum(np.square(s_controlAvg), axis=0)
+    #         # Calculate proportional control.
+    #         X = np.square((1 / c_control) * (np.sum(s_controlAvg * chan_mav, axis=0)))
+    #     else:
+    #         # Incumbent Technique.
+    #         X = np.ones((1, numModes)) * np.average(chan_mav)
+    #     # Pre-filled matrix may contain NaN's and Inf's. If they exist make them zeros.
+    #     for i in range(0, X.shape[0]):
+    #         if (np.isnan(X[i]) or np.isinf(X[i])):
+    #             X[i] = 0.0
                 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # RAMPING
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if rampEnabled and (rampTime != 0):
-            # Step 1: bias each class numerator as not selected by subtracting 2 from numerator
-            for i in range(0, numModes):
-                ramp_numerator[:, i] -= 2
-            # Step 2: for any active DOF, reverse bias by adding 2, then add 1 more to decrease attenuation for that single class (total add = 3)
-            for i in range(0, numModes):
-                # Apply to active class as long as it's not 'no motion'.
-                if ((i == class_est) and (class_est != 0)):
-                    # Increment
-                    ramp_numerator[:, i] += 3
-                    # We never want to amplify, so make sure to cap the numerator.
-                    if (ramp_numerator[:, i] > ramp_denominator[:, i]):
-                        ramp_numerator[:, i] = ramp_denominator[:, i]
-                    # Scale signal
-                    X[i] = X[i] * ramp_numerator[:, i] / ramp_denominator[:, i]
-                # Limit so that any non-active class numerator never falls below zero.
-                if (ramp_numerator[:, i] < 0):
-                    ramp_numerator[:, i] = 0.0
+    #     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #     # RAMPING
+    #     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #     if rampEnabled and (rampTime != 0):
+    #         # Step 1: bias each class numerator as not selected by subtracting 2 from numerator
+    #         for i in range(0, numModes):
+    #             ramp_numerator[:, i] -= 2
+    #         # Step 2: for any active DOF, reverse bias by adding 2, then add 1 more to decrease attenuation for that single class (total add = 3)
+    #         for i in range(0, numModes):
+    #             # Apply to active class as long as it's not 'no motion'.
+    #             if ((i == class_est) and (class_est != 0)):
+    #                 # Increment
+    #                 ramp_numerator[:, i] += 3
+    #                 # We never want to amplify, so make sure to cap the numerator.
+    #                 if (ramp_numerator[:, i] > ramp_denominator[:, i]):
+    #                     ramp_numerator[:, i] = ramp_denominator[:, i]
+    #                 # Scale signal
+    #                 X[i] = X[i] * ramp_numerator[:, i] / ramp_denominator[:, i]
+    #             # Limit so that any non-active class numerator never falls below zero.
+    #             if (ramp_numerator[:, i] < 0):
+    #                 ramp_numerator[:, i] = 0.0
 
-        # The original equation is 'O_j = B_j[G_j(X) - T_j]', where: 
-        # O_j is output speed, B_j is the boost, G_j is the gain, T_j is the threshold, and X is the channel MAV.
-        # For PR the threshold and gain are typically 1, while the boost is 2.
-        #prop_control = sig_boost * ((sig_gain * X) - ((voltRange / 100.0) * sig_thres))
-        prop_control = X
-        # If the value of prop_control is below 0, it could be because of the threshold equation. If so, make the values 0.
-        for i in range(0, prop_control.shape[0]):
-            if (prop_control[i] < 0):
-                prop_control[i] = 0.0
-        # Set proportional control value to PCE variable.
-        pce.set_var('PROP_CONTROL', np.array(prop_control, dtype=float, order='F'))        
-    else:
-        print('TRAINING HERE...')
+    #     # The original equation is 'O_j = B_j[G_j(X) - T_j]', where: 
+    #     # O_j is output speed, B_j is the boost, G_j is the gain, T_j is the threshold, and X is the channel MAV.
+    #     # For PR the threshold and gain are typically 1, while the boost is 2.
+    #     #prop_control = sig_boost * ((sig_gain * X) - ((voltRange / 100.0) * sig_thres))
+    #     prop_control = X
+    #     # If the value of prop_control is below 0, it could be because of the threshold equation. If so, make the values 0.
+    #     for i in range(0, prop_control.shape[0]):
+    #         if (prop_control[i] < 0):
+    #             prop_control[i] = 0.0
+    #     # Set proportional control value to PCE variable.
+    #     pce.set_var('PROP_CONTROL', np.array(prop_control, dtype=float, order='F'))        
+    # else:
+    #     print('TRAINING HERE...')
 #######################################################################################################################
 # Function    : initialiseVariables(args)
 # args        : None.
@@ -469,27 +473,27 @@ def clearWeights():
 # args        : x_in: input, w: layer weights, fxn: activation fxn, arch: string of layer type or act fxn
 # Description : forward pass through trained nn
 #######################################################################################################################
-def dense(x_in, w, fxn = 'relu'):
-    out = (x_in @ w[0]) + w[1]
-    if fxn == 'relu':
-        out *= (out > 0)
-    elif fxn == 'softmax':
-        out = np.exp(out) / np.sum(np.exp(out), axis=1)[...,np.newaxis]
-    return out
+# def dense(x_in, w, fxn = 'relu'):
+#     out = (x_in @ w[0]) + w[1]
+#     if fxn == 'relu':
+#         out *= (out > 0)
+#     elif fxn == 'softmax':
+#         out = np.exp(out) / np.sum(np.exp(out), axis=1)[...,np.newaxis]
+#     return out
 
-def bn(x_in, w):
-    out = ((w[0] * (x_in - w[2])) / np.sqrt(w[3] + 0.001)) + w[1]
-    return out
+# def bn(x_in, w):
+#     out = ((w[0] * (x_in - w[2])) / np.sqrt(w[3] + 0.001)) + w[1]
+#     return out
 
-def nn_pass(x, w, arch):
-    i = 0 
-    for l in arch:
-        if l == 'bn':
-            w_layer = w[i:i+4]
-            x = bn(x, w_layer)
-            i += 4
-        else:
-            w_layer = w[i:i+2]
-            x = dense(x, w_layer, fxn = l)
-            i += 2
-    return x
+# def nn_pass(x, w, arch):
+#     i = 0 
+#     for l in arch:
+#         if l == 'bn':
+#             w_layer = w[i:i+4]
+#             x = bn(x, w_layer)
+#             i += 4
+#         else:
+#             w_layer = w[i:i+2]
+#             x = dense(x, w_layer, fxn = l)
+#             i += 2
+#     return x
