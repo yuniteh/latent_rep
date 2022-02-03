@@ -113,6 +113,7 @@ def run():
         
         # NN forward pass
         nn_out = nn_pass(feat_out, mlp_arch)
+        print(np.argmax(nn_out))
         
     #     # Get channel MAV.
     #     if CAPSMAV:
