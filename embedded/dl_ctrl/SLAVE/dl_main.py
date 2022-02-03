@@ -68,9 +68,9 @@ DAQ_conv = (2**16-1)/2
 try:
     mlp_temp = pce.get_var('ARCH')
     mlp_arch = np.array(mlp_temp.split('/'))
-    print('mlp')
     emg_scale = pce.get_var('EMG_SCALE').to_np_array()
-    print('emg')
+    x_min = np.tile(pce.get_var('X_MIN').to_np_array(),(numEMG,1)).T
+    x_max = np.tile(pce.get_var('X_MAX').to_np_array(),(numEMG,1)).T
 except:
     print('missing trained params')
 
@@ -105,18 +105,14 @@ def run():
         raw_DAQ = np.array(pce.get_var('DAQ_DATA').to_np_array()[0:numEMG,:], order='F')
         # Get converted DAQ data between +/- voltRange.
         raw_conv = (raw_DAQ.astype(float) / (np.power(2, 16) - 1)) * (voltRange * 2) - voltRange
-        # daq.DAQ_DATA = double(A') / (2^16 - 1) * 10 - 5; % Scale to +/-5 Volts appropriately
 
         # Scale and extract
-        # emg_scale_DAQ = ((emg_scale + voltRange)/(voltRange*2))*(np.power(2, 16) - 1)
-        # print(emg_scale_DAQ)
-        print(emg_scale)
-        scaled_raw = emg_scale * raw_conv ## might be problem
-        scaled_DAQ = ((scaled_raw + voltRange)/(voltRange*2))*(np.power(2,16)-1)
-        feat_scaled = feat.extract(featVal, scaled_DAQ.astype('uint16')) ## size = 1x60 (numfeat)
+        scaled_raw = emg_scale * (raw_DAQ.astype('float') - DAQ_conv) + DAQ_conv ## might be problem
+        feat_scaled = feat.extract(featVal, scaled_raw.astype('uint16')) ## size = 1x24 (numfeat)
+        feat_out = minmax(feat_scaled)
+        
         # NN forward pass
-        # nn_out = nn_pass(feat_data, mlp_arch)
-        print(feat_scaled)
+        nn_out = nn_pass(feat_out, mlp_arch)
         
     #     # Get channel MAV.
     #     if CAPSMAV:
@@ -509,5 +505,5 @@ def nn_pass(x, arch):
             x = dense(x, w, fxn = l)
     return x
 
-def minmax(x, xmin, xmax):
-    return (x - np.tile(xmin,4)) / (np.tile(xmax,4) - np.tile(xmin,4))
+def minmax(x):
+    return (x - x_min) / (x_max - x_min)
