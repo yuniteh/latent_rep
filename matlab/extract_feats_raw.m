@@ -1,7 +1,7 @@
-function feat_out = extract_feats(raw)
+function feat_out = extract_feats_raw(raw)
 N=size(raw,2);
-z_th = 164;
-s_th = 99;
+z_th = .025;
+s_th = .015;
 mean_mav = repmat(mean(raw,2),[1,N]);
 raw_demean = raw-mean_mav;
 

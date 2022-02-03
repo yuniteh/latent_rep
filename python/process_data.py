@@ -797,42 +797,45 @@ def extract_feats_fast(raw):
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     return feat_out
 
-def extract_feats_uint(raw):
+def extract_feats_caps(raw,uint=False):
     # raw format (samps x chan x win)
     if raw.shape[-1] == 1:
         raw = np.squeeze(raw)
-    N=raw.shape[2]
-    samp = raw.shape[0]
-    z_th = 164
-    s_th = 99
+    N = raw.shape[2]
+    ch = raw.shape[1]
+    if uint:
+        z_th = 164
+        s_th = 99
+    else:
+        z_th = 0.025
+        s_th = 0.015
+
     mean_mav = np.tile(np.mean(raw,axis=2)[...,np.newaxis],(1,1,N))
     raw_demean = raw-mean_mav
 
     mav=np.sum(np.abs(raw_demean),axis=2)
-    print(mav.shape)
 
     last = raw_demean[...,:-2]
     next = raw_demean[...,1:]
 
     zero_change = (next*raw_demean[...,:-1] < 0) & ((np.abs(next) >= z_th) | (np.abs(raw_demean[...,:-1])>=z_th))
     zc = np.sum(zero_change, axis=2)
-    print(zc.shape)
 
     next_s = next[...,1:] - raw_demean[...,1:-1]
     last_s = raw_demean[...,1:-1] - last
     sign_change = ((next_s > 0) & (last_s < 0)) | ((next_s < 0) & (last_s > 0))
     th_check = (np.abs(next_s) > s_th) | (np.abs(last_s) > (s_th))
     ssc = np.sum(sign_change & th_check, axis=2)
-    print(ssc.shape)
 
     wl = np.sum(np.abs(next - raw_demean[...,:-1]), axis=2)
-    print(wl.shape)
 
     feat_out = np.concatenate([mav,wl,zc,ssc],-1)
-    print(feat_out.shape)
     feat_out = feat_out/200
 
-    return feat_out, mean_mav
+    if not uint:
+        feat_out[...,:ch*2] = (2**16-1)*feat_out[...,:ch*2]/10
+
+    return feat_out
 
 
 def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=1):
@@ -886,7 +889,7 @@ def extract_scale(x,scaler,load=True, ft='feat',emg_scale=1,caps=False):
         num_feat = 1
     
     if caps:
-        x_temp = np.transpose(extract_feats_uint(x,ft=ft,emg_scale=emg_scale).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
+        x_temp = np.transpose(extract_feats_caps(x).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
         x_test = x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)
         x_min = x_test.min(axis=0)
         x_max = x_test.max(axis=0)

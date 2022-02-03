@@ -15,7 +15,6 @@ from numpy import extract
 import pcepy.pce as pce
 import pcepy.feat as feat
 import numpy as np
-import pickle
 
 # Class dictionary
 classmap = {0: 'NO MOVEMENT',
@@ -63,8 +62,9 @@ rampTime = 500
 # Define the starting ramp numerators and denominators.
 ramp_numerator = np.zeros((1, numModes), dtype=float, order='F')
 ramp_denominator = np.ones((1, numModes), dtype=float, order='F') * (rampTime / pce.get_var('DAQ_FRINC'))
+# DAQ UINT ZERO
+DAQ_conv = (2**16-1)/2
 # Neural network architectures
-print('hi')
 try:
     mlp_temp = pce.get_var('ARCH')
     mlp_arch = np.array(mlp_temp.split('/'))
@@ -113,14 +113,9 @@ def run():
         print(emg_scale)
         scaled_raw = emg_scale * raw_conv ## might be problem
         scaled_DAQ = ((scaled_raw + voltRange)/(voltRange*2))*(np.power(2,16)-1)
-        feat_data = feat.extract(featVal, raw_DAQ) ## size = 1x60 (numfeat)
         feat_scaled = feat.extract(featVal, scaled_DAQ.astype('uint16')) ## size = 1x60 (numfeat)
-        feat_manual = extract_feats(raw_conv)
-        feat_num = (feat_data.astype(float) / (np.power(2, 16) - 1)) * (voltRange * 2)
         # NN forward pass
         # nn_out = nn_pass(feat_data, mlp_arch)
-        print(feat_manual)
-        print(feat_data)
         print(feat_scaled)
         
     #     # Get channel MAV.
@@ -516,33 +511,3 @@ def nn_pass(x, arch):
 
 def minmax(x, xmin, xmax):
     return (x - np.tile(xmin,4)) / (np.tile(xmax,4) - np.tile(xmin,4))
-
-def extract_feats(raw,th=0.01,ft='feat'):
-    if raw.shape[-1] == 1:
-        raw = np.squeeze(raw)
-    N=raw.shape[1]
-    z_th = 0.025
-    s_th = 0.015
-
-    mav=np.sum(np.absolute(raw),axis=1)/N
-
-    last = np.roll(raw, 1, axis=1)
-    next = np.roll(raw, -1, axis=1)
-
-    # zero crossings
-    zero_change = (next[...,:-1]*raw[...,:-1] < 0) & (np.absolute(next[...,:-1]-raw[...,:-1])>z_th)
-    zc = np.sum(zero_change, axis=1)
-
-    # slope sign change
-    next_s = next[...,1:-1] - raw[...,1:-1]
-    last_s = raw[...,1:-1] - last[...,1:-1]
-    sign_change = ((next_s > 0) & (last_s < 0)) | ((next_s < 0) & (last_s > 0))
-    th_check = (np.absolute(next_s) >s_th) & (np.absolute(last_s) > (s_th))
-    ssc = np.sum(sign_change & th_check, axis=1)
-
-    # waveform length
-    wl = np.sum(np.absolute(next[...,:-1] - raw[...,:-1]), axis=1)
-
-    feat_out = np.concatenate([mav,wl,zc,ssc],-1)
-
-    return feat_out
