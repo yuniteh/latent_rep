@@ -28,11 +28,19 @@ def load_raw(filename):
 # params structure: [subject ID, Iter, Index, Training group, DOF, Pos]
 def load_train_data(filename):
     struct = scipy.io.loadmat(filename)
+
     feat = struct['feat']
     params = struct['params']
     daq = struct['daq']
 
     return feat,params,daq
+
+def load_caps_train(filename):
+    struct = scipy.io.loadmat(filename)
+    data = struct['data_out']
+    params = struct['params_out']
+    
+    return data, params
 
 def process_daq(daq,params,win=200,ch=6):
     trial_data = np.zeros((win,6,params.shape[0]))
@@ -73,6 +81,39 @@ def truncate(data):
     data[data > 5] = 5
     data[data < -5] = -5
     return data
+
+def prep_train_caps(x_train, params):
+    x_train, p_train = shuffle(x_train, params, random_state = 0)
+    
+    emg_scale = np.ones((np.size(x_train,1),1))
+    for i in range(np.size(x_train,1)):
+        emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
+    x_train *= emg_scale
+
+    x_train_noise, _, y_train_clean = add_noise_caps(x_train, p_train)
+
+    # shuffle data to make even batches
+    x_train_noise, y_train_clean = shuffle(x_train_noise, y_train_clean, random_state = 0)
+
+    # Extract features
+    scaler = MinMaxScaler(feature_range=(0,1))
+    x_train_noise_cnn, scaler, x_min, x_max = extract_scale(x_train_noise,scaler,False,ft='feat',caps=True) 
+    x_train_noise_cnn = x_train_noise_cnn.astype('float32')
+
+    # reshape data for nonconvolutional network
+    x_train_noise_mlp = x_train_noise_cnn.reshape(x_train_noise_cnn.shape[0],-1)
+
+    # create batches
+    trainmlp = tf.data.Dataset.from_tensor_slices((x_train_noise_mlp, y_train_clean)).shuffle(x_train_noise_mlp.shape[0],reshuffle_each_iteration=True).batch(128)
+    traincnn = tf.data.Dataset.from_tensor_slices((x_train_noise_cnn, y_train_clean)).shuffle(x_train_noise_cnn.shape[0],reshuffle_each_iteration=True).batch(128)
+
+    # LDA data
+    y_train = p_train[:,0]
+    y_train_lda = y_train[...,np.newaxis] - 1
+    x_train_lda = extract_feats(x_train,ft='feat',emg_scale=emg_scale)
+    x_train_aug = extract_feats(x_train_noise,ft='feat',emg_scale=emg_scale)
+
+    return trainmlp, traincnn, y_train_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug, emg_scale, scaler, x_min, x_max
 
 def prep_train_data(d, raw, params):
     x_train, _, x_valid, p_train, _, p_valid = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,load=True,train_grp=d.train_grp)
@@ -346,7 +387,78 @@ def add_noise_all(x_train,x_test,p_train,p_test, sub, sub_type, dt=0, train_grp=
     
     return x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean
 
-def add_noise(raw, params, sub, n_type='flat', scale=5, real_noise=0,emg_scale=[1,1,1,1,1,1]):
+def add_noise_caps(raw, params):
+    num_ch = 4
+    split = 6
+    rep = 2
+    start_ch = 1
+    sub_params = np.tile(params,(rep*(num_ch-1)+1,1))
+    orig = np.tile(raw,(rep*(num_ch-1)+1,1,1))
+
+    out = np.array([]).reshape(0,6,200)
+    x = np.linspace(0,0.2,200)
+
+    # repeat twice if adding gauss and flat
+    for rep_i in range(rep):   
+        # loop through channel noise
+        for num_noise in range(start_ch,num_ch):
+            # find all combinations of noisy channels
+            ch_all = list(combinations(range(0,6),num_noise))
+            temp = cp.deepcopy(raw)
+            ch_split = temp.shape[0]//(split*len(ch_all))
+            
+            # loop through all channel combinations
+            for ch in range(0,len(ch_all)):
+                ch_noise = np.random.randint(3,size=(ch_split,num_noise))
+                ch_level = np.random.randint(5,size=(ch_split,num_noise))
+
+                if num_noise > 1:
+                    for i in range(ch_split):
+                        while np.array([x == ch_noise[i,0] for x in ch_noise[i,:]]).all() and np.array([x == ch_level[i,0] for x in ch_level[i,:]]).all():
+                            ch_noise[i,:] = np.random.randint(3,size = num_noise)
+                            ch_level[i,:] = np.random.randint(5,size = num_noise)
+
+                ch_ind = 0
+                for i in ch_all[ch]:       
+                    if rep_i == 0:
+                        temp[6*ch*ch_split:(6*ch+1)*ch_split,i,:] = 0
+                        temp[(6*ch+2)*ch_split:(6*ch+3)*ch_split,i,:] += np.sin(2*np.pi*60*x)
+                        temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += 2*np.sin(2*np.pi*60*x)
+                        temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += 3*np.sin(2*np.pi*60*x) 
+                        temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += 4*np.sin(2*np.pi*60*x)
+                        temp_split = temp[(6*ch+1)*ch_split:(6*ch+2)*ch_split,i,:]
+                        for temp_iter in range(ch_split):
+                            if ch_noise[temp_iter,ch_ind] == 0:
+                                temp_split[temp_iter,...] = 0
+                            elif ch_noise[temp_iter,ch_ind] == 1:
+                                temp_split[temp_iter,...] += np.random.normal(0,ch_level[temp_iter,ch_ind]+1,temp.shape[2])
+                            else:
+                                temp_split[temp_iter,...] += (ch_level[temp_iter,ch_ind]+1)*np.sin(2*np.pi*60*x)
+                        temp[(6*ch+1)*ch_split:(6*ch+2)*ch_split,i,:] = cp.deepcopy(temp_split)
+                    else:        
+                        temp[(6*ch)*ch_split:(6*ch+1)*ch_split,i,:] += 5*np.sin(2*np.pi*60*x)
+                        temp[(6*ch+1)*ch_split:(6*ch+2)*ch_split,i,:] += np.random.normal(0,1,temp.shape[2])
+                        temp[(6*ch+2)*ch_split:(6*ch+3)*ch_split,i,:] += np.random.normal(0,2,temp.shape[2])
+                        temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += np.random.normal(0,3,temp.shape[2])
+                        temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
+                        temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])
+
+                    ch_ind += 1 
+
+            out = np.concatenate((out,temp))
+    
+    out = np.concatenate((raw, out))
+
+    noisy, clean, y = out, orig, to_categorical(sub_params[:,0]-1)
+
+    clean = clean[...,np.newaxis]
+    noisy = noisy[...,np.newaxis]
+
+    noisy = truncate(noisy)
+    clean = truncate(clean)
+    return noisy,clean,y
+
+def add_noise(raw, params, n_type='flat', scale=5, real_noise=0,emg_scale=[1,1,1,1,1,1]):
     # Index subject and training group
     max_ch = raw.shape[1] + 1
     num_ch = int(n_type[-1]) + 1
@@ -685,7 +797,48 @@ def extract_feats_fast(raw):
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     return feat_out
 
-def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
+def extract_feats_caps(raw,uint=False):
+    # raw format (samps x chan x win)
+    if raw.shape[-1] == 1:
+        raw = np.squeeze(raw)
+    N = raw.shape[2]
+    ch = raw.shape[1]
+    if uint:
+        z_th = 164
+        s_th = 99
+    else:
+        z_th = 0.025
+        s_th = 0.015
+
+    mean_mav = np.tile(np.mean(raw,axis=2)[...,np.newaxis],(1,1,N))
+    raw_demean = raw-mean_mav
+
+    mav=np.sum(np.abs(raw_demean),axis=2)
+
+    last = raw_demean[...,:-2]
+    next = raw_demean[...,1:]
+
+    zero_change = (next*raw_demean[...,:-1] < 0) & ((np.abs(next) >= z_th) | (np.abs(raw_demean[...,:-1])>=z_th))
+    zc = np.sum(zero_change, axis=2)
+
+    next_s = next[...,1:] - raw_demean[...,1:-1]
+    last_s = raw_demean[...,1:-1] - last
+    sign_change = ((next_s > 0) & (last_s < 0)) | ((next_s < 0) & (last_s > 0))
+    th_check = (np.abs(next_s) > s_th) | (np.abs(last_s) > (s_th))
+    ssc = np.sum(sign_change & th_check, axis=2)
+
+    wl = np.sum(np.abs(next - raw_demean[...,:-1]), axis=2)
+
+    feat_out = np.concatenate([mav,wl,zc,ssc],-1)
+    feat_out = feat_out/200
+
+    if not uint:
+        feat_out[...,:ch*2] = (2**16-1)*feat_out[...,:ch*2]/10
+
+    return feat_out
+
+
+def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=1):
     if raw.shape[-1] == 1:
         raw = np.squeeze(raw)
     N=raw.shape[2]
@@ -714,7 +867,7 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
         wl = np.sum(np.absolute(next[...,:-1] - raw[...,:-1]), axis=2)
 
         # feat_out = 0
-        feat_out = np.concatenate([mav,zc,ssc,wl],-1)
+        feat_out = np.concatenate([mav,wl,zc,ssc],-1)
         
         if ft == 'tdar':
             AR = np.zeros((samp,raw.shape[1],order))
@@ -726,7 +879,7 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=[1,1,1,1,1]):
         feat_out = mav
     return feat_out
 
-def extract_scale(x,scaler,load=True, ft='feat',emg_scale=[1,1,1,1,1,1]):
+def extract_scale(x,scaler,load=True, ft='feat',emg_scale=1,caps=False):
     # extract features 
     if ft == 'feat':
         num_feat = 4
@@ -734,7 +887,14 @@ def extract_scale(x,scaler,load=True, ft='feat',emg_scale=[1,1,1,1,1,1]):
         num_feat = 10
     elif ft == 'mav':
         num_feat = 1
-    x_temp = np.transpose(extract_feats(x,ft=ft,emg_scale=emg_scale).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
+    
+    if caps:
+        x_temp = np.transpose(extract_feats_caps(x).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
+        x_test = x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)
+        x_min = x_test.min(axis=0)
+        x_max = x_test.max(axis=0)
+    else:
+        x_temp = np.transpose(extract_feats(x,ft=ft,emg_scale=emg_scale).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
     
     # scale features
     if load:
@@ -742,7 +902,10 @@ def extract_scale(x,scaler,load=True, ft='feat',emg_scale=[1,1,1,1,1,1]):
     else:
         x_vae = scaler.fit_transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
     
-    return x_vae, scaler
+    if caps:
+        return x_vae, scaler, x_min, x_max
+    else:
+        return x_vae, scaler
 
 def matAR(data,order):
     datalen = len(data)
