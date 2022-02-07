@@ -17,17 +17,7 @@ import pcepy.feat as feat
 import numpy as np
 
 # Class dictionary
-classmap = {0: 'NO MOVEMENT',
-            1: 'HAND OPEN',
-            2: 'HAND CLOSE',
-            3: 'WRIST PRO.',
-            4: 'WRIST SUP.',
-            5: 'WRIST FLEX.',
-            6: 'WRIST EXT.',
-            7: 'WRIST ADD.',
-            8: 'WRIST ABD.',
-            9: 'ELBOW FLEX.',
-            10: 'ELBOW EXT.'}
+classmap = [1,10,11,12,13,16,19]
 # Specify where the saved data is stored.
 datafolder = 'DATA'
 datadir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', datafolder))
@@ -113,7 +103,12 @@ def run():
         
         # NN forward pass
         nn_out = nn_pass(feat_out, mlp_arch)
-        print(np.argmax(nn_out))
+        pce.set_var('CLASS_EST', classmap[np.argmax(nn_out)])
+        # class_out[0,0] = classmap[np.argmax(nn_out)]
+        # pce.set_var('CLAS_OUT', class_out.astype(float, order='F'))
+        print(pce.get_var('MV_CLAS_OUT').to_np_array()[0,0])
+        # print(classmap[np.argmax(nn_out)])
+        print(pce.get_var('CLASFR_MAV').to_np_array()[0,0])
         
     #     # Get channel MAV.
     #     if CAPSMAV:
