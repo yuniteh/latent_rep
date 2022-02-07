@@ -1,25 +1,8 @@
 from numpy.core.defchararray import lower
 import tensorflow as tf
-from loop import create_foldername
-import numpy as np
-import os
-import pickle
-
-from sklearn.model_selection import train_test_split
-from tensorflow.keras.utils import to_categorical
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-from lda import train_lda, predict, eval_lda, eval_lda_ch
-from sklearn.utils import shuffle
-import sVAE_utils as dl
-import process_data as prd
-import copy as cp
-from datetime import date
-import time
-from numpy.linalg import eig, inv
-from types import SimpleNamespace 
-import keras.backend as K
+
+
 
 class Sess():
     def __init__(self,**settings):
