@@ -2,14 +2,14 @@ from matplotlib import pyplot as plt
 import os
 import numpy as np
 
-from keras.layers import Lambda, Input, Dense, Conv2D, Flatten, Conv2DTranspose, Reshape, concatenate, BatchNormalization, MaxPooling2D
-from keras.models import Model
-from keras.datasets import mnist
-from keras.losses import mse, binary_crossentropy, categorical_crossentropy
-from keras.utils import plot_model, to_categorical
-from keras import backend as K
-from keras import regularizers
-from keras import optimizers
+from tensorflow.keras.layers import Lambda, Input, Dense, Conv2D, Flatten, Conv2DTranspose, Reshape, concatenate, BatchNormalization, MaxPooling2D
+from tensorflow.keras.models import Model
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.losses import mse, binary_crossentropy, categorical_crossentropy
+from tensorflow.keras.utils import plot_model, to_categorical
+from tensorflow.keras import backend as K
+from tensorflow.keras import regularizers
+from tensorflow.keras import optimizers
 import tensorflow as tf
 import time
 

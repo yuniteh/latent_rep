@@ -1,6 +1,6 @@
 import tensorflow as tf
-from keras.layers import Dense, Flatten, Conv2D, BatchNormalization
-from keras import Model
+from tensorflow.keras.layers import Dense, Flatten, Conv2D, BatchNormalization
+from tensorflow.keras import Model
 import numpy as np
 
 ## Encoders

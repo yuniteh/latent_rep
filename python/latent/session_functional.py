@@ -2,7 +2,7 @@ import numpy as np
 import os
 import pickle
 
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 from sklearn.preprocessing import MinMaxScaler
 from latent.ml.lda import train_lda, predict, eval_lda, eval_lda_ch
 from sklearn.utils import shuffle
@@ -11,7 +11,7 @@ import latent.utils.data_utils as prd
 import copy as cp
 from datetime import date
 import time
-import keras.backend as K
+import tensorflow.keras.backend as K
 import timeit
 
 class Session():
