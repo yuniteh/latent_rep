@@ -2,9 +2,7 @@ import pickle
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.patches import Ellipse
-from scipy.interpolate import interp1d
 import seaborn as sns
-import matplotlib as mpl
 from matplotlib import gridspec
 
 

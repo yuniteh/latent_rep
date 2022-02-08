@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1' 
+VERSION = '0.0.2' 
 DESCRIPTION = 'Latent model package (NER, JNER)'
 LONG_DESCRIPTION = 'Python package that contains tools for latent representation project, including pipeline and machine learning tools.'
 

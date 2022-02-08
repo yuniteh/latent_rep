@@ -1,8 +1,4 @@
-from numpy.core.defchararray import lower
-import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
-
-
 
 class Sess():
     def __init__(self,**settings):

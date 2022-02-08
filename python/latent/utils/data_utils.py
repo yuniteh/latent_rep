@@ -5,14 +5,11 @@ import copy as cp
 import pickle
 import os
 from datetime import date
-from tensorflow.keras.utils import to_categorical
+from keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from sklearn.preprocessing import MinMaxScaler
-from collections import deque
 from itertools import combinations, product
-import time
-import json
 import pickle
 import tensorflow as tf
 from scipy.fftpack import fft, ifft
