@@ -2,7 +2,7 @@ import numpy as np
 import scipy.io 
 import pandas as pd
 from itertools import combinations
-import process_data as prd
+import latent.utils.data_utils as prd
 from numpy.linalg import eig, inv
 
 
