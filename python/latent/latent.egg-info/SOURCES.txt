@@ -1,0 +1,14 @@
+setup.py
+latent.egg-info/PKG-INFO
+latent.egg-info/SOURCES.txt
+latent.egg-info/dependency_links.txt
+latent.egg-info/top_level.txt
+ml/__init__.py
+ml/dl_functional.py
+ml/dl_manual.py
+ml/dl_subclass.py
+ml/lda.py
+utils/__init__.py
+utils/data_utils.py
+utils/plot_utils.py
+utils/stats_utils.py
