@@ -90,15 +90,21 @@ def prep_train_caps(x_train, params):
 
     x_train_noise, x_train_clean, y_train_clean = add_noise_caps(x_train, p_train)
 
-    # calculate class MAV
-
-
     # shuffle data to make even batches
-    x_train_noise, y_train_clean = shuffle(x_train_noise, y_train_clean, random_state = 0)
+    x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
+
+    # calculate class MAV
+    mav_all, _, _, _ = extract_scale(x_train_clean,load=False,ft='mav',caps=True)
+    mav_class = np.empty((y_train_clean.shape[1],x_train_clean.shape[1]))
+    for i in range(mav_class.shape[1]):
+        mav_class[i,:] = np.squeeze(np.mean(mav_all[y_train_clean[:,i].astype(bool),...],axis=0))
+    
+    print(mav_class)
+
 
     # Extract features
     scaler = MinMaxScaler(feature_range=(0,1))
-    x_train_noise_cnn, scaler, x_min, x_max = extract_scale(x_train_noise,scaler,False,ft='feat',caps=True) 
+    x_train_noise_cnn, scaler, x_min, x_max = extract_scale(x_train_noise,scaler=scaler,load=False,ft='feat',caps=True) 
     x_train_noise_cnn = x_train_noise_cnn.astype('float32')
 
     # reshape data for nonconvolutional network
@@ -906,7 +912,7 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=1):
         feat_out = mav
     return feat_out
 
-def extract_scale(x,scaler,load=True, ft='feat',emg_scale=1,caps=False):
+def extract_scale(x,scaler=0,load=True, ft='feat',emg_scale=1,caps=False):
     # extract features 
     if ft == 'feat':
         num_feat = 4
@@ -924,10 +930,13 @@ def extract_scale(x,scaler,load=True, ft='feat',emg_scale=1,caps=False):
         x_temp = np.transpose(extract_feats(x,ft=ft,emg_scale=emg_scale).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
     
     # scale features
-    if load:
-        x_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
+    if scaler != 0:
+        if load:
+            x_vae = scaler.transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
+        else:
+            x_vae = scaler.fit_transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
     else:
-        x_vae = scaler.fit_transform(x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)).reshape(x_temp.shape)
+        x_vae = x_temp
     
     if caps:
         return x_vae, scaler, x_min, x_max
