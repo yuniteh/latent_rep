@@ -98,8 +98,18 @@ def prep_train_caps(x_train, params):
     mav_class = np.empty((y_train_clean.shape[1],x_train_clean.shape[1]))
     for i in range(mav_class.shape[1]):
         mav_class[i,:] = np.squeeze(np.mean(mav_all[y_train_clean[:,i].astype(bool),...],axis=0))
+    mav_tot = np.sum(np.square(mav_class), axis=1)[...,np.newaxis]
+    print(mav_tot.shape)
+    print(mav_class.shape)
+    print(mav_all.shape)
     
-    print(mav_class)
+    prop = np.square((1 / mav_tot) * (mav_class @ np.squeeze(mav_all).T))
+    print(prop.shape)
+
+    # (7,)
+    # (6, 7)
+    # (16611, 6, 1, 1)
+    # (6, 6, 7)
 
 
     # Extract features
