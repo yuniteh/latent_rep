@@ -9,12 +9,13 @@
 
 # Import all the required modules. These are helper functions that will allow us to get variables from CAPS PC
 import os
-import csv
 
 from numpy import extract
 import pcepy.pce as pce
 import pcepy.feat as feat
 import numpy as np
+import copy as cp
+import time
 
 # Class dictionary
 classmap = [1,10,11,12,13,16,19]
@@ -54,27 +55,35 @@ ramp_numerator = np.zeros((1, numModes), dtype=float, order='F')
 ramp_denominator = np.ones((1, numModes), dtype=float, order='F') * (rampTime / pce.get_var('DAQ_FRINC'))
 # DAQ UINT ZERO
 DAQ_conv = (2**16-1)/2
-# Neural network architectures
 try:
+    # Neural network architectures
     mlp_temp = pce.get_var('ARCH')
     mlp_arch = np.array(mlp_temp.split('/'))
     emg_scale = pce.get_var('EMG_SCALE').to_np_array()
     x_min = np.tile(pce.get_var('X_MIN').to_np_array(),(numEMG,1)).T
     x_max = np.tile(pce.get_var('X_MAX').to_np_array(),(numEMG,1)).T
+    
+    w_all = []
+    for l in mlp_arch:
+        w_all.append(pce.get_var(l).to_np_array())
+    nn = True
+    # NN forward pass
+    class_out = pce.get_var('CLAS_OUT').to_np_array()
 except:
     print('missing trained params')
+    nn = False
 
 def dispose():
     pass
 
 ############################################# MAIN FUNCTION LOOP #######################################################
 def run():
-    # Try/catch to see if data already exists.
-    try:
-        pce.get_var('TRAIN_FLAG')
-    except:
-        # Initialise all variables.
-        initialiseVariables()
+    # # Try/catch to see if data already exists.
+    # try:
+    #     pce.get_var('TRAIN_FLAG')
+    # except:
+    #     # Initialise all variables.
+    #     initialiseVariables()
 
     # Don't do anything if PCE is training.
     if pce.get_var('TRAIN_STATUS') != 1:
@@ -82,33 +91,34 @@ def run():
         # Get global variables.
         # global adaptNMCounter                                                 #yt
         # Define local variables.
-        flag = int(pce.get_var('TRAIN_FLAG'))
-        dnt_on = int(pce.get_var('DNT_ON'))
-        N_R = pce.get_var('N_R').to_np_array()
-        class_est = 0
-        armflag = int(pce.get_var('ARM_FLAG'))
+        # flag = int(pce.get_var('TRAIN_FLAG'))
+        # dnt_on = int(pce.get_var('DNT_ON'))
+        # N_R = pce.get_var('N_R').to_np_array()
+        # class_est = 0
+        # armflag = int(pce.get_var('ARM_FLAG'))
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # PROCESS DATA
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get raw DAQ data for the .
-        raw_DAQ = np.array(pce.get_var('DAQ_DATA').to_np_array()[0:numEMG,:], order='F')
-        # Get converted DAQ data between +/- voltRange.
-        raw_conv = (raw_DAQ.astype(float) / (np.power(2, 16) - 1)) * (voltRange * 2) - voltRange
+        ctrl = pce.get_var('CTRL')
 
-        # Scale and extract
-        scaled_raw = emg_scale * (raw_DAQ.astype('float') - DAQ_conv) + DAQ_conv ## might be problem
-        feat_scaled = feat.extract(featVal, scaled_raw.astype('uint16')) ## size = 1x24 (numfeat)
-        feat_out = minmax(feat_scaled)
-        
-        # NN forward pass
-        nn_out = nn_pass(feat_out, mlp_arch)
-        pce.set_var('CLASS_EST', classmap[np.argmax(nn_out)])
+        if ctrl == 2 and nn:
+            # Get raw DAQ data for the .
+            raw_DAQ = np.array(pce.get_var('DAQ_DATA').to_np_array()[0:numEMG,:], order='F')
+            scaled_raw = emg_scale * (raw_DAQ.astype('float') - DAQ_conv) + DAQ_conv ## might be problem
+            feat_scaled = feat.extract(featVal, scaled_raw.astype('uint16')) ## size = 1x24 (numfeat)
+            feat_out = minmax(feat_scaled)
+
+            nn_out, prop_out = nn_pass(feat_out, mlp_arch)
+            class_out[0,0] = classmap[np.argmax(nn_out)]
+            pce.set_var('CLAS_OUT', class_out.astype(float, order='F'))
+            pce.set_var('PROP_OUT', prop_out.astype(float, order='F'))
+            
         # class_out[0,0] = classmap[np.argmax(nn_out)]
         # pce.set_var('CLAS_OUT', class_out.astype(float, order='F'))
-        print(pce.get_var('MV_CLAS_OUT').to_np_array()[0,0])
-        # print(classmap[np.argmax(nn_out)])
-        print(pce.get_var('CLASFR_MAV').to_np_array()[0,0])
+        # print(pce.get_var('MV_CLAS_OUT').to_np_array()[0,0])
+        # # print(classmap[np.argmax(nn_out)])
+        # print(pce.get_var('CLASFR_MAV').to_np_array()[0,0])
         
     #     # Get channel MAV.
     #     if CAPSMAV:
@@ -493,13 +503,22 @@ def bn(x_in, w):
     return out
 
 def nn_pass(x, arch):
+    if 'PROP' not in arch:
+        prop = 0
+    i = 0
     for l in arch:
-        w = pce.get_var(l).to_np_array()
+        w = w_all[i]
         if 'BN' in l:
             x = bn(x, w)
         else:
-            x = dense(x, w, fxn = l)
-    return x
+            if 'PROP' in l:
+                prop = dense(prev_x, w, fxn = 'RELU')
+            else:
+                prev_x = cp.deepcopy(x)
+                x = dense(x, w, fxn = l)
+        i += 1
+            
+    return x, prop
 
 def minmax(x):
     return (x - x_min) / (x_max - x_min)
