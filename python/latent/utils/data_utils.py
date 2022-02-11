@@ -1,3 +1,4 @@
+from re import A
 import numpy as np
 import scipy.io 
 import pandas as pd
@@ -107,10 +108,32 @@ def prep_train_caps(x_train, params):
     # LDA data
     y_train = p_train[:,0]
     y_train_lda = y_train[...,np.newaxis] - 1
-    x_train_lda = extract_feats(x_train,ft='feat',emg_scale=emg_scale)
-    x_train_aug = extract_feats(x_train_noise,ft='feat',emg_scale=emg_scale)
+    x_train_lda = extract_feats_caps(x_train)
+    x_train_aug = extract_feats_caps(x_train_noise)
 
     return trainmlp, traincnn, y_train_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug, emg_scale, scaler, x_min, x_max
+
+def prep_test_caps(x, params, scaler, emg_scale):
+    x, p_test = shuffle(x, params, random_state = 0)
+    y = to_categorical(p_test[:,0]-1)
+
+    x *= emg_scale
+
+    # shuffle data to make even batches
+    x_test, y_test = shuffle(x, y, random_state = 0)
+
+    # Extract features
+    x_test_cnn, _, _, _ = extract_scale(x_test,scaler,True,ft='feat',caps=True) 
+    x_test_cnn = x_test_cnn.astype('float32')
+
+    # reshape data for nonconvolutional network
+    x_test_mlp = x_test_cnn.reshape(x_test_cnn.shape[0],-1)
+    
+    # LDA data
+    y_lda = p_test[:,[0]] - 1
+    x_lda = extract_feats_caps(x)
+
+    return y_test, x_test_mlp, x_test_cnn, x_lda, y_lda
 
 def prep_train_data(d, raw, params):
     x_train, _, x_valid, p_train, _, p_valid = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,load=True,train_grp=d.train_grp)
@@ -385,6 +408,7 @@ def add_noise_all(x_train,x_test,p_train,p_test, sub, sub_type, dt=0, train_grp=
     return x_train_noise, x_train_clean, y_train_clean, x_test_noise, x_test_clean, y_test_clean
 
 def add_noise_caps(raw, params):
+    all_ch = raw.shape[1]
     num_ch = 4
     split = 6
     rep = 2
@@ -392,7 +416,7 @@ def add_noise_caps(raw, params):
     sub_params = np.tile(params,(rep*(num_ch-1)+1,1))
     orig = np.tile(raw,(rep*(num_ch-1)+1,1,1))
 
-    out = np.array([]).reshape(0,6,200)
+    out = np.array([]).reshape(0,all_ch,200)
     x = np.linspace(0,0.2,200)
 
     # repeat twice if adding gauss and flat
@@ -400,7 +424,7 @@ def add_noise_caps(raw, params):
         # loop through channel noise
         for num_noise in range(start_ch,num_ch):
             # find all combinations of noisy channels
-            ch_all = list(combinations(range(0,6),num_noise))
+            ch_all = list(combinations(range(0,all_ch),num_noise))
             temp = cp.deepcopy(raw)
             ch_split = temp.shape[0]//(split*len(ch_all))
             
