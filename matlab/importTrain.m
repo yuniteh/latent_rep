@@ -230,7 +230,7 @@ for subs = 1:iter
                 end
             end
             
-            trainfile = fullfile(MAT_subfolder_path, 'traindata.mat');
+            trainfile = fullfile('C:\Users\yteh\Documents\work\git\projects\latent_rep\python', 'traindata.mat');
             save(trainfile, 'data_out', 'params_out');
         end
     end
