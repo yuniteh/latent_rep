@@ -80,7 +80,7 @@ def truncate(data):
     data[data < -5] = -5
     return data
 
-def prep_train_caps(x_train, params):
+def prep_train_caps(x_train, params, prop_b = True):
     x_train, p_train = shuffle(x_train, params, random_state = 0)
     
     emg_scale = np.ones((np.size(x_train,1),1))
@@ -94,23 +94,15 @@ def prep_train_caps(x_train, params):
     x_train_noise, x_train_clean, y_train_clean = shuffle(x_train_noise, x_train_clean, y_train_clean, random_state = 0)
 
     # calculate class MAV
-    mav_all, _, _, _ = extract_scale(x_train_clean,load=False,ft='mav',caps=True)
-    mav_class = np.empty((y_train_clean.shape[1],x_train_clean.shape[1]))
-    for i in range(mav_class.shape[1]):
-        mav_class[i,:] = np.squeeze(np.mean(mav_all[y_train_clean[:,i].astype(bool),...],axis=0))
-    mav_tot = np.sum(np.square(mav_class), axis=1)[...,np.newaxis]
-    print(mav_tot.shape)
-    print(mav_class.shape)
-    print(mav_all.shape)
-    
-    prop = np.square((1 / mav_tot) * (mav_class @ np.squeeze(mav_all).T))
-    print(prop.shape)
-
-    # (7,)
-    # (6, 7)
-    # (16611, 6, 1, 1)
-    # (6, 6, 7)
-
+    if prop_b:
+        mav_all, _, _, _ = extract_scale(x_train_clean,load=False,ft='mav',caps=True)
+        mav_class = np.empty((y_train_clean.shape[1],x_train_clean.shape[1]))
+        for i in range(mav_class.shape[0]):
+            mav_class[i,:] = np.squeeze(np.mean(mav_all[y_train_clean[:,i].astype(bool),...],axis=0))
+        mav_tot = np.sum(np.square(mav_class), axis=1)[...,np.newaxis]
+        prop = np.square((1 / mav_tot) * (mav_class @ np.squeeze(mav_all).T)).T
+    else:
+        prop = np.empty((y_train_clean.shape))
 
     # Extract features
     scaler = MinMaxScaler(feature_range=(0,1))
@@ -121,8 +113,8 @@ def prep_train_caps(x_train, params):
     x_train_noise_mlp = x_train_noise_cnn.reshape(x_train_noise_cnn.shape[0],-1)
 
     # create batches
-    trainmlp = tf.data.Dataset.from_tensor_slices((x_train_noise_mlp, y_train_clean)).shuffle(x_train_noise_mlp.shape[0],reshuffle_each_iteration=True).batch(128)
-    traincnn = tf.data.Dataset.from_tensor_slices((x_train_noise_cnn, y_train_clean)).shuffle(x_train_noise_cnn.shape[0],reshuffle_each_iteration=True).batch(128)
+    trainmlp = tf.data.Dataset.from_tensor_slices((x_train_noise_mlp, y_train_clean, prop)).shuffle(x_train_noise_mlp.shape[0],reshuffle_each_iteration=True).batch(128)
+    traincnn = tf.data.Dataset.from_tensor_slices((x_train_noise_cnn, y_train_clean, prop)).shuffle(x_train_noise_cnn.shape[0],reshuffle_each_iteration=True).batch(128)
 
     # LDA data
     y_train = p_train[:,0]
@@ -130,7 +122,7 @@ def prep_train_caps(x_train, params):
     x_train_lda = extract_feats_caps(x_train)
     x_train_aug = extract_feats_caps(x_train_noise)
 
-    return trainmlp, traincnn, y_train_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug, emg_scale, scaler, x_min, x_max
+    return trainmlp, traincnn, y_train_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug, emg_scale, scaler, x_min, x_max, prop
 
 def prep_test_caps(x, params, scaler, emg_scale):
     x, p_test = shuffle(x, params, random_state = 0)
