@@ -88,7 +88,10 @@ def prep_train_caps(x_train, params):
         emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
     x_train *= emg_scale
 
-    x_train_noise, _, y_train_clean = add_noise_caps(x_train, p_train)
+    x_train_noise, x_train_clean, y_train_clean = add_noise_caps(x_train, p_train)
+
+    # calculate class MAV
+
 
     # shuffle data to make even batches
     x_train_noise, y_train_clean = shuffle(x_train_noise, y_train_clean, random_state = 0)
@@ -818,7 +821,7 @@ def extract_feats_fast(raw):
     feat_out = np.concatenate([mav,zc,ssc,wl],-1)
     return feat_out
 
-def extract_feats_caps(raw,uint=False):
+def extract_feats_caps(raw,ft='feat',uint=False):
     # raw format (samps x chan x win)
     if raw.shape[-1] == 1:
         raw = np.squeeze(raw)
@@ -836,21 +839,24 @@ def extract_feats_caps(raw,uint=False):
 
     mav=np.sum(np.abs(raw_demean),axis=2)
 
-    last = raw_demean[...,:-2]
-    next = raw_demean[...,1:]
+    if ft != 'mav':
+        last = raw_demean[...,:-2]
+        next = raw_demean[...,1:]
 
-    zero_change = (next*raw_demean[...,:-1] < 0) & ((np.abs(next) >= z_th) | (np.abs(raw_demean[...,:-1])>=z_th))
-    zc = np.sum(zero_change, axis=2)
+        zero_change = (next*raw_demean[...,:-1] < 0) & ((np.abs(next) >= z_th) | (np.abs(raw_demean[...,:-1])>=z_th))
+        zc = np.sum(zero_change, axis=2)
 
-    next_s = next[...,1:] - raw_demean[...,1:-1]
-    last_s = raw_demean[...,1:-1] - last
-    sign_change = ((next_s > 0) & (last_s < 0)) | ((next_s < 0) & (last_s > 0))
-    th_check = (np.abs(next_s) > s_th) | (np.abs(last_s) > (s_th))
-    ssc = np.sum(sign_change & th_check, axis=2)
+        next_s = next[...,1:] - raw_demean[...,1:-1]
+        last_s = raw_demean[...,1:-1] - last
+        sign_change = ((next_s > 0) & (last_s < 0)) | ((next_s < 0) & (last_s > 0))
+        th_check = (np.abs(next_s) > s_th) | (np.abs(last_s) > (s_th))
+        ssc = np.sum(sign_change & th_check, axis=2)
 
-    wl = np.sum(np.abs(next - raw_demean[...,:-1]), axis=2)
+        wl = np.sum(np.abs(next - raw_demean[...,:-1]), axis=2)
 
-    feat_out = np.concatenate([mav,wl,zc,ssc],-1)
+        feat_out = np.concatenate([mav,wl,zc,ssc],-1)
+    else:
+        feat_out = mav
     feat_out = feat_out/200
 
     if not uint:
@@ -910,7 +916,7 @@ def extract_scale(x,scaler,load=True, ft='feat',emg_scale=1,caps=False):
         num_feat = 1
     
     if caps:
-        x_temp = np.transpose(extract_feats_caps(x).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
+        x_temp = np.transpose(extract_feats_caps(x,ft=ft).reshape((x.shape[0],num_feat,-1)),(0,2,1))[...,np.newaxis]
         x_test = x_temp.reshape(x_temp.shape[0]*x_temp.shape[1],-1)
         x_min = x_test.min(axis=0)
         x_max = x_test.max(axis=0)
