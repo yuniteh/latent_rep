@@ -128,10 +128,13 @@ class CNN(Model):
         super(CNN, self).__init__()
         self.enc = CNNenc()
         self.clf = CLF(n_class)
+        self.prop = PROP(n_class)
     
     def call(self, x):
         x = self.enc(x)
-        return self.clf(x)
+        y = self.clf(x)
+        prop = self.prop(x)
+        return y, prop
 
 def eval_nn(x, y, mod, clean):
     y_pred = np.argmax(mod(x).numpy(),axis=1)
