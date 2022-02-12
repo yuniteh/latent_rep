@@ -112,8 +112,9 @@ def ThreadJob_A():
 def sendData():
     global connection
     # Get class prediction (CLASS_EST) and whether a new class has just been trained (NEW_CLASS).
-    class_out = pce.get_var('CLASS_EST')
-    class_new = pce.get_var('NEW_CLASS')
+    class_out = pce.get_var('MV_CLAS_OUT').to_np_array()[0,0]
+    class_est = pce.get_var('CLASS_EST')
+    prop = pce.get_var('CLASFR_MAV').to_np_array()[0,0]
     # Get proportional control information and format into comma deliminated string. Shape[1] of N_T is used to get the number of modes (typically 7).
     class_pc = ';'.join(['%.5f' % num2 for num2 in [pce.get_var('PROP_CONTROL')[num] for num in range(0, pce.get_var('N_T').to_np_array().shape[1])]])
     # Get the total number of patterns (N_C), number of repetition (N_R), and temporary number of patterns (N_T).
@@ -126,15 +127,7 @@ def sendData():
     # If data is streaming, send data, otherwise send 'nil'.
     if streaming:
         # Create single length string to transmit.
-        # Send calibrated arm positions if required.
-        if pce.get_var('SEND_PD') == 1:
-            # Get calibrated arm positions and rotations
-            pos = stringFormatter(pce.get_var('POS').to_np_array().flatten(),'%.1f')
-            rot = stringFormatter(pce.get_var('ROT').to_np_array().flatten(),'%d')
-            sendString = "C_OUT=" + str(class_out) + ",POS=" + pos + ",ROT=" + rot
-            pce.set_var('SEND_PD',0)
-        else:
-            sendString = "C_OUT=" + str(class_out) + ",C_NEW=" + str(class_new) + ",C_PC=" + str(class_pc) + ",N_C=" + ntot + ",N_R=" + nreps + ",N_T=" + npats + ",P_FLAG=" + str(pos_flag)
+        sendString = "C_OUT=" + str(class_out) + ',PROP=' + str(prop)
     else:
         sendString = "nil"
 
