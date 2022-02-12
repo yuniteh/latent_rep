@@ -24,7 +24,7 @@ def nn_pass(x, w, arch):
             x = conv(x, w_layer)
             i += 2
         elif 'flat' in l:
-            x = np.reshape(x,-1)
+            x = np.reshape(x,(x.shape[0],-1))
         else:
             w_layer = w[i:i+2]
             x = dense(x, w_layer, fxn = l)
