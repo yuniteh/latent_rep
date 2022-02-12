@@ -124,9 +124,9 @@ class MLPprop(Model):
         return y, prop
   
 class CNN(Model):
-    def __init__(self, n_class=7):
+    def __init__(self, n_class=7, c1=32, c2=32):
         super(CNN, self).__init__()
-        self.enc = CNNenc()
+        self.enc = CNNenc(c1=c1,c2=c2)
         self.clf = CLF(n_class)
         self.prop = PROP(n_class)
     
