@@ -49,11 +49,11 @@ class MLPenc_beta(Model):
         return self.bn4(x)
 
 class CNNenc(Model):
-    def __init__(self, latent_dim=4, name='enc'):
+    def __init__(self, latent_dim=4, c1=32, c2=32,name='enc'):
         super(CNNenc, self).__init__(name=name)
-        self.conv1 = Conv2D(32,3, activation='relu', strides=1, padding="same")
+        self.conv1 = Conv2D(c1,3, activation='relu', strides=1, padding="same")
         self.bn1 = BatchNormalization()
-        self.conv2 = Conv2D(34,3, activation='relu', strides=1, padding="same")
+        self.conv2 = Conv2D(c2,3, activation='relu', strides=1, padding="same")
         self.bn2 = BatchNormalization()
         self.flatten = Flatten()
         self.dense1 = Dense(16, activation='relu')

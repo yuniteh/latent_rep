@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 def dense(x_in, w, fxn = 'relu'):
     out = (x_in @ w[0]) + w[1]
@@ -14,25 +15,32 @@ def bn(x_in, w):
 
 def nn_pass(x, w, arch):
     i = 0 
+    if 'prop' not in arch:
+        prop = 0
     for l in arch:
         if l == 'bn':
             w_layer = w[i:i+4]
             x = bn(x, w_layer)
             i += 4
-        elif 'conv' in l:
-            w_layer = w[i:i+2]
-            x = conv(x, w_layer)
-            i += 2
         elif 'flat' in l:
             x = np.reshape(x,(x.shape[0],-1))
         else:
             w_layer = w[i:i+2]
-            x = dense(x, w_layer, fxn = l)
             i += 2
-    return x
+            if 'conv' in l:
+                x = conv(x, w_layer)
+            elif 'prop' in l:
+                x = dense(prev_x, w_layer)
+            else:
+                if 'softmax' in l:
+                    prev_x = x
+                x = dense(x, w_layer, fxn = l)
+        
+    return x, prop
 
 def conv(x_in, w, stride=1, k = (3,3), fxn = 'relu'):
     out = np.zeros((x_in.shape[0], 1+(x_in.shape[1]-k[0]+2)//stride, 1+(x_in.shape[2]-k[1]+2)//stride, w[0].shape[-1]))
+    time1 = time.time()
     for f in range(w[0].shape[-1]):
         padded = np.pad(x_in,pad_width = ((0,0),(1,1),(1,1),(0,0)))
 
@@ -44,6 +52,8 @@ def conv(x_in, w, stride=1, k = (3,3), fxn = 'relu'):
                 out[:,row,col,f] = np.sum(np.sum(np.sum(temp*w[0][...,f],axis=-1),axis=-1),axis=-1,keepdims=False) + w[1][f]
                 j += stride
             i += stride
+            
+    print(time.time()-time1)
         
     if fxn == 'relu':
         out = relu(out)
