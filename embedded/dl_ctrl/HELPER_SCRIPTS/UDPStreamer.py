@@ -127,7 +127,7 @@ def sendData():
     # If data is streaming, send data, otherwise send 'nil'.
     if streaming:
         # Create single length string to transmit.
-        sendString = "C_OUT=" + str(class_out) + ',PROP=' + str(prop) + ',C_EST=' + str(class_est)
+        sendString = "C_OUT=" + str(class_out) + ',PROP=' + str(prop)
     else:
         sendString = "nil"
 
