@@ -40,7 +40,6 @@ def nn_pass(x, w, arch):
 
 def conv(x_in, w, stride=1, k = (3,3), fxn = 'relu'):
     out = np.zeros((x_in.shape[0], 1+(x_in.shape[1]-k[0]+2)//stride, 1+(x_in.shape[2]-k[1]+2)//stride, w[0].shape[-1]))
-    time1 = time.time()
     for f in range(w[0].shape[-1]):
         padded = np.pad(x_in,pad_width = ((0,0),(1,1),(1,1),(0,0)))
 
@@ -48,12 +47,9 @@ def conv(x_in, w, stride=1, k = (3,3), fxn = 'relu'):
         for row in range(out.shape[1]):
             j = 0
             for col in range(out.shape[2]):
-                temp = padded[:,i:i+k[0],j:j+k[1],:]
-                out[:,row,col,f] = np.sum(np.sum(np.sum(temp*w[0][...,f],axis=-1),axis=-1),axis=-1,keepdims=False) + w[1][f]
+                out[:,row,col,f] = np.sum(np.sum(np.sum(padded[:,i:i+k[0],j:j+k[1],:]*w[0][...,f],axis=-1),axis=-1),axis=-1,keepdims=False) + w[1][f]
                 j += stride
             i += stride
-            
-    print(time.time()-time1)
         
     if fxn == 'relu':
         out = relu(out)
