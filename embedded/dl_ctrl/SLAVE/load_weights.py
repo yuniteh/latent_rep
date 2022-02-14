@@ -14,9 +14,9 @@ if sys.argv[2] == 'LR':
     print('Loading linear regression weights...')
     w = np.genfromtxt(str(sys.argv[1]) + 'w.csv', delimiter=',')
     pce.set_var('W', w.astype(float, order='F'))
-elif sys.argv[2] == 'MLP':
+elif sys.argv[2] == 'NN':
     folder = str(sys.argv[1])
-    print('Loading MLP weights...')
+    print('Loading NN weights...')
     print(folder)
     files = [f for f in listdir(folder) if isfile(join(folder, f))]
     for file in files:
@@ -55,7 +55,7 @@ else:
     pce.set_var('CG_ADAPT',cg.astype(float, order='F'))
     pce.set_var('MID',mid.astype(float, order='F'))
 
-if sys.argv[2] != 'MLP':
+if sys.argv[2] != 'NN':
     mvc = np.genfromtxt(str(sys.argv[1]) + 'mvc.csv', delimiter=',')
     pce.set_var('MVC',mvc.astype(float, order='F'))
 print('COMPLETE')

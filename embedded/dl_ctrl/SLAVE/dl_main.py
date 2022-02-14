@@ -61,7 +61,13 @@ try:
     
     w_all = []
     for l in mlp_arch:
-        w_all.append(pce.get_var(l).to_np_array())
+        if 'CONV' in l:
+            sh = pce.get_var(l + '_shape').to_np_array()
+            temp = pce.get_var(l).to_np_array()
+            w_all.append(temp[:-1,:].reshape(sh))
+            w_all.append(temp[-1,:])
+        else:
+            w_all.append(pce.get_var(l).to_np_array())
     nn = True
     # NN forward pass
     class_out = pce.get_var('CLAS_OUT').to_np_array()
@@ -317,7 +323,7 @@ def bn(x_in, w):
     out = ((w[0,:] * (x_in - w[2,:])) / np.sqrt(w[3,:] + 0.001)) + w[1,:]
     return out
 
-def conv(x_in, w, stride=1, k = (3,3), fxn = 'relu'):
+def conv(x_in, w, w2, stride=1, k = (3,3), fxn = 'relu'):
     out = np.zeros((x_in.shape[0], 1+(x_in.shape[1]-k[0]+2)//stride, 1+(x_in.shape[2]-k[1]+2)//stride, w[0].shape[-1]))
     for f in range(w[0].shape[-1]):
         padded = np.pad(x_in,pad_width = ((0,0),(1,1),(1,1),(0,0)))
@@ -326,7 +332,7 @@ def conv(x_in, w, stride=1, k = (3,3), fxn = 'relu'):
         for row in range(out.shape[1]):
             j = 0
             for col in range(out.shape[2]):
-                out[:,row,col,f] = np.sum(np.sum(np.sum(padded[:,i:i+k[0],j:j+k[1],:]*w[0][...,f],axis=-1),axis=-1),axis=-1,keepdims=False) + w[1][f]
+                out[:,row,col,f] = np.sum(np.sum(np.sum(padded[:,i:i+k[0],j:j+k[1],:]*w[0][...,f],axis=-1),axis=-1),axis=-1,keepdims=False) + w2[f]
                 j += stride
             i += stride
         
@@ -344,7 +350,9 @@ def nn_pass(x, arch):
         if 'BN' in l:
             x = bn(x, w)
         elif 'CONV' in l:
-            x = conv(x, w)
+            w2 = w_all[i+1]
+            x = conv(x, w, w2)
+            i += 1
         elif 'FLAT' in l:
             x = np.reshape(x,(x.shape[0],-1))
         elif 'PROP' in l:
