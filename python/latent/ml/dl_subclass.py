@@ -49,11 +49,11 @@ class MLPenc_beta(Model):
         return self.bn4(x)
 
 class CNNenc(Model):
-    def __init__(self, latent_dim=4, name='enc'):
+    def __init__(self, latent_dim=4, c1=32, c2=32,name='enc'):
         super(CNNenc, self).__init__(name=name)
-        self.conv1 = Conv2D(32,(3,2), activation='relu', strides=1, padding="same")
+        self.conv1 = Conv2D(c1,3, activation='relu', strides=1, padding="same")
         self.bn1 = BatchNormalization()
-        self.conv2 = Conv2D(32,3, activation='relu', strides=2, padding="same")
+        self.conv2 = Conv2D(c2,3, activation='relu', strides=1, padding="same")
         self.bn2 = BatchNormalization()
         self.flatten = Flatten()
         self.dense1 = Dense(16, activation='relu')
@@ -124,14 +124,17 @@ class MLPprop(Model):
         return y, prop
   
 class CNN(Model):
-    def __init__(self, n_class=7):
+    def __init__(self, n_class=7, c1=32, c2=32):
         super(CNN, self).__init__()
-        self.enc = CNNenc()
+        self.enc = CNNenc(c1=c1,c2=c2)
         self.clf = CLF(n_class)
+        self.prop = PROP(n_class)
     
     def call(self, x):
         x = self.enc(x)
-        return self.clf(x)
+        y = self.clf(x)
+        prop = self.prop(x)
+        return y, prop
 
 def eval_nn(x, y, mod, clean):
     y_pred = np.argmax(mod(x).numpy(),axis=1)

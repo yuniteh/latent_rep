@@ -61,7 +61,13 @@ try:
     
     w_all = []
     for l in mlp_arch:
-        w_all.append(pce.get_var(l).to_np_array())
+        if 'CONV' in l:
+            sh = pce.get_var(l + '_shape').to_np_array()
+            temp = pce.get_var(l).to_np_array()
+            w_all.append(temp[:-1,:].reshape(sh))
+            w_all.append(temp[-1,:])
+        else:
+            w_all.append(pce.get_var(l).to_np_array())
     nn = True
     # NN forward pass
     class_out = pce.get_var('CLAS_OUT').to_np_array()
@@ -308,13 +314,31 @@ def clearWeights():
 def dense(x_in, w, fxn = 'RELU'):
     out = np.dot(x_in,w[:-1,:]) + w[-1,:]
     if 'RELU' in fxn:
-        out *= (out > 0)
+        out = relu(out)
     elif 'SOFTMAX' in fxn:
-        out = np.exp(out) / np.sum(np.exp(out), axis=1)[...,np.newaxis]
+        out = softmax(out)
     return out
 
 def bn(x_in, w):
     out = ((w[0,:] * (x_in - w[2,:])) / np.sqrt(w[3,:] + 0.001)) + w[1,:]
+    return out
+
+def conv(x_in, w, w2, stride=1, k = (3,3), fxn = 'relu'):
+    out = np.zeros((x_in.shape[0], 1+(x_in.shape[1]-k[0]+2)//stride, 1+(x_in.shape[2]-k[1]+2)//stride, w[0].shape[-1]))
+    for f in range(w[0].shape[-1]):
+        padded = np.pad(x_in,pad_width = ((0,0),(1,1),(1,1),(0,0)))
+
+        i = 0
+        for row in range(out.shape[1]):
+            j = 0
+            for col in range(out.shape[2]):
+                out[:,row,col,f] = np.sum(np.sum(np.sum(padded[:,i:i+k[0],j:j+k[1],:]*w[0][...,f],axis=-1),axis=-1),axis=-1,keepdims=False) + w2[f]
+                j += stride
+            i += stride
+        
+    if fxn == 'relu':
+        out = relu(out)
+    
     return out
 
 def nn_pass(x, arch):
@@ -325,16 +349,29 @@ def nn_pass(x, arch):
         w = w_all[i]
         if 'BN' in l:
             x = bn(x, w)
+        elif 'CONV' in l:
+            w2 = w_all[i+1]
+            x = conv(x, w, w2)
+            i += 1
+        elif 'FLAT' in l:
+            x = np.reshape(x,(x.shape[0],-1))
+        elif 'PROP' in l:
+            prop = dense(prev_x, w, fxn = 'RELU')
         else:
-            if 'PROP' in l:
-                prop = dense(prev_x, w, fxn = 'RELU')
-            else:
-                if 'SOFTMAX' in l:
-                    prev_x = cp.deepcopy(x)
-                x = dense(x, w, fxn = l)
+            if 'SOFTMAX' in l:
+                prev_x = cp.deepcopy(x)
+            x = dense(x, w, fxn = l)
         i += 1
             
     return x, prop
 
 def minmax(x):
     return (x - x_min) / (x_max - x_min)
+
+def softmax(x):
+    out = np.exp(x) / np.sum(np.exp(x), axis=1)[...,np.newaxis]
+    return out
+
+def relu(x):
+    out = x * (x > 0)
+    return out
