@@ -5,7 +5,7 @@ import numpy as np
 # Class dictionary
 classmap = [1,10,11,12,13,16,19]
 prop_mv = pce.get_var('CLASFR_MAV').to_np_array()
-sim = np.zeros((2,))
+sim = pce.get_var('SIM_OUT').to_np_array()
 pce.set_var('COUNTER',0)
 pce.set_var('SIM_COUNT', np.zeros((10,2),dtype=float,order='F'))
 
@@ -54,8 +54,9 @@ def run():
             pce.set_var('SIM_COUNT', sim_count.astype('float',order='F'))
             pce.set_var('SIM_OUT', sim.astype('float',order='F'))
             pce.set_var('COUNTER',counter)
-
-        print('nn: ' + str(sim[0]) + ', ' + str(sim[1]) + ', p: ' + "{:.2f}".format(prop[0,sim[0]]) + ', ' + "{:.2f}".format(prop[0,sim[1]]))
+            print('s-nn: ' + str(sim[0]) + ', ' + str(sim[1]) + ', p: ' + "{:.2f}".format(prop[0,sim[0]]) + ', ' + "{:.2f}".format(prop[0,sim[1]]))
+        else:
+            print('nn: ' + str(mv))
     else:
         print('lda: ' + str(mv))
 

@@ -17,7 +17,7 @@ import pcepy.pce as pce
 import numpy as np
 
 # Number of modes/classes.
-numModes = 11
+numModes = 7
 # Number of EMG channels.
 numEMG = int(len(pce.get_var('DAQ_CHAN').to_np_array()[0]))
 
@@ -58,5 +58,10 @@ for i in range(0, numModes):
     pce.set_var('COV' + str(i), np.zeros((matSize, matSize), dtype=float, order='F'))
     pce.set_var('MN' + str(i), np.zeros((1, matSize), dtype=float, order='F'))
     pce.set_var('CLASS_MAV' + str(i), 0)
-    
+pce.set_var('COUNTER',0)
+pce.set_var('SIM_CTRL',0)
+pce.set_var('CTRL',1)
+pce.set_var('SIM_COUNT', np.zeros((10,2),dtype=float,order='F'))
+pce.set_var('PROP_OUT', np.zeros((1,numModes), dtype=float, order='F'))
+
 print('INITIALISE COMPLETE')

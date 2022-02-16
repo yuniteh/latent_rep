@@ -125,7 +125,6 @@ def sendData():
     if streaming:
         # Create single length string to transmit.
         sendString = "C_OUT=" + str(class_out) + ',PROPL=' + str(prop2) + ',PROP1=' + "{:.2f}".format(float(prop[0,sim[0]])) + ',PROP2=' + "{:.2f}".format(float(prop[0,sim[1]])) + ',SIM1=' + str(class_map[sim[0]]) + ',SIM2=' + str(class_map[sim[1]])
-        # print(sendString)
     else:
         sendString = "nil"
 
