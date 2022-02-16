@@ -5,6 +5,8 @@ import os
 import numpy as np
 import pcepy.can as can
 import pcepy.pce as pce
+import copy as cp
+
 if os.name == 'nt':
     host = '127.0.0.1'
 else:
@@ -23,6 +25,8 @@ socktimeout = 1
 connection = False
 # Bool to indicate when data is streaming.
 streaming = False
+class_map = [1,10,11,12,13,16,19]
+
 
 
 #######################################################################################################################
@@ -114,20 +118,28 @@ def sendData():
     # Get class prediction (CLASS_EST) and whether a new class has just been trained (NEW_CLASS).
     class_out = pce.get_var('MV_CLAS_OUT').to_np_array()[0,0]
     class_est = pce.get_var('CLASS_EST')
-    prop = pce.get_var('CLASFR_MAV').to_np_array()[0,0]
-    # Get proportional control information and format into comma deliminated string. Shape[1] of N_T is used to get the number of modes (typically 7).
-    class_pc = ';'.join(['%.5f' % num2 for num2 in [pce.get_var('PROP_CONTROL')[num] for num in range(0, pce.get_var('N_T').to_np_array().shape[1])]])
-    # Get the total number of patterns (N_C), number of repetition (N_R), and temporary number of patterns (N_T).
-    ntot = stringFormatter(pce.get_var('N_C').to_np_array(), '%d')
-    nreps = stringFormatter(pce.get_var('N_R').to_np_array(), '%d')
-    npats = stringFormatter(pce.get_var('N_T').to_np_array(), '%d')
-    # Get position calibration flag
-    pos_flag = pce.get_var('PD_FLAG')
+    prop2 = pce.get_var('CLASFR_MAV').to_np_array()[0,0]
+    prop = pce.get_var('PROP_OUT').to_np_array()
+    prop = np.squeeze(prop)
+    sim = pce.get_var('SIM_OUT').to_np_array().astype(int)
+    # prop_temp = cp.deepcopy(prop)
+    # sim_1 = np.argmax(prop)
+    # sim_1 = np.argmax(class_map == class_out)
+    # if sim_1%2 == 0:
+    #     if sim_1 != 0:
+    #         prop_temp[0,sim_1-1] = -1
+    # elif sim_1 < prop_temp.shape[1]-1:
+    #     prop_temp[0,sim_1+1] = -1
+    # prop_temp[0,sim_1] = -1
+    # sim_2 = np.argmax(prop_temp)
+    # print(str(prop))
+    # print(str(class_out))
     
     # If data is streaming, send data, otherwise send 'nil'.
     if streaming:
         # Create single length string to transmit.
-        sendString = "C_OUT=" + str(class_out) + ',PROP=' + str(prop)
+        sendString = "C_OUT=" + str(class_out) + ',PROPL=' + str(prop2) + ',PROP1=' + "{:.2f}".format(float(prop[sim[0]])) + ',PROP2=' + "{:.2f}".format(float(prop[sim[1]])) + ',SIM1=' + str(class_map[sim[0]]) + ',SIM2=' + str(class_map[sim[1]])
+        # print(sendString)
     else:
         sendString = "nil"
 

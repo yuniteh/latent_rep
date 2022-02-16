@@ -51,16 +51,17 @@ ramp_numerator = np.zeros((1, numModes), dtype=float, order='F')
 ramp_denominator = np.ones((1, numModes), dtype=float, order='F') * (rampTime / pce.get_var('DAQ_FRINC'))
 # DAQ UINT ZERO
 DAQ_conv = (2**16-1)/2
-try:
-    # Neural network architectures
-    mlp_temp = pce.get_var('ARCH')
-    mlp_arch = np.array(mlp_temp.split('/'))
-    emg_scale = pce.get_var('EMG_SCALE').to_np_array()
-    x_min = np.tile(pce.get_var('X_MIN').to_np_array(),(numEMG,1)).T
-    x_max = np.tile(pce.get_var('X_MAX').to_np_array(),(numEMG,1)).T
-    
-    w_all = []
-    for l in mlp_arch:
+# try:
+# Neural network architectures
+mlp_temp = pce.get_var('ARCH')
+mlp_arch = np.array(mlp_temp.split('/'))
+emg_scale = pce.get_var('EMG_SCALE').to_np_array()
+x_min = np.tile(pce.get_var('X_MIN').to_np_array(),(numEMG,1)).T
+x_max = np.tile(pce.get_var('X_MAX').to_np_array(),(numEMG,1)).T
+
+w_all = []
+for l in mlp_arch:
+    if 'FLAT' not in l:
         if 'CONV' in l:
             sh = pce.get_var(l + '_shape').to_np_array()
             temp = pce.get_var(l).to_np_array()
@@ -68,14 +69,15 @@ try:
             w_all.append(temp[-1,:])
         else:
             w_all.append(pce.get_var(l).to_np_array())
-    nn = True
-    # NN forward pass
-    class_out = pce.get_var('CLAS_OUT').to_np_array()
-except:
-    print('missing trained params')
-    nn = False
+nn = True
+# NN forward pass
+class_out = pce.get_var('CLAS_OUT').to_np_array()
+# except:
+#     print('missing trained params')
+#     nn = False
 
-pce.set_var('CTRL',2)
+pce.set_var('CTRL',1)
+sim_out = np.zeros((2,))
 
 def dispose():
     pass
@@ -96,10 +98,15 @@ def run():
             feat_scaled = feat.extract(featVal, scaled_raw.astype('uint16')) ## size = 1x24 (numfeat)
             feat_out = minmax(feat_scaled)
 
+            # for CNN
+            # feat_out = np.reshape(feat_out,(numEMG, featNum))
+            # feat_out = feat_out[np.newaxis,...,np.newaxis]
+
             nn_out, prop_out = nn_pass(feat_out, mlp_arch)
             class_out[0,0] = classmap[np.argmax(nn_out)]
-            # print(class_out[0,0])
+
             pce.set_var('CLAS_OUT', class_out.astype(float, order='F'))
+            pce.set_var('CLASS_EST', int(np.argmax(nn_out)))
             pce.set_var('PROP_OUT', prop_out.astype(float, order='F'))
             
 #######################################################################################################################
@@ -326,7 +333,7 @@ def bn(x_in, w):
 def conv(x_in, w, w2, stride=1, k = (3,3), fxn = 'relu'):
     out = np.zeros((x_in.shape[0], 1+(x_in.shape[1]-k[0]+2)//stride, 1+(x_in.shape[2]-k[1]+2)//stride, w[0].shape[-1]))
     for f in range(w[0].shape[-1]):
-        padded = np.pad(x_in,pad_width = ((0,0),(1,1),(1,1),(0,0)))
+        padded = np.pad(x_in,pad_width = ((0,0),(1,1),(1,1),(0,0)),mode = 'constant')
 
         i = 0
         for row in range(out.shape[1]):
@@ -349,12 +356,13 @@ def nn_pass(x, arch):
         w = w_all[i]
         if 'BN' in l:
             x = bn(x, w)
-        elif 'CONV' in l:
-            w2 = w_all[i+1]
-            x = conv(x, w, w2)
-            i += 1
-        elif 'FLAT' in l:
-            x = np.reshape(x,(x.shape[0],-1))
+        # elif 'CONV' in l:
+        #     w2 = w_all[i+1]
+        #     x = conv(x, w, w2)
+        #     i += 1
+        # elif 'FLAT' in l:
+        #     x = np.reshape(x,(x.shape[0],-1))
+        #     i -= 1
         elif 'PROP' in l:
             prop = dense(prev_x, w, fxn = 'RELU')
         else:

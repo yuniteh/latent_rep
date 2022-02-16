@@ -20,9 +20,9 @@ elif sys.argv[2] == 'NN':
     print(folder)
     files = [f for f in listdir(folder) if isfile(join(folder, f))]
     for file in files:
-        if file[:-4] != 'ARCH':
+        if 'ARCH' not in file:
             temp = np.genfromtxt(join(folder,file), delimiter=',')
-            if file[:-4] == 'scales':
+            if 'scales' in file:
                 pce.set_var('EMG_SCALE', temp[:,0].astype(float, order='F'))
                 pce.set_var('X_MIN', temp[:4,1].astype(float, order='F'))
                 pce.set_var('X_MAX', temp[:4,2].astype(float, order='F'))
