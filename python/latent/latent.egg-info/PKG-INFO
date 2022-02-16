@@ -1,0 +1,17 @@
+Metadata-Version: 1.1
+Name: latent
+Version: 0.0.2
+Summary: Latent model package (NER, JNER)
+Home-page: UNKNOWN
+Author: Yuni Teh
+Author-email: <yuni@u.northwestern.edu>
+License: UNKNOWN
+Description: Python package that contains tools for latent representation project, including pipeline and machine learning tools.
+Keywords: python
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Education
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows

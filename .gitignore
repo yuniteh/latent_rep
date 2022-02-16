@@ -4,6 +4,10 @@
 *.p
 *.DAQ
 *.pyc
+*.csv
+*.fig
+*.PVD
+*.bmp
 MyoArmbandDataset-master/EvaluationDataset
 MyoArmbandDataset-master/PreTrainingDataset
 figures

@@ -1,0 +1,2434 @@
+<User>
+  <version>2.3.6887</version>
+  <firstName>default</firstName>
+  <lastName>default</lastName>
+  <userid>dl_caps</userid>
+  <dateCreated>636981978194012200</dateCreated>
+  <outDeviceFile>Arm Virtual Reality Only.odv</outDeviceFile>
+  <appSettings>
+    <language>en</language>
+    <autoLoadSignalViewer>False</autoLoadSignalViewer>
+    <numInputBarToShow>12</numInputBarToShow>
+    <defaultDcInputGain>1</defaultDcInputGain>
+    <defaultPrInputGain>1</defaultPrInputGain>
+    <defaultDcThresh>10</defaultDcThresh>
+    <defaultPrThresh>1</defaultPrThresh>
+    <defaultDcOutputGain>1</defaultDcOutputGain>
+    <defaultPrOutputGain>2</defaultPrOutputGain>
+    <maxInGain>100</maxInGain>
+    <maxOutGain>100</maxOutGain>
+    <maxTimeoutSec>20</maxTimeoutSec>
+    <captureDuration>3</captureDuration>
+    <captureDelay>3</captureDelay>
+    <captureRandomize>False</captureRandomize>
+    <embeddedAddress>192.168.20.2</embeddedAddress>
+    <embeddedCAPSFolder>\\192.168.20.2\CAPSv2\</embeddedCAPSFolder>
+    <showGUIFramesMissed>False</showGUIFramesMissed>
+    <defaultRampEnabled>True</defaultRampEnabled>
+    <askMotorEnableOnExit>True</askMotorEnableOnExit>
+    <enableAdvancedSystemControlShortcuts>True</enableAdvancedSystemControlShortcuts>
+  </appSettings>
+  <inDevice>
+    <deviceType>CAN_BOARD</deviceType>
+    <fileName />
+    <boardNum>0</boardNum>
+    <numChannels>6</numChannels>
+    <useFileFraming>False</useFileFraming>
+    <canSettingsFileName>EMG_8_Chans_16_Bits_0x50.cid</canSettingsFileName>
+    <use_file>False</use_file>
+  </inDevice>
+  <pceSettings>
+    <sampFreq>1000</sampFreq>
+    <frameLen>200</frameLen>
+    <frameInc>25</frameInc>
+    <emInputs>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+      <Boolean>False</Boolean>
+    </emInputs>
+    <bpEnable>False</bpEnable>
+    <bpLoCut>10</bpLoCut>
+    <bpHiCut>499</bpHiCut>
+    <bpLoOrd>3</bpLoOrd>
+    <bpHiOrd>3</bpHiOrd>
+    <nfEnable>False</nfEnable>
+    <nfFreqs>
+      <double>60</double>
+    </nfFreqs>
+    <nfFilterQ>35</nfFilterQ>
+    <ecEnable>False</ecEnable>
+    <ecFrameLen>150</ecFrameLen>
+    <ecGainFactor>2.1</ecGainFactor>
+    <featSelect>15</featSelect>
+    <defaultMotionMRV>0</defaultMotionMRV>
+    <defaultNoMotionMRV>0</defaultNoMotionMRV>
+    <hpEnable>False</hpEnable>
+    <hpCut>20</hpCut>
+    <hpOrd>3</hpOrd>
+    <mvEnable>False</mvEnable>
+    <mvWindow>10</mvWindow>
+    <gsEnable>False</gsEnable>
+    <gsWindow>3</gsWindow>
+    <gsOpenThresh>100</gsOpenThresh>
+    <switchHoldDelay>700</switchHoldDelay>
+    <onThreshToArmedTime>100</onThreshToArmedTime>
+    <expProfileEnable>False</expProfileEnable>
+    <expScaleFactor>1</expScaleFactor>
+    <expResponseFactor>1</expResponseFactor>
+    <enableRamp>True</enableRamp>
+    <varFile>
+      <pceVarFileVars>
+        <_items>
+          <String>FRAME_CNT</String>
+          <String>DAQ_FRINC</String>
+          <String>DAQ_SAMP</String>
+          <String>DAQ_FRAME</String>
+          <String>CLASS_EST</String>
+          <String>PROP_CONTROL</String>
+          <String>TARGET_ARM</String>
+          <String>TARGET_DOF</String>
+          <String>TRIAL_FLAG</String>
+          <String>ARM_FLAG</String>
+          <String>COLLECTING</String>
+          <String>THRESH_VAL</String>
+          <String>TRAIN_FLAG</String>
+        </_items>
+        <_size>13</_size>
+        <_syncRoot null="True" />
+      </pceVarFileVars>
+      <pceVarFileName />
+      <enabled>True</enabled>
+      <pceVarDaqRecordLock>True</pceVarDaqRecordLock>
+    </varFile>
+    <devTrainSettings>
+      <autoStartAfterTrain>True</autoStartAfterTrain>
+      <numOfRecentTrainSets>3</numOfRecentTrainSets>
+      <switchChannel>0</switchChannel>
+    </devTrainSettings>
+    <userStatsEnable>False</userStatsEnable>
+    <userStatsCustomFields>0</userStatsCustomFields>
+    <userStatRqst>
+      <_items>
+        <double>100</double>
+        <double>101</double>
+        <double>102</double>
+        <double>103</double>
+        <double>104</double>
+        <double>105</double>
+        <double>106</double>
+        <double>107</double>
+        <double>108</double>
+        <double>109</double>
+        <double>0</double>
+        <double>0</double>
+        <double>0</double>
+        <double>0</double>
+        <double>0</double>
+        <double>0</double>
+      </_items>
+      <_size>10</_size>
+      <_syncRoot null="True" />
+    </userStatRqst>
+    <usePropControl>True</usePropControl>
+    <classifierType>LS</classifierType>
+  </pceSettings>
+  <slaveSteps>
+    <_items>
+      <SlaveStep>
+        <stepId>CLASSIFY</stepId>
+        <cntlCode>ADDAFTER</cntlCode>
+        <runMode>PYTHON_SCRIPT</runMode>
+        <command>dl_main</command>
+        <slaveVars>
+          <_items />
+          <_size>0</_size>
+          <_syncRoot null="True" />
+        </slaveVars>
+      </SlaveStep>
+    </_items>
+    <_size>1</_size>
+    <_version>6</_version>
+    <_syncRoot null="True" />
+  </slaveSteps>
+  <vrSettings>
+    <vrCamera>
+      <_items>
+        <double>-10</double>
+        <double>4</double>
+        <double>40</double>
+        <double>-15</double>
+        <double>0</double>
+        <double>0</double>
+      </_items>
+      <_size>6</_size>
+      <_syncRoot null="True" />
+    </vrCamera>
+    <vrSpeedsNormalized>False</vrSpeedsNormalized>
+    <vrSpeedNormalizationSteps>10</vrSpeedNormalizationSteps>
+    <vrAlwaysOnTop>False</vrAlwaysOnTop>
+    <graspMode>1</graspMode>
+  </vrSettings>
+  <stateMachineFile />
+  <customClassesFile />
+  <canOutDeviceFile />
+  <canCustomMessagesFile />
+  <outDeviceSelectedLeft>True</outDeviceSelectedLeft>
+  <channels>
+    <_items>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>&lt;Channel&gt;</longName>
+        <shortName>&lt;Chan&gt;</shortName>
+        <number>0</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>1</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>2</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>3</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>4</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>5</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>6</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>7</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>8</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>9</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>10</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>11</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>12</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>13</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>14</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>15</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>16</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>17</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>18</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>19</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>20</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>21</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>22</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>23</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>24</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>25</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>26</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>27</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>28</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>29</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>30</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>31</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>32</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>33</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>34</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>35</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>36</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>37</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>38</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>39</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>40</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>41</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>42</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>43</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>44</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>45</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>46</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>47</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>48</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>49</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>50</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>51</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>52</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>53</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>54</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>55</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>56</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>57</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>58</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>59</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>60</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>61</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>62</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>63</number>
+      </Channel>
+      <Channel>
+        <type>EMG</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.5</onThresh1>
+        <onThresh2>0.5</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName />
+        <shortName />
+        <number>64</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Shoulder Flexion</longName>
+        <shortName>Shldr Flx</shortName>
+        <number>2</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Shoulder Extension</longName>
+        <shortName>Shldr Ext</shortName>
+        <number>3</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Shoulder Abduction</longName>
+        <shortName>Shldr Abdu</shortName>
+        <number>4</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Shoulder Adduction</longName>
+        <shortName>Shldr Addu</shortName>
+        <number>5</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Humeral Rotation In</longName>
+        <shortName>Hum Ro in</shortName>
+        <number>6</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Humeral Rotation Out</longName>
+        <shortName>Hum Ro out</shortName>
+        <number>7</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Elbow Flexion</longName>
+        <shortName>Elb Flx</shortName>
+        <number>8</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Elbow Extension</longName>
+        <shortName>Elb Ext</shortName>
+        <number>9</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Wrist Supination</longName>
+        <shortName>Wrist Sup</shortName>
+        <number>10</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Wrist Pronation</longName>
+        <shortName>Wrist Pro</shortName>
+        <number>11</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Wrist Flexion</longName>
+        <shortName>Wrist Flx</shortName>
+        <number>12</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Wrist Extension</longName>
+        <shortName>Wrist Ext</shortName>
+        <number>13</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Wrist Abduction</longName>
+        <shortName>Wrist Abdu</shortName>
+        <number>14</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Wrist Adduction</longName>
+        <shortName>Wrist Addu</shortName>
+        <number>15</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Hand Open</longName>
+        <shortName>Hand Open</shortName>
+        <number>16</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Key Grip</longName>
+        <shortName>Key Grip</shortName>
+        <number>17</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Chuck Grip</longName>
+        <shortName>Chuck Grip</shortName>
+        <number>18</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Power Grip</longName>
+        <shortName>Power Grip</shortName>
+        <number>19</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Fine Pinch</longName>
+        <shortName>Fine Pinch</shortName>
+        <number>20</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Tool Grip</longName>
+        <shortName>Tool Grip</shortName>
+        <number>21</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Point Grip</longName>
+        <shortName>Point Grip</shortName>
+        <number>22</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Hook Grip</longName>
+        <shortName>Hook Grip</shortName>
+        <number>23</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Fine Pinch Closed</longName>
+        <shortName>Fine Pinch Closed</shortName>
+        <number>264</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Tripod Opened</longName>
+        <shortName>Tripod Opened</shortName>
+        <number>285</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Tripod Closed</longName>
+        <shortName>Tripod Closed</shortName>
+        <number>306</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Precision Pinch Opened</longName>
+        <shortName>Precision Pinch Opened</shortName>
+        <number>327</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Precision Pinch Closed</longName>
+        <shortName>Precision Pinch Closed</shortName>
+        <number>348</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Three Jaw Chuck Opened</longName>
+        <shortName>Three Jaw Chuck Opened</shortName>
+        <number>369</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Three Jaw Chuck Closed</longName>
+        <shortName>Three Jaw Chuck Closed</shortName>
+        <number>390</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Thumb Park Continuous</longName>
+        <shortName>Thumb Park Continuous</shortName>
+        <number>411</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Thumb Enclosed</longName>
+        <shortName>Thumb Enclosed</shortName>
+        <number>432</number>
+      </Channel>
+      <Channel>
+        <type>Virtual</type>
+        <inputGain>1</inputGain>
+        <onThresh1>0.05</onThresh1>
+        <onThresh2>0.05</onThresh2>
+        <dofArmThresh>1</dofArmThresh>
+        <swtArmThresh>1</swtArmThresh>
+        <longName>Index Point</longName>
+        <shortName>Index Point</shortName>
+        <number>453</number>
+      </Channel>
+    </_items>
+    <_size>97</_size>
+    <_syncRoot null="True" />
+  </channels>
+  <classes>
+    <_items>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>No Movement</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>no movement.jpg</imageName>
+        <longName>No Movement</longName>
+        <shortName>No Movmt</shortName>
+        <number>1</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Shoulder Forward</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>shoulder flexion.jpg</imageName>
+        <longName>Shoulder Flexion</longName>
+        <shortName>Shldr Flx</shortName>
+        <number>2</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Shoulder Back</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>shoulder extension.jpg</imageName>
+        <longName>Shoulder Extension</longName>
+        <shortName>Shldr Ext</shortName>
+        <number>3</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Shoulder Out</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>shoulder abduction.jpg</imageName>
+        <longName>Shoulder Abduction</longName>
+        <shortName>Shldr Abdu</shortName>
+        <number>4</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Shoulder In</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>shoulder adduction.jpg</imageName>
+        <longName>Shoulder Adduction</longName>
+        <shortName>Shldr Addu</shortName>
+        <number>5</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Humeral Rotation In</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>humeral rotation (in).jpg</imageName>
+        <longName>Humeral Rotation In</longName>
+        <shortName>Hum Ro in</shortName>
+        <number>6</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Humeral Rotation Out</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>humeral rotation (out).jpg</imageName>
+        <longName>Humeral Rotation Out</longName>
+        <shortName>Hum Ro out</shortName>
+        <number>7</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Elbow Bend</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>elbow flexion.jpg</imageName>
+        <longName>Elbow Flexion</longName>
+        <shortName>Elb Flx</shortName>
+        <number>8</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Elbow Straight</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>elbow extension.jpg</imageName>
+        <longName>Elbow Extension</longName>
+        <shortName>Elb Ext</shortName>
+        <number>9</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Palm Up</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>wrist supination.jpg</imageName>
+        <longName>Wrist Supination</longName>
+        <shortName>Wrist Sup</shortName>
+        <number>10</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Palm Down</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>wrist pronation.jpg</imageName>
+        <longName>Wrist Pronation</longName>
+        <shortName>Wrist Pro</shortName>
+        <number>11</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Wrist In</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>wrist flexion.jpg</imageName>
+        <longName>Wrist Flexion</longName>
+        <shortName>Wrist Flx</shortName>
+        <number>12</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Wrist Out</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>wrist extension.jpg</imageName>
+        <longName>Wrist Extension</longName>
+        <shortName>Wrist Ext</shortName>
+        <number>13</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Wrist Toward Thumb</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>wrist abduction.jpg</imageName>
+        <longName>Wrist Abduction</longName>
+        <shortName>Wrist Abdu</shortName>
+        <number>14</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Wrist Toward Little Finger</subjectName>
+        <isHandGrasp>False</isHandGrasp>
+        <isPose>False</isPose>
+        <imageName>wrist adduction.jpg</imageName>
+        <longName>Wrist Adduction</longName>
+        <shortName>Wrist Addu</shortName>
+        <number>15</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Hand Open</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>hand open.jpg</imageName>
+        <longName>Hand Open</longName>
+        <shortName>Hand Open</shortName>
+        <number>16</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Key Grip</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>key grip.jpg</imageName>
+        <longName>Key Grip</longName>
+        <shortName>Key Grip</shortName>
+        <number>17</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Chuck Grip</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>chuck grip.jpg</imageName>
+        <longName>Chuck Grip</longName>
+        <shortName>Chuck Grip</shortName>
+        <number>18</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Power Grip</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>power grip.jpg</imageName>
+        <longName>Power Grip</longName>
+        <shortName>Power Grip</shortName>
+        <number>19</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Fine Pinch</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>fine pinch grip.jpg</imageName>
+        <longName>Fine Pinch</longName>
+        <shortName>Fine Pinch</shortName>
+        <number>20</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Tool Grip</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>tool grip.jpg</imageName>
+        <longName>Tool Grip</longName>
+        <shortName>Tool Grip</shortName>
+        <number>21</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Point Grip</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>point grip.jpg</imageName>
+        <longName>Point Grip</longName>
+        <shortName>Point Grip</shortName>
+        <number>22</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Hook Grip</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>hook grip.jpg</imageName>
+        <longName>Hook Grip</longName>
+        <shortName>Hook Grip</shortName>
+        <number>23</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Fine Pinch Closed</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>dummy grip.jpg</imageName>
+        <longName>Fine Pinch Closed</longName>
+        <shortName>Fine Pinch Closed</shortName>
+        <number>264</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Tripod Opened</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>dummy grip.jpg</imageName>
+        <longName>Tripod Opened</longName>
+        <shortName>Tripod Opened</shortName>
+        <number>285</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Tripod Closed</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>dummy grip.jpg</imageName>
+        <longName>Tripod Closed</longName>
+        <shortName>Tripod Closed</shortName>
+        <number>306</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Precision Pinch Opened</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>dummy grip.jpg</imageName>
+        <longName>Precision Pinch Opened</longName>
+        <shortName>Precision Pinch Opened</shortName>
+        <number>327</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Precision Pinch Closed</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>dummy grip.jpg</imageName>
+        <longName>Precision Pinch Closed</longName>
+        <shortName>Precision Pinch Closed</shortName>
+        <number>348</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Three Jaw Chuck Opened</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>dummy grip.jpg</imageName>
+        <longName>Three Jaw Chuck Opened</longName>
+        <shortName>Three Jaw Chuck Opened</shortName>
+        <number>369</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Three Jaw Chuck Closed</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>dummy grip.jpg</imageName>
+        <longName>Three Jaw Chuck Closed</longName>
+        <shortName>Three Jaw Chuck Closed</shortName>
+        <number>390</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Thumb Park Continuous</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>dummy grip.jpg</imageName>
+        <longName>Thumb Park Continuous</longName>
+        <shortName>Thumb Park Continuous</shortName>
+        <number>411</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Thumb Enclosed</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>dummy grip.jpg</imageName>
+        <longName>Thumb Enclosed</longName>
+        <shortName>Thumb Enclosed</shortName>
+        <number>432</number>
+      </Clas>
+      <Clas>
+        <iterations>0</iterations>
+        <subjectName>Index Point</subjectName>
+        <isHandGrasp>True</isHandGrasp>
+        <isPose>True</isPose>
+        <imageName>dummy grip.jpg</imageName>
+        <longName>Index Point</longName>
+        <shortName>Index Point</shortName>
+        <number>453</number>
+      </Clas>
+    </_items>
+    <_size>33</_size>
+    <_syncRoot null="True" />
+  </classes>
+  <dofs>
+    <_items>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="122" />
+        <clas2 ref="123" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>23</x>
+          <y>49</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>178</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Shoulder Flex/Ext</subjectName>
+        <clasNum1>2</clasNum1>
+        <clasNum2>3</clasNum2>
+        <vrLimit1>-89</vrLimit1>
+        <vrLimit2>89</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Shoulder Flex/Ext</longName>
+        <shortName>Shldr F/E</shortName>
+        <number>1</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="124" />
+        <clas2 ref="125" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>121</x>
+          <y>49</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>140</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Shoulder Abd/Add</subjectName>
+        <clasNum1>4</clasNum1>
+        <clasNum2>5</clasNum2>
+        <vrLimit1>-50</vrLimit1>
+        <vrLimit2>90</vrLimit2>
+        <vrNeutralPos>70</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Shoulder Abd/Add</longName>
+        <shortName>Shld Ab/Ad</shortName>
+        <number>2</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="126" />
+        <clas2 ref="127" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>67</x>
+          <y>181</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>180</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Humeral Rotation</subjectName>
+        <clasNum1>6</clasNum1>
+        <clasNum2>7</clasNum2>
+        <vrLimit1>90</vrLimit1>
+        <vrLimit2>-90</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Humeral Rotation</longName>
+        <shortName>Hum Rot</shortName>
+        <number>3</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="128" />
+        <clas2 ref="129" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>45</x>
+          <y>300</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>150</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Elbow Flex/Ext</subjectName>
+        <clasNum1>8</clasNum1>
+        <clasNum2>9</clasNum2>
+        <vrLimit1>150</vrLimit1>
+        <vrLimit2>0</vrLimit2>
+        <vrNeutralPos>75</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Elbow Flex/Ext</longName>
+        <shortName>Elbow F/E</shortName>
+        <number>4</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="130" />
+        <clas2 ref="131" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>121</x>
+          <y>375</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>150</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Wrist Rotation</subjectName>
+        <clasNum1>10</clasNum1>
+        <clasNum2>11</clasNum2>
+        <vrLimit1>-75</vrLimit1>
+        <vrLimit2>75</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Wrist Rotation</longName>
+        <shortName>Wrist Rot</shortName>
+        <number>5</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="132" />
+        <clas2 ref="133" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>163</x>
+          <y>462</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>180</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Wrist Flex/Ext</subjectName>
+        <clasNum1>12</clasNum1>
+        <clasNum2>13</clasNum2>
+        <vrLimit1>90</vrLimit1>
+        <vrLimit2>-90</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Wrist Flex/Ext</longName>
+        <shortName>Wrist F/E</shortName>
+        <number>6</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="134" />
+        <clas2 ref="135" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>200</x>
+          <y>420</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>80</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Wrist Abd/Add</subjectName>
+        <clasNum1>14</clasNum1>
+        <clasNum2>15</clasNum2>
+        <vrLimit1>40</vrLimit1>
+        <vrLimit2>-40</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Wrist Abd/Add</longName>
+        <shortName>Wrst Ab/Ad</shortName>
+        <number>7</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="137" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>325</x>
+          <y>369</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Key Grip</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>17</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Key Grip</longName>
+        <shortName>Key Grip</shortName>
+        <number>8</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="138" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>325</x>
+          <y>399</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Chuck Grip</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>18</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Chuck Grip</longName>
+        <shortName>Chuck Grip</shortName>
+        <number>9</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="139" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>325</x>
+          <y>429</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Power Grip</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>19</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Power Grip</longName>
+        <shortName>Power Grip</shortName>
+        <number>10</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="140" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>325</x>
+          <y>459</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Fine Pinch</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>20</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Fine Pinch</longName>
+        <shortName>Fine Pinch</shortName>
+        <number>11</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="141" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>325</x>
+          <y>489</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Tool Grip</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>21</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Tool Grip</longName>
+        <shortName>Tool Grip</shortName>
+        <number>12</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="142" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>325</x>
+          <y>519</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Point Grip</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>22</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Point Grip</longName>
+        <shortName>Point Grip</shortName>
+        <number>13</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="143" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>325</x>
+          <y>549</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Hook Grip</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>23</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Hook Grip</longName>
+        <shortName>Hook Grip</shortName>
+        <number>14</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="144" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>325</x>
+          <y>579</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Fine Pinch Closed</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>264</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Fine Pinch Closed</longName>
+        <shortName>Fine Pinch Closed</shortName>
+        <number>190</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="145" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>325</x>
+          <y>609</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Tripod Opened</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>285</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Tripod Opened</longName>
+        <shortName>Tripod Opened</shortName>
+        <number>211</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="146" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>295</x>
+          <y>609</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Tripod Closed</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>306</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Tripod Closed</longName>
+        <shortName>Tripod Closed</shortName>
+        <number>232</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="147" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>265</x>
+          <y>609</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Precision Pinch Opened</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>327</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Precision Pinch Opened</longName>
+        <shortName>Precision Pinch Opened</shortName>
+        <number>253</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="148" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>235</x>
+          <y>609</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Precision Pinch Closed</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>348</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Precision Pinch Closed</longName>
+        <shortName>Precision Pinch Closed</shortName>
+        <number>274</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="149" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>205</x>
+          <y>609</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Three Jaw Chuck Opened</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>369</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Three Jaw Chuck Opened</longName>
+        <shortName>Three Jaw Chuck Opened</shortName>
+        <number>295</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="150" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>175</x>
+          <y>609</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Three Jaw Chuck Closed</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>390</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Three Jaw Chuck Closed</longName>
+        <shortName>Three Jaw Chuck Closed</shortName>
+        <number>316</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="151" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>145</x>
+          <y>609</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Thumb Park Continuous</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>411</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Thumb Park Continuous</longName>
+        <shortName>Thumb Park Continuous</shortName>
+        <number>337</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="152" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>115</x>
+          <y>609</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Thumb Enclosed</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>432</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Thumb Enclosed</longName>
+        <shortName>Thumb Enclosed</shortName>
+        <number>358</number>
+      </DOF>
+      <DOF>
+        <state>NOT_USED</state>
+        <clas1 ref="136" />
+        <clas2 ref="153" />
+        <clsfNumber>-1</clsfNumber>
+        <outputGain>1</outputGain>
+        <location>
+          <x>85</x>
+          <y>609</y>
+        </location>
+        <xfrFiltSelect>0</xfrFiltSelect>
+        <xfrFiltEcoef>1</xfrFiltEcoef>
+        <xfrFiltEmult>1</xfrFiltEmult>
+        <onThreshToTriggerTime>700</onThreshToTriggerTime>
+        <vrSpeed>100</vrSpeed>
+        <rangeOfMotion>100</rangeOfMotion>
+        <rampTimeMs>500</rampTimeMs>
+        <subjectName>Index Point</subjectName>
+        <clasNum1>16</clasNum1>
+        <clasNum2>453</clasNum2>
+        <vrLimit1>0</vrLimit1>
+        <vrLimit2>100</vrLimit2>
+        <vrNeutralPos>0</vrNeutralPos>
+        <scalingFactor>1</scalingFactor>
+        <offset>0</offset>
+        <longName>Index Point</longName>
+        <shortName>Index Point</shortName>
+        <number>379</number>
+      </DOF>
+    </_items>
+    <_size>24</_size>
+    <_syncRoot null="True" />
+  </dofs>
+  <moveEvents>
+    <_items />
+    <_size>0</_size>
+    <_syncRoot null="True" />
+  </moveEvents>
+  <swtEvents>
+    <_items />
+    <_size>0</_size>
+    <_syncRoot null="True" />
+  </swtEvents>
+  <groups>
+    <_items>
+      <Group>
+        <points>
+          <Point>
+            <x>-30</x>
+            <y>-30</y>
+          </Point>
+          <Point>
+            <x>370</x>
+            <y>-30</y>
+          </Point>
+          <Point>
+            <x>370</x>
+            <y>653</y>
+          </Point>
+          <Point>
+            <x>-30</x>
+            <y>653</y>
+          </Point>
+        </points>
+        <childrens>
+          <_items>
+            <DOF ref="156" />
+            <DOF ref="158" />
+            <DOF ref="160" />
+            <DOF ref="162" />
+            <DOF ref="164" />
+            <DOF ref="166" />
+            <DOF ref="168" />
+            <DOF ref="170" />
+            <DOF ref="172" />
+            <DOF ref="174" />
+            <DOF ref="176" />
+            <DOF ref="178" />
+            <DOF ref="180" />
+            <DOF ref="182" />
+            <DOF ref="184" />
+            <DOF ref="186" />
+            <DOF ref="188" />
+            <DOF ref="190" />
+            <DOF ref="192" />
+            <DOF ref="194" />
+            <DOF ref="196" />
+            <DOF ref="198" />
+            <DOF ref="200" />
+            <DOF ref="202" />
+          </_items>
+          <_size>24</_size>
+          <_syncRoot null="True" />
+        </childrens>
+        <curChild null="True" />
+        <tagId>0</tagId>
+        <longName />
+        <shortName />
+        <number>10000</number>
+      </Group>
+    </_items>
+    <_size>1</_size>
+    <_syncRoot null="True" />
+  </groups>
+  <transitions>
+    <_items />
+    <_size>0</_size>
+    <_syncRoot null="True" />
+  </transitions>
+  <prClassifiers>
+    <_items />
+    <_size>0</_size>
+    <_syncRoot null="True" />
+  </prClassifiers>
+  <classifiers>
+    <_items />
+    <_size>0</_size>
+    <_syncRoot null="True" />
+  </classifiers>
+</User>
