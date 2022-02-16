@@ -14,26 +14,7 @@ if sys.argv[2] == 'LR':
     print('Loading linear regression weights...')
     w = np.genfromtxt(str(sys.argv[1]) + 'w.csv', delimiter=',')
     pce.set_var('W', w.astype(float, order='F'))
-elif sys.argv[2] == 'NN':
-    folder = str(sys.argv[1])
-    print('Loading NN weights...')
-    print(folder)
-    files = [f for f in listdir(folder) if isfile(join(folder, f))]
-    for file in files:
-        if 'ARCH' not in file:
-            temp = np.genfromtxt(join(folder,file), delimiter=',')
-            if 'scales' in file:
-                pce.set_var('EMG_SCALE', temp[:,0].astype(float, order='F'))
-                pce.set_var('X_MIN', temp[:4,1].astype(float, order='F'))
-                pce.set_var('X_MAX', temp[:4,2].astype(float, order='F'))
-            else:
-                pce.set_var(file[:-4], temp.astype(float, order='F'))
-        else:
-            temp = np.genfromtxt(join(folder,file),dtype='str', delimiter=',')
-            temp = "/".join(temp)
-            pce.set_var(file[:-4], temp)
-    
-else:
+elif sys.argv[2] == 'LDA':
     numClasses = 5
     out_map = pce.get_var('OUT_MAP').to_np_array()
     print('Loading LDA weights...')
@@ -54,8 +35,28 @@ else:
     pce.set_var('WG_ADAPT',wg.astype(float, order='F'))
     pce.set_var('CG_ADAPT',cg.astype(float, order='F'))
     pce.set_var('MID',mid.astype(float, order='F'))
+else:
+    if len(sys.argv) > 1:
+        folder = str(sys.argv[1])
+    else:
+        folder = 'DATA/mlp_w'
+    print('Loading NN weights...')
+    files = [f for f in listdir(folder) if isfile(join(folder, f))]
+    for file in files:
+        if 'ARCH' not in file:
+            temp = np.genfromtxt(join(folder,file), delimiter=',')
+            if 'scales' in file:
+                pce.set_var('EMG_SCALE', temp[:,0].astype(float, order='F'))
+                pce.set_var('X_MIN', temp[:4,1].astype(float, order='F'))
+                pce.set_var('X_MAX', temp[:4,2].astype(float, order='F'))
+            else:
+                pce.set_var(file[:-4], temp.astype(float, order='F'))
+        else:
+            temp = np.genfromtxt(join(folder,file),dtype='str', delimiter=',')
+            temp = "/".join(temp)
+            pce.set_var(file[:-4], temp)
 
-if sys.argv[2] != 'NN':
+if sys.argv[2] == 'LR' or sys.argv[2] == 'LDA':
     mvc = np.genfromtxt(str(sys.argv[1]) + 'mvc.csv', delimiter=',')
     pce.set_var('MVC',mvc.astype(float, order='F'))
 print('COMPLETE')
