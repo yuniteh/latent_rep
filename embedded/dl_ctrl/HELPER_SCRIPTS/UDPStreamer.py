@@ -117,16 +117,14 @@ def sendData():
     global connection
     # Get class prediction (CLASS_EST) and whether a new class has just been trained (NEW_CLASS).
     class_out = pce.get_var('MV_CLAS_OUT').to_np_array()[0,0]
-    class_est = pce.get_var('CLASS_EST')
     prop2 = pce.get_var('CLASFR_MAV').to_np_array()[0,0]
     prop = pce.get_var('PROP_OUT').to_np_array()
-    prop = np.squeeze(prop)
     sim = pce.get_var('SIM_OUT').to_np_array().astype(int)
     
     # If data is streaming, send data, otherwise send 'nil'.
     if streaming:
         # Create single length string to transmit.
-        sendString = "C_OUT=" + str(class_out) + ',PROPL=' + str(prop2) + ',PROP1=' + "{:.2f}".format(float(prop[sim[0]])) + ',PROP2=' + "{:.2f}".format(float(prop[sim[1]])) + ',SIM1=' + str(class_map[sim[0]]) + ',SIM2=' + str(class_map[sim[1]])
+        sendString = "C_OUT=" + str(class_out) + ',PROPL=' + str(prop2) + ',PROP1=' + "{:.2f}".format(float(prop[0,sim[0]])) + ',PROP2=' + "{:.2f}".format(float(prop[0,sim[1]])) + ',SIM1=' + str(class_map[sim[0]]) + ',SIM2=' + str(class_map[sim[1]])
         # print(sendString)
     else:
         sendString = "nil"
