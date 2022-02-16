@@ -8,7 +8,6 @@ prop_mv = pce.get_var('CLASFR_MAV').to_np_array()
 sim = np.zeros((2,))
 pce.set_var('COUNTER',0)
 pce.set_var('SIM_COUNT', np.zeros((10,2),dtype=float,order='F'))
-print('hi')
 
 def dispose():
     pass
@@ -24,8 +23,6 @@ def run():
         prop_mv[0,0] = prop[0,classmap == mv]
         pce.set_var('CLASFR_MAV', prop_mv.astype('float',order = 'F'))
     
-        # pce.set_var('CLASFR_MAV', prop.astype('float',order = 'F'))
-
         prop_temp = cp.deepcopy(prop)
         sim[0] = np.argmax(classmap == mv)
         if sim[0]%2 == 0:

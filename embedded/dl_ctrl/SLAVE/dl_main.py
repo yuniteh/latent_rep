@@ -98,10 +98,6 @@ def run():
             feat_scaled = feat.extract(featVal, scaled_raw.astype('uint16')) ## size = 1x24 (numfeat)
             feat_out = minmax(feat_scaled)
 
-            # for CNN
-            # feat_out = np.reshape(feat_out,(numEMG, featNum))
-            # feat_out = feat_out[np.newaxis,...,np.newaxis]
-
             nn_out, prop_out = nn_pass(feat_out, mlp_arch)
             class_out[0,0] = classmap[np.argmax(nn_out)]
 
@@ -356,13 +352,6 @@ def nn_pass(x, arch):
         w = w_all[i]
         if 'BN' in l:
             x = bn(x, w)
-        # elif 'CONV' in l:
-        #     w2 = w_all[i+1]
-        #     x = conv(x, w, w2)
-        #     i += 1
-        # elif 'FLAT' in l:
-        #     x = np.reshape(x,(x.shape[0],-1))
-        #     i -= 1
         elif 'PROP' in l:
             prop = dense(prev_x, w, fxn = 'RELU')
         else:
