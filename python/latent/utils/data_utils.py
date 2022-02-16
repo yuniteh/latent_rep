@@ -100,10 +100,14 @@ def prep_train_caps(x_train, params, prop_b = True):
         for i in range(mav_class.shape[0]):
             mav_class[i,:] = np.squeeze(np.mean(mav_all[y_train_clean[:,i].astype(bool),...],axis=0))
         mav_tot = np.sum(np.square(mav_class), axis=1)[...,np.newaxis]
-        prop = np.square((1 / mav_tot) * (mav_class @ np.squeeze(mav_all).T)).T
+        prop_temp = np.square((1 / mav_tot) * (mav_class @ np.squeeze(mav_all).T)).T
     else:
-        prop = np.empty((y_train_clean.shape))
-
+        prop_temp = np.empty((y_train_clean.shape))
+    
+    # prop = prop[y_train_clean.astype(bool)][...,np.newaxis]
+    # prop[not y_train_clean.astype(bool)] = 0
+    prop = np.zeros(prop_temp.shape)
+    prop[y_train_clean.astype(bool)] = prop_temp[y_train_clean.astype(bool)]
     # Extract features
     scaler = MinMaxScaler(feature_range=(0,1))
     x_train_noise_cnn, scaler, x_min, x_max = extract_scale(x_train_noise,scaler=scaler,load=False,ft='feat',caps=True) 

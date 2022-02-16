@@ -82,7 +82,7 @@ class CLF(Model):
         return self.dense1(x)
 
 class PROP(Model):
-    def __init__(self, n_class=7, name='prop'):
+    def __init__(self, n_class=1, name='prop'):
         super(PROP, self).__init__(name=name)
         self.dense1 = Dense(n_class, activation='relu')
 
@@ -111,11 +111,11 @@ class MLPbeta(Model):
         return self.clf(x)
 
 class MLPprop(Model):
-    def __init__(self, n_class=7):
+    def __init__(self, n_class=7, n_prop=1):
         super(MLPprop, self).__init__()
         self.enc = MLPenc_beta()
         self.clf = CLF(n_class)
-        self.prop = PROP(n_class)
+        self.prop = PROP(n_prop)
     
     def call(self, x):
         x = self.enc(x)
