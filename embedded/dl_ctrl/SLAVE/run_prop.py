@@ -5,9 +5,9 @@ import numpy as np
 # Class dictionary
 classmap = [1,10,11,12,13,16,19]
 prop_mv = pce.get_var('CLASFR_MAV').to_np_array()
-sim = pce.get_var('SIM_OUT').to_np_array()
+sim = pce.get_var('SIM_OUT').to_np_array().astype(int)
 pce.set_var('COUNTER',0)
-pce.set_var('SIM_COUNT', np.zeros((10,2),dtype=float,order='F'))
+pce.set_var('SIM_COUNT', np.zeros((5,2),dtype=float,order='F'))
 
 def dispose():
     pass
@@ -21,8 +21,6 @@ def run():
         prop = pce.get_var('PROP_OUT').to_np_array()
         if mv < 0:
             mv = 1
-        prop_mv[0,0] = prop[0,classmap == mv]
-        pce.set_var('CLASFR_MAV', prop_mv.astype('float',order = 'F'))
 
         if sim_ctrl == 1:
             prop_temp = cp.deepcopy(prop)
@@ -49,14 +47,16 @@ def run():
             else:
                 sim[1] = 0
 
-            if counter < 9:
+            if counter < 4:
                 counter += 1
             pce.set_var('SIM_COUNT', sim_count.astype('float',order='F'))
             pce.set_var('SIM_OUT', sim.astype('float',order='F'))
             pce.set_var('COUNTER',counter)
-            print('s-nn: ' + str(sim[0]) + ', ' + str(sim[1]) + ', p: ' + "{:.2f}".format(prop[0,sim[0]]) + ', ' + "{:.2f}".format(prop[0,sim[1]]))
+            # print('s-nn: ' + str(sim[0]) + ', ' + str(sim[1]) + ', p: ' + "{:.2f}".format(float(prop[0,sim[0]])) + ', ' + "{:.2f}".format(float(prop[0,sim[1]])))
         else:
-            print('nn: ' + str(mv))
+            prop_mv[0,0] = prop[0,classmap == mv]
+            pce.set_var('CLASFR_MAV', prop_mv.astype('float',order = 'F'))
+        print('nn: ' + str(mv))
     else:
         print('lda: ' + str(mv))
 

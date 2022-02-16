@@ -61,7 +61,8 @@ for i in range(0, numModes):
 pce.set_var('COUNTER',0)
 pce.set_var('SIM_CTRL',0)
 pce.set_var('CTRL',1)
-pce.set_var('SIM_COUNT', np.zeros((10,2),dtype=float,order='F'))
+pce.set_var('SIM_COUNT', np.zeros((5,2),dtype=float,order='F'))
 pce.set_var('PROP_OUT', np.zeros((1,numModes), dtype=float, order='F'))
+pce.set_var('SIM_OUT', np.zeros((2,),dtype=float,order='F'))
 
 print('INITIALISE COMPLETE')
