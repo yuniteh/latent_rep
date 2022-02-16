@@ -51,33 +51,32 @@ ramp_numerator = np.zeros((1, numModes), dtype=float, order='F')
 ramp_denominator = np.ones((1, numModes), dtype=float, order='F') * (rampTime / pce.get_var('DAQ_FRINC'))
 # DAQ UINT ZERO
 DAQ_conv = (2**16-1)/2
-# try:
+
+try:
 # Neural network architectures
-mlp_temp = pce.get_var('ARCH')
-mlp_arch = np.array(mlp_temp.split('/'))
-emg_scale = pce.get_var('EMG_SCALE').to_np_array()
-x_min = np.tile(pce.get_var('X_MIN').to_np_array(),(numEMG,1)).T
-x_max = np.tile(pce.get_var('X_MAX').to_np_array(),(numEMG,1)).T
+    mlp_temp = pce.get_var('ARCH')
+    mlp_arch = np.array(mlp_temp.split('/'))
+    emg_scale = pce.get_var('EMG_SCALE').to_np_array()
+    x_min = np.tile(pce.get_var('X_MIN').to_np_array(),(numEMG,1)).T
+    x_max = np.tile(pce.get_var('X_MAX').to_np_array(),(numEMG,1)).T
 
-w_all = []
-for l in mlp_arch:
-    if 'FLAT' not in l:
-        if 'CONV' in l:
-            sh = pce.get_var(l + '_shape').to_np_array()
-            temp = pce.get_var(l).to_np_array()
-            w_all.append(temp[:-1,:].reshape(sh))
-            w_all.append(temp[-1,:])
-        else:
-            w_all.append(pce.get_var(l).to_np_array())
-nn = True
-# NN forward pass
+    w_all = []
+    for l in mlp_arch:
+        if 'FLAT' not in l:
+            if 'CONV' in l:
+                sh = pce.get_var(l + '_shape').to_np_array()
+                temp = pce.get_var(l).to_np_array()
+                w_all.append(temp[:-1,:].reshape(sh))
+                w_all.append(temp[-1,:])
+            else:
+                w_all.append(pce.get_var(l).to_np_array())
+    nn = True
+except:
+    print('missing trained params')
+    nn = False
+
 class_out = pce.get_var('CLAS_OUT').to_np_array()
-# except:
-#     print('missing trained params')
-#     nn = False
-
 pce.set_var('CTRL',1)
-sim_out = np.zeros((2,))
 
 def dispose():
     pass
@@ -91,23 +90,21 @@ def run():
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ctrl = pce.get_var('CTRL')
 
-        if ctrl == 2 and nn:
-            # Get raw DAQ data for the .
-            raw_DAQ = np.array(pce.get_var('DAQ_DATA').to_np_array()[0:numEMG,:], order='F')
-            scaled_raw = emg_scale * (raw_DAQ.astype('float') - DAQ_conv) + DAQ_conv ## might be problem
-            feat_scaled = feat.extract(featVal, scaled_raw.astype('uint16')) ## size = 1x24 (numfeat)
-            feat_out = minmax(feat_scaled)
+        if ctrl == 2:
+            if nn:
+                # Get raw DAQ data for the .
+                raw_DAQ = np.array(pce.get_var('DAQ_DATA').to_np_array()[0:numEMG,:], order='F')
+                scaled_raw = emg_scale * (raw_DAQ.astype('float') - DAQ_conv) + DAQ_conv ## might be problem
+                feat_scaled = feat.extract(featVal, scaled_raw.astype('uint16')) ## size = 1x24 (numfeat)
+                feat_out = minmax(feat_scaled)
 
-            # for CNN
-            # feat_out = np.reshape(feat_out,(numEMG, featNum))
-            # feat_out = feat_out[np.newaxis,...,np.newaxis]
+                nn_out, prop_out = nn_pass(feat_out, mlp_arch)
+                class_out[0,0] = classmap[np.argmax(nn_out)]
 
-            nn_out, prop_out = nn_pass(feat_out, mlp_arch)
-            class_out[0,0] = classmap[np.argmax(nn_out)]
-
-            pce.set_var('CLAS_OUT', class_out.astype(float, order='F'))
-            pce.set_var('CLASS_EST', int(np.argmax(nn_out)))
-            pce.set_var('PROP_OUT', prop_out.astype(float, order='F'))
+                pce.set_var('CLAS_OUT', class_out.astype(float, order='F'))
+                pce.set_var('PROP_OUT', prop_out.astype(float, order='F'))
+            else:
+                print('----NO NN PARAMS----')
             
 #######################################################################################################################
 # Function    : initialiseVariables(args)
@@ -356,13 +353,6 @@ def nn_pass(x, arch):
         w = w_all[i]
         if 'BN' in l:
             x = bn(x, w)
-        # elif 'CONV' in l:
-        #     w2 = w_all[i+1]
-        #     x = conv(x, w, w2)
-        #     i += 1
-        # elif 'FLAT' in l:
-        #     x = np.reshape(x,(x.shape[0],-1))
-        #     i -= 1
         elif 'PROP' in l:
             prop = dense(prev_x, w, fxn = 'RELU')
         else:
