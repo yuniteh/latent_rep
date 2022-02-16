@@ -122,18 +122,6 @@ def sendData():
     prop = pce.get_var('PROP_OUT').to_np_array()
     prop = np.squeeze(prop)
     sim = pce.get_var('SIM_OUT').to_np_array().astype(int)
-    # prop_temp = cp.deepcopy(prop)
-    # sim_1 = np.argmax(prop)
-    # sim_1 = np.argmax(class_map == class_out)
-    # if sim_1%2 == 0:
-    #     if sim_1 != 0:
-    #         prop_temp[0,sim_1-1] = -1
-    # elif sim_1 < prop_temp.shape[1]-1:
-    #     prop_temp[0,sim_1+1] = -1
-    # prop_temp[0,sim_1] = -1
-    # sim_2 = np.argmax(prop_temp)
-    # print(str(prop))
-    # print(str(class_out))
     
     # If data is streaming, send data, otherwise send 'nil'.
     if streaming:

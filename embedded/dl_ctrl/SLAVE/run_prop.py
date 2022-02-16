@@ -16,43 +16,44 @@ def dispose():
 def run():
     ctrl = pce.get_var('CTRL')
     mv = pce.get_var('MV_CLAS_OUT').to_np_array()[0,0]
+    sim_ctrl = pce.get_var('SIM_CTRL')
     if ctrl == 2:
         prop = pce.get_var('PROP_OUT').to_np_array()
         if mv < 0:
             mv = 1
         prop_mv[0,0] = prop[0,classmap == mv]
         pce.set_var('CLASFR_MAV', prop_mv.astype('float',order = 'F'))
-    
-        prop_temp = cp.deepcopy(prop)
-        sim[0] = np.argmax(classmap == mv)
-        if sim[0]%2 == 0:
+
+        if sim_ctrl == 1:
+            prop_temp = cp.deepcopy(prop)
+            sim[0] = np.argmax(classmap == mv)
+            if sim[0]%2 == 0:
+                if sim[0] != 0:
+                    prop_temp[0,sim[0]-1] = -1
+            elif sim[0] < prop_temp.shape[1]-1:
+                prop_temp[0,sim[0]+1] = -1
             if sim[0] != 0:
-                prop_temp[0,sim[0]-1] = -1
-        elif sim[0] < prop_temp.shape[1]-1:
-            prop_temp[0,sim[0]+1] = -1
-        if sim[0] != 0:
-            prop_temp[0,sim[0]] = -1
-        sim[1] = np.argmax(prop_temp)
+                prop_temp[0,sim[0]] = -1
+            sim[1] = np.argmax(prop_temp)
 
-        counter = pce.get_var('COUNTER')
-        sim_count = pce.get_var('SIM_COUNT').to_np_array()
-        sim_count = np.roll(sim_count,-1,axis=0)
-        sim_count[counter,0] = sim[0]
-        sim_count[counter,1] = sim[1]
-        values,counts = unique1d(sim_count[:])
-        values[values < 0] = 0
-        # sim[0] = values[counts.argmax()]
-        counts[values==sim[0]] = -1
-        if counts.argmax() > 0 and sim[0] > 0:
-            sim[1] = values[counts.argmax()]
-        else:
-            sim[1] = 0
+            counter = pce.get_var('COUNTER')
+            sim_count = pce.get_var('SIM_COUNT').to_np_array()
+            sim_count = np.roll(sim_count,-1,axis=0)
+            sim_count[counter,0] = sim[0]
+            sim_count[counter,1] = sim[1]
+            values,counts = unique1d(sim_count[:])
+            values[values < 0] = 0
+            counts[values==sim[0]] = -1
+            if counts.argmax() > 0 and sim[0] > 0:
+                sim[1] = values[counts.argmax()]
+            else:
+                sim[1] = 0
 
-        if counter < 9:
-            counter += 1
-        pce.set_var('SIM_COUNT', sim_count.astype('float',order='F'))
-        pce.set_var('SIM_OUT', sim.astype('float',order='F'))
-        pce.set_var('COUNTER',counter)
+            if counter < 9:
+                counter += 1
+            pce.set_var('SIM_COUNT', sim_count.astype('float',order='F'))
+            pce.set_var('SIM_OUT', sim.astype('float',order='F'))
+            pce.set_var('COUNTER',counter)
 
         print('nn: ' + str(sim[0]) + ', ' + str(sim[1]) + ', p: ' + "{:.2f}".format(prop[0,sim[0]]) + ', ' + "{:.2f}".format(prop[0,sim[1]]))
     else:
