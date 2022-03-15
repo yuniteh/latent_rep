@@ -1,6 +1,0 @@
-> Started collecting training data @ Fri Sep 29 05:14:42 UTC 2017 [1506662082].
-> Started building classifier @ Fri Sep 29 05:16:18 UTC 2017 [1506662178].
-> Training Session Successfully Completed @ Fri Sep 29 05:16:26 UTC 2017 [1506662186].
-> Starting Archive Process @ 'Fri Sep 29 05:16:27 UTC 2017' [1506662187].
-> Completed Archive Process @ 'Fri Sep 29 05:17:07 UTC 2017' [1506662227].
-> Successfully generated archive '20170929_051442-DBT-Success'.
