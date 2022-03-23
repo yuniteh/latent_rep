@@ -272,7 +272,8 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',g
     else:
         ax = plt.subplot(gs)
 
-    for i in [6,7,11,14,10]:#,9]:    
+    for i in [1,2,11,14,10]:#,9]:    
+    # for i in [6,7,1,14,2]:#,9]:    
         ax.fill_between(np.arange(5),ave_noise[:,i]+all_std[:,i],ave_noise[:,i]-all_std[:,i],color=line_col[c_i],alpha=.5,ec=None)
         ax.plot(ave_noise[:,i],'-o',color=line_col[c_i+1],ms=4,linewidth=.75)
         c_i+=2
@@ -281,7 +282,7 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',g
     ax.spines['right'].set_visible(False)
     ax.set_ylabel('Accuracy (%)')
     ax.set_xlabel('Number of Noisy Electrodes')
-    ax.legend(['SAE-LDA','CNN-LDA','LDA+','LDA-','LDA'])
+    ax.legend(['SAE','CNN','LDA+','LDA-','LDA'])
     ax.set_axisbelow(True)
     ax.yaxis.grid(1,color='lightgrey',linewidth=.5)
     ax.set_ylim(20,90)
@@ -299,8 +300,8 @@ def plot_summary(acc_clean, acc_mix,gs=0):
     line_col[9] = ((0,0,0))
 
     lda_ind = 10
-    all_ind = [11, 6, 7, 14]
-    labels = ['LDA-corrupt', 'SAE-LDA', 'CNN-LDA', 'LDA-ch']
+    all_ind = [11, 1, 2, 14]
+    labels = ['LDA-corrupt', 'SAE', 'CNN', 'LDA-ch']
     acc_clean[...,-1] = acc_clean[...,10]
 
     lda_mix = np.tile(acc_mix[...,lda_ind,np.newaxis],(1,1,len(all_ind)))
