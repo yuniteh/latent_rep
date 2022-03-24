@@ -828,6 +828,10 @@ class Session():
             v_svae, v_sae, v_cnn, v_vcnn, _, v, v_noise = pickle.load(f)
 
         noisefolder = self.create_foldername(ftype=traintest)
+        if traintest == 'testnoise':
+            noisefolder = 'testdata/' + noisefolder
+        else:
+            noisefolder = 'noisedata/' + noisefolder
         noisefile = self.create_filename(noisefolder,sub=sub,ftype=traintest,test_scale=1)
         
         print(noisefile)
