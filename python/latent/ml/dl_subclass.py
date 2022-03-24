@@ -5,7 +5,7 @@ import numpy as np
 
 ## Encoders
 class MLPenc(Model):
-    def __init__(self, latent_dim=4, name='enc'):
+    def __init__(self, latent_dim=8, name='enc'):
         super(MLPenc, self).__init__(name=name)
         self.dense1 = Dense(24, activation='relu')
         self.bn1 = BatchNormalization()
@@ -49,7 +49,7 @@ class MLPenc_beta(Model):
         return self.bn4(x)
 
 class CNNenc(Model):
-    def __init__(self, latent_dim=4, c1=32, c2=32,name='enc'):
+    def __init__(self, latent_dim=8, c1=32, c2=32,name='enc'):
         super(CNNenc, self).__init__(name=name)
         self.conv1 = Conv2D(c1,3, activation='relu', strides=1, padding="same")
         self.bn1 = BatchNormalization()

@@ -561,6 +561,8 @@ class Session():
                         scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise,emg_scale = pickle.load(f)   
                         # scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)  
                         # emg_scale = 1 
+                    with open('subclass/models/' + str(self.sub_type) + str(sub) + '_' + str(self.feat_type) + '.p','rb') as f:
+                        sae_w, _, cnn_w, w_sae, c_sae, _, _, w_cnn, c_cnn, w, c, w_noise, c_noise, emg_scale, scaler = pickle.load(f)
 
                     # Add noise to training data
                     y_shape = np.max(p_train[:,4])

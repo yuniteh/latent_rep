@@ -159,8 +159,11 @@ def prep_train_data(d, raw, params):
     x_train = x_train*emg_scale
     x_valid = x_valid*emg_scale
 
-    x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.sub, d.train, d.train_scale)
-    x_valid_noise, _, y_valid_clean = add_noise(x_valid, p_valid, d.sub, d.train, d.train_scale)
+    # x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.sub, d.train, d.train_scale)
+    # x_valid_noise, _, y_valid_clean = add_noise(x_valid, p_valid, d.sub, d.train, d.train_scale)
+
+    x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.train, d.train_scale)
+    x_valid_noise, _, y_valid_clean = add_noise(x_valid, p_valid, d.train, d.train_scale)
 
     # shuffle data to make even batches
     x_train_noise, y_train_clean = shuffle(x_train_noise, y_train_clean, random_state = 0)
@@ -628,7 +631,7 @@ def add_noise(raw, params, n_type='flat', scale=5, real_noise=0,emg_scale=[1,1,1
                             temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])                    
                     elif noise_type == 'allmix':
                         if rep_i == 0:
-                            temp[6*ch*ch_split:(6*ch+1)*ch_split,i,:] = 0
+                            temp[6*ch*ch_split:(6*ch+1)*ch_split,i,:] += np.random.normal(0,.005,temp.shape[2])#= 0
                             temp[(6*ch+2)*ch_split:(6*ch+3)*ch_split,i,:] += np.sin(2*np.pi*60*x)
                             temp[(6*ch+3)*ch_split:(6*ch+4)*ch_split,i,:] += 2*np.sin(2*np.pi*60*x)
                             temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += 3*np.sin(2*np.pi*60*x) 
@@ -636,7 +639,7 @@ def add_noise(raw, params, n_type='flat', scale=5, real_noise=0,emg_scale=[1,1,1
                             temp_split = temp[(6*ch+1)*ch_split:(6*ch+2)*ch_split,i,:]
                             for temp_iter in range(ch_split):
                                 if ch_noise[temp_iter,ch_ind] == 0:
-                                    temp_split[temp_iter,...] = 0
+                                    temp_split[temp_iter,...]  += np.random.normal(0,.005,temp.shape[2])#= 0
                                 elif ch_noise[temp_iter,ch_ind] == 1:
                                     temp_split[temp_iter,...] += np.random.normal(0,ch_level[temp_iter,ch_ind]+1,temp.shape[2])
                                 else:
@@ -911,7 +914,7 @@ def extract_feats(raw,th=0.01,ft='feat',order=6,emg_scale=1):
         if ft == 'tdar':
             AR = np.zeros((samp,raw.shape[1],order))
             for ch in range(raw.shape[1]):
-                AR[:,ch,:] = np.squeeze(matAR_ch(raw[:,ch,:],order))
+                AR[:,ch,:] = np.squeeze(matAR(raw[:,ch,:],order))
             reg_out = np.real(AR.transpose(0,2,1)).reshape((samp,-1))
             feat_out = np.hstack([feat_out,reg_out])
     else:
@@ -949,7 +952,7 @@ def extract_scale(x,scaler=0,load=True, ft='feat',emg_scale=1,caps=False):
     else:
         return x_vae, scaler
 
-def matAR(data,order):
+def matAR_old(data,order):
     datalen = len(data)
     AR = np.zeros((order+1,1))
     K = np.zeros((order+1,1))
@@ -1075,3 +1078,38 @@ def matAR_ch(data,order):
     
     AR = np.nan_to_num(AR).T
     return AR[:,1:]
+
+def matAR(data,order):
+    samp = data.shape[0]
+    # data = data.astype('float32')*10/(2**16-1)-5
+    AR = np.zeros((order+1,samp))
+    K = np.zeros((order+1,samp))
+    AR[0,:] = 1
+    R0 = np.sum(np.multiply(data,data),axis=1)
+    R = np.zeros((samp,order))
+    for i in range(order):
+        R[:,i] = np.sum(np.multiply(data[:,:-1*(i+1)],data[:,i+1:]),axis=1)
+    E = cp.deepcopy(R0)
+    AR[1,:] = -R[:,0]/R0
+    K[0,:] = AR[1,:]
+    q = cp.deepcopy(R[:,0])
+    tmp = np.zeros((samp,order))
+
+    for i in range(order-1):
+        E += np.multiply(q,K[i,:].T)
+        q = cp.deepcopy(R[:,i+1])
+        S = np.zeros((samp,))
+        for k in range(i+1):
+            S[:] += np.multiply(R[:,k],AR[i+1-k,:].T)
+
+        q += S
+        K[i+1,:] = -q/E
+        for k in range(i+1):
+            tmp[:,k] = np.multiply(K[i+1,:],AR[i+1-k,:])
+
+        for k in range(1,i+2):
+            AR[k,:] = AR[k,:] + tmp[:,k-1]
+
+        AR[i+2,:] = K[i+1,:]
+
+    return AR[1:,:].T
