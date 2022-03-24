@@ -13,6 +13,7 @@ from datetime import date
 import time
 import tensorflow.keras.backend as K
 import timeit
+from latent.ml.dl_subclass import MLP, CNN
 
 class Session():
     def __init__(self,**settings):
@@ -71,7 +72,8 @@ class Session():
             filename = foldername + '/' + self.sub_type + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
         # model file
         else:
-            filename = foldername + '/' + self.sub_type + str(sub) + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
+            # filename = foldername + '/' + self.sub_type + str(sub) + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
+            filename = foldername + '/' + self.sub_type + str(sub) + '_' + 'feat' + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000))
         if self.dt == 'cv':
             filename += '_cv_' + str(cv)
         if self.sparsity and ftype == '':
@@ -534,7 +536,7 @@ class Session():
             num_feats = 10
 
         # loop through subjects
-        for sub in range(1,np.max(params[:,0])+1):            
+        for sub in range(2,np.max(params[:,0])+1):            
             # index based on training group and subject
             ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
 
@@ -562,8 +564,7 @@ class Session():
                         # scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)  
                         # emg_scale = 1 
                     with open('subclass/models/' + str(self.sub_type) + str(sub) + '_' + str(self.feat_type) + '.p','rb') as f:
-                        sae_w, _, cnn_w, w_sae, c_sae, _, _, w_cnn, c_cnn, w, c, w_noise, c_noise, emg_scale, scaler = pickle.load(f)
-
+                        sae_w, _, cnn_w, w_sae, c_sae, _, _, w_cnn, c_cnn, w, c, w_noise, c_noise, emg_scale, scaler, mu, C = pickle.load(f)
                     # Add noise to training data
                     y_shape = np.max(p_train[:,4])
                     # Build models and set weights
@@ -573,27 +574,30 @@ class Session():
                     cnn, cnn_enc, cnn_clf = dl.build_cnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     vcnn, vcnn_enc, vcnn_clf = dl.build_vcnn(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
                     ecnn, ecnn_enc, ecnn_dec, ecnn_clf = dl.build_M2S2(self.latent_dim, y_shape, input_type=self.feat_type, sparse=self.sparsity,lr=self.lr)
+                    n_dof = y_shape#len(np.unique(p_train[:,4]))
+                    sae = MLP(n_class=n_dof)
+                    # mlp_beta = MLPbeta(n_class=n_dof)
+                    cnn = CNN(n_class=n_dof)
+                    # svae.set_weights(svae_w)
+                    # svae_enc.set_weights(svae_enc_w)
+                    # svae_dec.set_weights(svae_dec_w)
+                    # svae_clf.set_weights(svae_clf_w)
 
-                    svae.set_weights(svae_w)
-                    svae_enc.set_weights(svae_enc_w)
-                    svae_dec.set_weights(svae_dec_w)
-                    svae_clf.set_weights(svae_clf_w)
+                    # sae.set_weights(sae_w)
+                    # # sae_enc.set_weights(sae_enc_w)
+                    # # sae_clf.set_weights(sae_clf_w)
 
-                    sae.set_weights(sae_w)
-                    sae_enc.set_weights(sae_enc_w)
-                    sae_clf.set_weights(sae_clf_w)
+                    # cnn.set_weights(cnn_w)
+                    # cnn_enc.set_weights(cnn_enc_w)
+                    # cnn_clf.set_weights(cnn_clf_w)
 
-                    cnn.set_weights(cnn_w)
-                    cnn_enc.set_weights(cnn_enc_w)
-                    cnn_clf.set_weights(cnn_clf_w)
+                    # vcnn.set_weights(vcnn_w)
+                    # vcnn_enc.set_weights(vcnn_enc_w)
+                    # vcnn_clf.set_weights(vcnn_clf_w)
 
-                    vcnn.set_weights(vcnn_w)
-                    vcnn_enc.set_weights(vcnn_enc_w)
-                    vcnn_clf.set_weights(vcnn_clf_w)
-
-                    ecnn.set_weights(ecnn_w)
-                    ecnn_enc.set_weights(ecnn_enc_w)
-                    ecnn_clf.set_weights(ecnn_clf_w)
+                    # ecnn.set_weights(ecnn_w)
+                    # ecnn_enc.set_weights(ecnn_enc_w)
+                    # ecnn_clf.set_weights(ecnn_clf_w)
                     
                     # set test on validation data for cv mode
                     skip = False
@@ -609,7 +613,7 @@ class Session():
                     else:
                         clean_size = int(np.size(x_test,axis=0))
                     
-                    print(emg_scale)
+                    # print(emg_scale)
                     x_test_old = cp.deepcopy(x_test)
                     if 'emgscale' in self.mod_dt:
                         x_test = x_test*emg_scale
@@ -648,7 +652,10 @@ class Session():
                                     if 'real' in noise_type:
                                         if 'noisescale' in self.test_dt:
                                             print('scaling noise')
-                                            x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale, real_noise=real_noise_temp, emg_scale = emg_scale)
+                                            # def add_noise(raw, params, n_type='flat', scale=5, real_noise=0,emg_scale=[1,1,1,1,1,1]):
+                                            # print(emg_scale)
+                                            x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, self.n_test, test_scale, real_noise=real_noise_temp, emg_scale = emg_scale)
+                                            # x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale, real_noise=real_noise_temp, emg_scale = emg_scale)
                                         else:
                                             x_test_noise, x_test_clean, y_test_clean = prd.add_noise(x_test, p_test, sub, self.n_test, test_scale, real_noise=real_noise_temp)
                                     else:
@@ -686,12 +693,22 @@ class Session():
                             # TEMP - CNN extended
                             x_test_ext = np.concatenate((x_test_vae,x_test_vae[:,:2,...]),axis=1)
 
+                            sae(x_test_dlsae[:1,...].astype('float32'))
+                            cnn(x_test_vae[:1,...].astype('float32'))
+                            sae.set_weights(sae_w)
+                            # sae_enc.set_weights(sae_enc_w)
+                            # sae_clf.set_weights(sae_clf_w)
+
+                            cnn.set_weights(cnn_w)
+
                             # Align test data for ENC-LDA
-                            _, x_test_svae = svae_clf.predict(x_test_vae)
-                            x_test_sae = sae_enc.predict(x_test_dlsae)
-                            x_test_cnn = cnn_enc.predict(x_test_vae)
-                            _,_,_,x_test_ecnn = ecnn_enc.predict(x_test_vae)
-                            _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
+                            # _, x_test_svae = svae_clf.predict(x_test_vae)
+                            x_test_sae = sae.enc(x_test_dlsae.astype('float32')).numpy()
+                            x_test_cnn = cnn.enc(x_test_vae.astype('float32')).numpy()
+                            # x_test_sae = sae_enc.predict(x_test_dlsae)
+                            # x_test_cnn = cnn_enc.predict(x_test_vae)
+                            # _,_,_,x_test_ecnn = ecnn_enc.predict(x_test_vae)
+                            # _, _, x_test_vcnn = vcnn_enc.predict(x_test_vae)
 
                             y_test_aligned = np.argmax(y_test_clean, axis=1)[...,np.newaxis]
 
@@ -705,21 +722,23 @@ class Session():
                             align_mods = 5
                             lda_mods = 2
                             qda_mods = 2
-                            mods_all = [svae,sae,cnn,vcnn,ecnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w_ecnn,c_ecnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, self.n_test,emg_scale]]
-                            x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_vae','x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_ecnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
+                            # mods_all = [svae,sae,cnn,vcnn,ecnn,[w_svae,c_svae],[w_sae,c_sae],[w_cnn,c_cnn],[w_vcnn,c_vcnn],[w_ecnn,c_ecnn],[w,c],[w_noise,c_noise],qda,qda_noise,[mu, C, self.n_test,emg_scale]]
+                            mods_all = [cnn,sae,cnn,cnn,cnn,[w_cnn,c_cnn],[w_sae,c_sae],[w_cnn,c_cnn],[w_cnn,c_cnn],[w_cnn,c_cnn],[w,c],[w_noise,c_noise],[w,c],[w,c],[mu, C, self.n_test, emg_scale]]
+                            # x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_vae','x_test_svae', 'x_test_sae', 'x_test_cnn', 'x_test_vcnn', 'x_test_ecnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
+                            x_test_all = ['x_test_vae', 'x_test_dlsae', 'x_test_vae', 'x_test_vae', 'x_test_vae','x_test_cnn', 'x_test_sae', 'x_test_cnn', 'x_test_cnn', 'x_test_cnn', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test_lda', 'x_test']
                             y_test_all = np.append(np.append(np.append(np.full(dl_mods,'y_test_clean'), np.full(align_mods, 'y_test_aligned')), np.full(lda_mods+qda_mods, 'y_test_lda')),np.full(1,'y_test_ch'))
-                            mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'qda')), np.full(1,'lda_ch'))
+                            mods_type =  np.append(np.append(np.append(np.full(dl_mods,'dl'),np.full(align_mods+lda_mods,'lda')),np.full(qda_mods,'lda')), np.full(1,'lda_ch'))
 
                             ## for timing
                             sae_start = time.time()
                             x_temp_sae = sae_enc(x_test_dlsae[[0],...].astype('float32')).numpy()
                             print(x_temp_sae)
-                            temp_out = predict(x_temp_sae, w_sae, c_sae)
+                            # temp_out = predict(x_temp_sae, w_sae, c_sae)
                             sae_time[sub-1] = time.time() - sae_start
 
                             cnn_start = time.time()
                             x_temp_cnn = cnn_enc(x_test_vae[[0],...].astype('float32')).numpy()
-                            temp_out = predict(x_temp_cnn, w_cnn, c_cnn)
+                            # temp_out = predict(x_temp_cnn, w_cnn, c_cnn)
                             cnn_time[sub-1] = time.time() - cnn_start
 
                             # lda_start = time.time()
@@ -740,9 +759,9 @@ class Session():
                                 max_i = len(mods_all) - 1
                             else:
                                 max_i = len(mods_all)
-                            # for i in range(max_i):
-                            #     acc_all[sub-1,cv-1,test_scale - 1,i], acc_noise[sub-1,cv-1,test_scale - 1,i], acc_clean[sub-1,cv-1,test_scale - 1,i] = self.eval_mod(eval(x_test_all[i]), eval(y_test_all[i]), clean_size, mods_all[i], mods_type[i])
-                            # print(acc_all[sub-1,cv-1,test_scale - 1,:])
+                            for i in range(max_i):
+                                acc_all[sub-1,cv-1,test_scale - 1,i], acc_noise[sub-1,cv-1,test_scale - 1,i], acc_clean[sub-1,cv-1,test_scale - 1,i] = self.eval_mod(eval(x_test_all[i]), eval(y_test_all[i]), clean_size, mods_all[i], mods_type[i])
+                            print(acc_all[sub-1,cv-1,test_scale - 1,:])
                         else:
                             acc_all[sub-1,cv-1,test_scale - 1,:], acc_noise[sub-1,cv-1,test_scale - 1,:], acc_clean[sub-1,cv-1,test_scale - 1,:] = np.nan, np.nan, np.nan
                 
@@ -751,8 +770,8 @@ class Session():
                 # print(np.squeeze(acc_noise[sub-1,...]))
                 # print(np.squeeze(acc_clean[sub-1,...]))
                 print('saving sub results: ' + subresults + '_' + self.n_test + '_subresults.p')
-                # with open(subresults + '_' + self.n_test + '_subresults.p', 'wb') as f:
-                #     pickle.dump([acc_all[sub-1,...], acc_noise[sub-1,...], acc_clean[sub-1,...]],f)
+                with open(subresults + '_' + self.n_test + '_subresults.p', 'wb') as f:
+                    pickle.dump([acc_all[sub-1,...], acc_noise[sub-1,...], acc_clean[sub-1,...]],f)
         
         # save results for all subjects, need to figure out n_test = 0
         allresults = self.create_filename(resultsfolder, cv, sub, ftype='allresults')
@@ -773,7 +792,7 @@ class Session():
             clean_size_2 = clean_size
 
         if eval_type == 'dl':
-            _, acc_all = dl.eval_vae(mod, x_test, y_test)
+            _, acc_all = dl.eval_vae(mod, x_test.astype('float32'), y_test.astype('float32'))
             _, acc_noise = dl.eval_vae(mod,x_test[clean_size:,...], y_test[clean_size:,:])
             _, acc_clean = dl.eval_vae(mod,x_test[:clean_size_2,...], y_test[:clean_size_2,:])
         elif eval_type == 'lda':

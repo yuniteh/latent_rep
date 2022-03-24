@@ -12,6 +12,7 @@ from tensorflow.keras import regularizers
 from tensorflow.keras import optimizers
 import tensorflow as tf
 import time
+from latent.ml.dl_subclass import eval_nn
 
 ## SUPERVISED VARIATIONAL AUTOENCODER (NER model)
 def build_svae_manual(latent_dim, n_class, input_type='feat', sparse='True',lr=0.001):
@@ -946,9 +947,20 @@ def build_vae(latent_dim, input_type='feat'):
     return vae, encoder, decoder
 
 def eval_vae(vae, x_test, y_test):
+    # print(x_test.shape)
+    # print(y_test.shape)
+    # print('---')
+    # print(vae)
+    # acc, _ = eval_nn(x_test, y_test, vae, x_test.shape[0])
     try:
-        temp = vae.predict(x=x_test)
+        # temp = vae.predict(x=x_test)
+        # y_pred = np.argmax(temp, axis=1)
+        temp = vae(x_test.astype('float32'))
+        # print(temp.shape)
         y_pred = np.argmax(temp, axis=1)
+        # print(np.sum(y_pred,axis=0))
+        # print(y_pred[0,...])
+        # print(np.sum(y_test,axis=0))
     except:
         test_weights = np.array([[1,1] for _ in range(len(x_test))])
         try:
@@ -962,6 +974,7 @@ def eval_vae(vae, x_test, y_test):
             y_pred = np.argmax(vae.predict(x=[x_test,test_y,test_weights])[1], axis=1)
                           
     acc = np.sum(np.argmax(y_test, axis=1) == y_pred)/y_pred.shape[0]
+    # print('acc: ' + str(acc))
     return y_pred, acc
 
 def recon_vae(vae, x_test):

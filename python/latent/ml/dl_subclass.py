@@ -7,11 +7,11 @@ import numpy as np
 class MLPenc(Model):
     def __init__(self, latent_dim=8, name='enc'):
         super(MLPenc, self).__init__(name=name)
-        self.dense1 = Dense(24, activation='relu')
+        self.dense1 = Dense(32, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn1 = BatchNormalization()
-        self.dense2 = Dense(12, activation='relu')
+        self.dense2 = Dense(24, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn2 = BatchNormalization()
-        self.dense3 = Dense(8, activation='relu')
+        self.dense3 = Dense(16, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn3 = BatchNormalization()
         self.latent = Dense(latent_dim, activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn4 = BatchNormalization()
@@ -51,12 +51,12 @@ class MLPenc_beta(Model):
 class CNNenc(Model):
     def __init__(self, latent_dim=8, c1=32, c2=32,name='enc'):
         super(CNNenc, self).__init__(name=name)
-        self.conv1 = Conv2D(c1,3, activation='relu', strides=1, padding="same")
+        self.conv1 = Conv2D(c1,3, activation='relu', strides=1, padding="same", activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn1 = BatchNormalization()
-        self.conv2 = Conv2D(c2,3, activation='relu', strides=1, padding="same")
+        self.conv2 = Conv2D(c2,3, activation='relu', strides=1, padding="same", activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn2 = BatchNormalization()
         self.flatten = Flatten()
-        self.dense1 = Dense(16, activation='relu')
+        self.dense1 = Dense(32, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn3 = BatchNormalization()
         self.latent = Dense(latent_dim, activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn4 = BatchNormalization()
@@ -91,9 +91,9 @@ class PROP(Model):
 
 ## Full models
 class MLP(Model):
-    def __init__(self, n_class=7):
+    def __init__(self, n_class=7,latent_dim=8):
         super(MLP, self).__init__()
-        self.enc = MLPenc()
+        self.enc = MLPenc(latent_dim=latent_dim)
         self.clf = CLF(n_class)
     
     def call(self, x):
@@ -124,17 +124,17 @@ class MLPprop(Model):
         return y, prop
   
 class CNN(Model):
-    def __init__(self, n_class=7, c1=32, c2=32):
+    def __init__(self, n_class=7, c1=32, c2=32, latent_dim=8):
         super(CNN, self).__init__()
-        self.enc = CNNenc(c1=c1,c2=c2)
+        self.enc = CNNenc(c1=c1,c2=c2,latent_dim=latent_dim)
         self.clf = CLF(n_class)
-        self.prop = PROP(n_class)
+        # self.prop = PROP(n_class)
     
     def call(self, x):
         x = self.enc(x)
         y = self.clf(x)
-        prop = self.prop(x)
-        return y, prop
+        # prop = self.prop(x)
+        return y#, prop
 
 def eval_nn(x, y, mod, clean):
     y_pred = np.argmax(mod(x).numpy(),axis=1)
