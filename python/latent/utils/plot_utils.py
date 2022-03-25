@@ -275,14 +275,14 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',g
     for i in [1,2,11,14,10]:#,9]:    
     # for i in [6,7,1,14,2]:#,9]:    
         ax.fill_between(np.arange(5),ave_noise[:,i]+all_std[:,i],ave_noise[:,i]-all_std[:,i],color=line_col[c_i],alpha=.5,ec=None)
-        ax.plot(ave_noise[:,i],'-o',color=line_col[c_i+1],ms=4,linewidth=.75)
+        ax.plot(ave_noise[:,i],'-o',color=line_col[c_i+1],ms=3,linewidth=.75)
         c_i+=2
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.set_ylabel('Accuracy (%)')
     ax.set_xlabel('Number of Noisy Electrodes')
-    ax.legend(['SAE','CNN','LDA+','LDA-','LDA'])
+    # ax.legend(['SAE','CNN','LDA+','LDA-','LDA'])
     ax.set_axisbelow(True)
     ax.yaxis.grid(1,color='lightgrey',linewidth=.5)
     ax.set_ylim(20,90)
