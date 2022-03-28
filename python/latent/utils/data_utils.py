@@ -150,6 +150,39 @@ def prep_test_caps(x, params, scaler, emg_scale):
 
     return y_test, x_test_mlp, x_test_cnn, x_lda, y_lda
 
+def prep_train_data_lite(d, x_train, p_train, mod='mlp', noise=True):
+
+    emg_scale = np.ones((np.size(x_train,1),1))
+    for i in range(np.size(x_train,1)):
+        emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
+    x_train = x_train*emg_scale
+
+    x_train, p_train = shuffle(x_train,p_train,random_state=0)
+
+    if noise:
+        x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.train, d.train_scale)
+    else:
+        x_train_noise = x_train
+        y_train_clean = to_categorical(p_train[:,4]-1)
+    
+    # shuffle data to make even batches
+    x_train_noise, y_train_clean = shuffle(x_train_noise, y_train_clean, random_state = 0)
+
+    # Extract features
+    scaler = MinMaxScaler(feature_range=(0,1))
+    x_train_noise_cnn, scaler = extract_scale(x_train_noise,scaler,d.scaler_load,ft=d.feat_type,emg_scale=emg_scale) 
+    x_train_noise_cnn = x_train_noise_cnn.astype('float32')
+
+    # reshape data for nonconvolutional network
+    if mod == 'mlp':
+        x_train_out = x_train_noise_cnn.reshape(x_train_noise_cnn.shape[0],-1)
+    else:
+        x_train_out = x_train_noise_cnn
+    
+    trainds = tf.data.Dataset.from_tensor_slices((x_train_out, y_train_clean)).shuffle(x_train_out.shape[0],reshuffle_each_iteration=True).batch(128)
+
+    return trainds, y_train_clean, x_train_out
+
 def prep_train_data(d, raw, params):
     x_train, _, x_valid, p_train, _, p_valid = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,load=True,train_grp=d.train_grp)
 
