@@ -39,7 +39,7 @@ def get_mods(df):
     if 0: # old models
         out_df = df[(df['mod']!=0) & (df['mod']!=3)& (df['mod']!=5)& (df['mod']!=8)& (df['mod']!=12)& (df['mod']!=13)]
     else:
-        out_df = df[(df['mod']==2) | (df['mod']==14)| (df['mod']==11)| (df['mod']==10)| (df['mod']==1)]
+        out_df = df[(df['mod']==7) | (df['mod']==14)| (df['mod']==11)| (df['mod']==10)| (df['mod']==6) | (df['mod']==5) | (df['mod']==4)]
 
     return out_df
 

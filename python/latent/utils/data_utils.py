@@ -159,12 +159,16 @@ def prep_train_data(d, raw, params):
     x_train = x_train*emg_scale
     x_valid = x_valid*emg_scale
 
+    y = to_categorical(p_train[:,4]-1)
+    x_train_clean, y_train_clean = shuffle(x_train,y,random_state=0)
+
     # x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.sub, d.train, d.train_scale)
     # x_valid_noise, _, y_valid_clean = add_noise(x_valid, p_valid, d.sub, d.train, d.train_scale)
 
-    x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.train, d.train_scale)
+    # x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.train, d.train_scale)
     x_valid_noise, _, y_valid_clean = add_noise(x_valid, p_valid, d.train, d.train_scale)
-
+    x_train_noise = cp.deepcopy(x_train_clean)
+    
     # shuffle data to make even batches
     x_train_noise, y_train_clean = shuffle(x_train_noise, y_train_clean, random_state = 0)
 

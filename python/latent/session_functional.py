@@ -73,7 +73,7 @@ class Session():
         # model file
         else:
             # filename = foldername + '/' + self.sub_type + str(sub) + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000)) 
-            filename = foldername + '/' + self.sub_type + str(sub) + '_' + 'feat' + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000))
+            filename = foldername + '/' + self.sub_type + str(sub) + '_' + self.feat_type + '_dim_' + str(self.latent_dim) + '_ep_' + str(self.epochs) + '_bat_' + str(self.batch_size) + '_' + self.n_train + '_' + str(self.train_scale) + '_lr_' + str(int(self.lr*10000))
         if self.dt == 'cv':
             filename += '_cv_' + str(cv)
         if self.sparsity and ftype == '':
@@ -536,7 +536,7 @@ class Session():
             num_feats = 10
 
         # loop through subjects
-        for sub in range(2,np.max(params[:,0])+1):            
+        for sub in range(1,2):#np.max(params[:,0])+1):            
             # index based on training group and subject
             ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
 
@@ -565,6 +565,7 @@ class Session():
                         # emg_scale = 1 
                     with open('subclass/models/' + str(self.sub_type) + str(sub) + '_' + str(self.feat_type) + '.p','rb') as f:
                         sae_w, _, cnn_w, w_sae, c_sae, _, _, w_cnn, c_cnn, w, c, w_noise, c_noise, emg_scale, scaler, mu, C = pickle.load(f)
+
                     # Add noise to training data
                     y_shape = np.max(p_train[:,4])
                     # Build models and set weights
@@ -766,6 +767,7 @@ class Session():
                             acc_all[sub-1,cv-1,test_scale - 1,:], acc_noise[sub-1,cv-1,test_scale - 1,:], acc_clean[sub-1,cv-1,test_scale - 1,:] = np.nan, np.nan, np.nan
                 
                 # Save subject specific cv results
+                resultsfolder += '/temp'
                 subresults = self.create_filename(resultsfolder, cv, sub)
                 # print(np.squeeze(acc_noise[sub-1,...]))
                 # print(np.squeeze(acc_clean[sub-1,...]))

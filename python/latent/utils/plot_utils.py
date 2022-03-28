@@ -1,10 +1,11 @@
 import pickle
+from re import I
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.patches import Ellipse
 import seaborn as sns
 from matplotlib import gridspec
-
+import copy as cp
 
 def plot_all_noise(real_noise):
     out = np.squeeze(np.zeros((200*1000//8,4)))
@@ -272,7 +273,7 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',g
     else:
         ax = plt.subplot(gs)
 
-    for i in [1,2,11,14,10]:#,9]:    
+    for i in [6,7,11,14,10]:#,9]:    
     # for i in [6,7,1,14,2]:#,9]:    
         ax.fill_between(np.arange(5),ave_noise[:,i]+all_std[:,i],ave_noise[:,i]-all_std[:,i],color=line_col[c_i],alpha=.5,ec=None)
         ax.plot(ave_noise[:,i],'-o',color=line_col[c_i+1],ms=3,linewidth=.75)
@@ -291,6 +292,332 @@ def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',g
     ax.set_xticklabels(['0','1','2','3','4'])
     # ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
     return ave_noise, all_std
+
+def plot_aug_results(acc_noise,acc_clean,acc_noise2, acc_clean2, ntrain='',ntest='',subtype='AB',gs=0):
+    line_col = sns.color_palette("Paired")
+    eb_col = sns.color_palette("Paired")
+
+    line_col[8] = ((0.6,0.6,0.6))
+    line_col[9] = ((0,0,0))
+
+    n_subs = np.sum(~np.isnan(acc_clean[:,0,0]))
+
+    acc_clean[:,0,-1] = acc_clean[:,0,10]
+    acc_noise = np.hstack([acc_clean[:,0,:][:,np.newaxis,:],acc_noise])
+    ave_noise = np.nanmean(100*acc_noise,axis=0)
+
+    all_std = np.nanstd(100*acc_noise,axis=0)/n_subs
+
+    acc_clean2[:,0,-1] = acc_clean2[:,0,10]
+    acc_noise2 = np.hstack([acc_clean2[:,0,:][:,np.newaxis,:],acc_noise2])
+    ave_noise2 = np.nanmean(100*acc_noise2,axis=0)
+
+    all_std2 = np.nanstd(100*acc_noise2,axis=0)/n_subs
+
+    x = [-.02, 1, 2, 3, 4.02]
+    # Plot accuracy vs. # noisy electrodes
+    c_i = 0
+
+    mm = 1/25.4 
+    w = 200
+    h = w/2.2
+
+    fig, ax = plt.subplots(1,3,figsize=(w*mm, h*mm))
+    # ax2 = plt.subplot(gs[1])
+
+    i = 10
+    ax[0].fill_between(np.arange(5),ave_noise2[:,i]+all_std2[:,i],ave_noise2[:,i]-all_std2[:,i],color=[.6,.6,.6],alpha=.5,ec=None)
+    ax[0].plot(ave_noise2[:,i],'.',linestyle='-',color='k',ms=7,linewidth=1)
+    i = 11
+    c_i = 4
+    ax[0].fill_between(np.arange(5),ave_noise2[:,i]+all_std2[:,i],ave_noise2[:,i]-all_std2[:,i],color=line_col[c_i],alpha=.5,ec=None)
+    ax[0].plot(ave_noise2[:,i],'.',linestyle='-',color=line_col[c_i+1],ms=7,linewidth=1)
+    c_i+=2
+
+    c_i = 0
+    # for i in [6,7,1,14,2]:#,9]:    
+    i = 6
+    ax[1].fill_between(np.arange(5),ave_noise[:,i]+all_std[:,i],ave_noise[:,i]-all_std[:,i],color=line_col[c_i],alpha=.5,ec=None)
+    ax[1].plot(ave_noise[:,i],'.',linestyle=(0, (5, 5)),color=line_col[c_i+1],ms=7,linewidth=1)
+    ax[1].fill_between(np.arange(5),ave_noise2[:,i]+all_std2[:,i],ave_noise2[:,i]-all_std2[:,i],color=line_col[c_i],alpha=.5,ec=None)
+    ax[1].plot(ave_noise2[:,i],'.',linestyle='-',color=line_col[c_i+1],ms=7,linewidth=1)
+    c_i+=2
+
+    i = 7
+    c_i = 2
+    ax[2].fill_between(np.arange(5),ave_noise[:,i]+all_std[:,i],ave_noise[:,i]-all_std[:,i],color=line_col[c_i],alpha=.5,ec=None)
+    ax[2].plot(ave_noise[:,i],'.',linestyle=(0, (5, 5)),color=line_col[c_i+1],ms=7,linewidth=1)
+    ax[2].fill_between(np.arange(5),ave_noise2[:,i]+all_std2[:,i],ave_noise2[:,i]-all_std2[:,i],color=line_col[c_i],alpha=.5,ec=None)
+    ax[2].plot(ave_noise2[:,i],'.',linestyle='-',color=line_col[c_i+1],ms=7,linewidth=1)
+
+    for i in range(len(ax)):
+        if i == 0:
+            ax[i].set_ylabel('Accuracy (%)')
+            ax[i].set_xlabel('Number of Noisy Electrodes')
+        else:
+            ax[i].set_yticklabels([''])
+        ax[i].spines['top'].set_visible(False)
+        ax[i].spines['right'].set_visible(False)
+        ax[i].set_axisbelow(True)
+        ax[i].yaxis.grid(1,color='lightgrey',linewidth=.5)
+        ax[i].set_ylim(20,90)
+        ax[i].set_xlim([-.1,4.1])
+        ax[i].set_xticks(range(0,5))
+        ax[i].set_xticklabels(['0','1','2','3','4'])
+    ax[0].legend(['LDA','LDA+'])
+    ax[1].legend(['MLP-LDA', 'MLP-LDA+'])
+    ax[2].legend(['CNN-LDA', 'CNN-LDA+'])
+    fig.set_tight_layout(True)
+    # ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
+
+def plot_nn_results(acc_noise,acc_clean,acc_noise2, acc_clean2, ntrain='',ntest='',subtype='AB',gs=0):
+    line_col = sns.color_palette("Paired")
+    eb_col = sns.color_palette("Paired")
+
+    line_col[8] = ((0.6,0.6,0.6))
+    line_col[9] = ((0,0,0))
+
+    n_subs = np.sum(~np.isnan(acc_clean[:,0,0]))
+
+    acc_clean[:,0,-1] = acc_clean[:,0,10]
+    acc_noise = np.hstack([acc_clean[:,0,:][:,np.newaxis,:],acc_noise])
+    ave_noise = np.nanmean(100*acc_noise,axis=0)
+
+    all_std = np.nanstd(100*acc_noise,axis=0)/n_subs
+
+    acc_clean2[:,0,-1] = acc_clean2[:,0,10]
+    acc_noise2 = np.hstack([acc_clean2[:,0,:][:,np.newaxis,:],acc_noise2])
+    ave_noise2 = np.nanmean(100*acc_noise2,axis=0)
+
+    all_std2 = np.nanstd(100*acc_noise2,axis=0)/n_subs
+
+    x = [-.02, 1, 2, 3, 4.02]
+    # Plot accuracy vs. # noisy electrodes
+    c_i = 0
+
+    mm = 1/25.4 
+    w = 150
+    h = w/1.5
+
+    fig, ax = plt.subplots(1,2,figsize=(w*mm, h*mm))
+    # ax2 = plt.subplot(gs[1])
+
+    for i in [2,7,1,6]:#,9]:    
+    # for i in [6,7,1,14,2]:#,9]:    
+        ax[0].fill_between(np.arange(5),ave_noise[:,i]+all_std[:,i],ave_noise[:,i]-all_std[:,i],color=line_col[c_i],alpha=.5,ec=None)
+        ax[0].plot(ave_noise[:,i],'--o',color=line_col[c_i+1],ms=3,linewidth=.75)
+        c_i+=2
+
+    c_i = 0
+    for i in [2,7,1,6]:#,9]:    
+    # for i in [6,7,1,14,2]:#,9]:    
+        ax[1].fill_between(np.arange(5),ave_noise2[:,i]+all_std2[:,i],ave_noise2[:,i]-all_std2[:,i],color=line_col[c_i],alpha=.5,ec=None)
+        ax[1].plot(ave_noise2[:,i],'-o',color=line_col[c_i+1],ms=3,linewidth=.75)
+        c_i+=2
+
+    for i in ax:
+        i.spines['top'].set_visible(False)
+        i.spines['right'].set_visible(False)
+        i.set_ylabel('Accuracy (%)')
+        i.set_xlabel('Number of Noisy Electrodes')
+        i.set_axisbelow(True)
+        i.yaxis.grid(1,color='lightgrey',linewidth=.5)
+        i.set_ylim(20,90)
+        i.set_xlim([-.1,4.1])
+        i.set_xticks(range(0,5))
+        i.set_xticklabels(['0','1','2','3','4'])
+    ax[0].legend(['CNN', 'CNN-LDA','MLP', 'MLP-LDA'])
+    ax[1].legend(['CNN+', 'CNN-LDA+','MLP+', 'MLP-LDA+'])
+    fig.set_tight_layout(True)
+    # ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
+
+def plot_electrode_results_aug(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',gs=0):
+    line_col = sns.color_palette("Paired")
+    # eb_col = sns.color_palette("Paired")
+    # temp_col = sns.color_palette("deep")
+    # line_col = cp.deepcopy(temp_col)
+    # line_col[1] = temp_col[0]
+    # line_col[2] = temp_col[2]
+    # line_col[3] = temp_col[2]
+    # line_col[4] = temp_col[3]
+    # line_col[5] = temp_col[1]
+    # line_col[6] = line_col[9] = ((0,0,0))
+    # line_col[1] = temp_col[2]
+    # line_col[2] = temp_col[3]
+    # line_col[3] = temp_col[1]
+
+    line_col[8] = ((0.6,0.6,0.6))
+    line_col[9] = ((0,0,0))
+    line_col.insert(2, line_col[0])
+    line_col.insert(3, line_col[1])
+    line_col.insert(6, line_col[4])
+    line_col.insert(7, line_col[5])
+
+    n_subs = np.sum(~np.isnan(acc_clean[:,0,0]))
+
+    acc_clean[:,0,-1] = acc_clean[:,0,10]
+    acc_noise = np.hstack([acc_clean[:,0,:][:,np.newaxis,:],acc_noise])
+    ave_noise = np.nanmean(100*acc_noise,axis=0)
+
+    all_std = np.nanstd(100*acc_noise,axis=0)/n_subs
+
+    x = [-.02, 1, 2, 3, 4.02]
+    # Plot accuracy vs. # noisy electrodes
+    c_i = 0
+    if gs == 0:
+        fig,ax = plt.subplots()
+    else:
+        ax = plt.subplot(gs)
+
+    for i in [4, 6, 5, 7, 11, 14, 10]:#[6,7,11,14,10]:
+    # for i in [6,7,1,14,2]:#,9]:    
+        ax.fill_between(np.arange(5),ave_noise[:,i]+all_std[:,i],ave_noise[:,i]-all_std[:,i],color=line_col[c_i],alpha=.5,ec=None)
+        if i == 4 or i == 5:
+            ax.plot(ave_noise[:,i],'.',linestyle=(0, (5, 5)),color=line_col[c_i+1],ms=7,linewidth=1)
+        else:
+            ax.plot(ave_noise[:,i],'.',linestyle='-',color=line_col[c_i+1],ms=7,linewidth=1)
+        c_i+=2
+
+    # deep
+    # for i in [4, 6, 5, 7, 11, 14, 10]:#[6,7,11,14,10]:
+    # # for i in [6,7,1,14,2]:#,9]:    
+    #     ax.fill_between(np.arange(5),ave_noise[:,i]+all_std[:,i],ave_noise[:,i]-all_std[:,i],color=line_col[c_i],alpha=.3,ec=None)
+    #     if i == 4 or i == 5:
+    #         ax.plot(ave_noise[:,i],'.',linestyle=(0, (5, 5)),color=line_col[c_i],ms=7,linewidth=1)
+    #     else:
+    #         ax.plot(ave_noise[:,i],'.',linestyle='-',color=line_col[c_i],ms=7,linewidth=1)
+    #     c_i+=1
+    
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.set_ylabel('Accuracy (%)')
+    ax.set_xlabel('Number of Noisy Electrodes')
+    # ax.legend(['SAE','CNN','LDA+','LDA-','LDA'])
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(1,color='lightgrey',linewidth=.5)
+    ax.set_ylim(20,90)
+    ax.set_xlim([-.1,4.1])
+    ax.set_xticks(range(0,5))
+    ax.set_xticklabels(['0','1','2','3','4'])
+    # ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
+    
+def plot_summary_aug(acc_clean, acc_mix, gs=0):
+    n_subs = np.sum(~np.isnan(acc_clean[:,0,0]))
+
+    line_col = sns.color_palette("Paired")
+    line_col[8] = ((0.6,0.6,0.6))
+    line_col[9] = ((0,0,0))
+    
+    # temp_col = sns.color_palette("deep")
+    # line_col = cp.deepcopy(temp_col)
+    # line_col[0] = temp_col[3]
+    # line_col[1] = temp_col[0]
+    # line_col[2] = temp_col[0]
+    # line_col[3] = temp_col[2]
+    # line_col[4] = temp_col[2]
+    # line_col[5] = temp_col[1]
+
+    # line_col[6] = line_col[9] = ((0,0,0))
+
+    lda_ind = 10
+    all_ind = [11, 4, 6, 5, 7, 14]
+    acc_clean[...,-1] = acc_clean[...,10]
+
+    lda_mix = np.tile(acc_mix[...,lda_ind,np.newaxis],(1,1,len(all_ind)))
+    lda_clean = np.tile(acc_clean[...,lda_ind,np.newaxis],(1,1,len(all_ind)))
+
+    all_mix_diff = acc_mix[...,all_ind] - lda_mix
+    all_clean_diff = acc_clean[...,all_ind] - lda_clean
+
+    # separated by channels
+    diff_mix = np.nanmean(all_mix_diff,axis=0)
+    diff_clean = np.nanmean(all_clean_diff,axis=0)
+
+    std_clean = 100*np.nanstd(all_clean_diff,axis=0)/n_subs
+    std_mix = 100*np.nanstd(all_mix_diff,axis=0)/n_subs
+
+    if gs == 0:
+        fig,ax = plt.subplots()
+    else:
+        ax = plt.subplot(gs)
+    c = ['r','tab:purple','tab:blue', 'm']
+    c = line_col[0::2]
+    c2 = line_col[0::2]
+    c[0],c[1],c[2] = c[2],c[0],c[1]
+    # c.insert(3, line_col[1])
+    # c.insert(4, line_col[2])
+    # c.insert(7, line_col[5])
+    # c.insert(8, line_col[6])
+    # c = line_col[0,2,4,5]
+
+    x = np.arange(len(all_ind))  # the label locations
+    width = 0.15
+    # ax.bar(x - 2*width, 100*diff_clean[0,:], width, color = c, edgecolor='w',yerr=std_clean[0,:],linewidth=.5)
+    # ax.bar(x - width, 100*diff_mix[0,:], width, color = c, edgecolor='w',yerr=std_mix[0,:],linewidth=.5)
+    # ax.bar(x, 100*diff_mix[1,:], width, color = c, edgecolor='w',yerr=std_mix[1,:],linewidth=.5)
+    # ax.bar(x + width, 100*diff_mix[2,:], width, color = c, edgecolor='w',yerr=std_mix[2,:],linewidth=.5)
+    # ax.bar(x + 2*width, 100*diff_mix[3,:], width, color = c, edgecolor='w',yerr=std_mix[3,:],linewidth=.5)
+    i = [0,2,4,5]
+    # c = []
+    # c.extend((line_col[0],line_col[2],line_col[4],line_col[5]))
+    # c1.append(line_col[2])
+    ax.bar(x[i] - 2*width, 100*diff_clean[0,i], width, color = c, edgecolor=c,yerr=std_clean[0,i],linewidth=.5,error_kw={'elinewidth':1.5})
+    ax.bar(x[i] - width, 100*diff_mix[0,i], width, color = c, edgecolor=c,yerr=std_mix[0,i],linewidth=.5,error_kw={'elinewidth':1.5})
+    ax.bar(x[i], 100*diff_mix[1,i], width, color = c, edgecolor=c,yerr=std_mix[1,i],linewidth=.5,error_kw={'elinewidth':1.5})
+    ax.bar(x[i] + width, 100*diff_mix[2,i], width, color = c, edgecolor=c,yerr=std_mix[2,i],linewidth=.5,error_kw={'elinewidth':1.5})
+    ax.bar(x[i] + 2*width, 100*diff_mix[3,i], width, color = c, edgecolor=c,yerr=std_mix[3,i],linewidth=.5,error_kw={'elinewidth':1.5})
+
+    for k in i:
+        xi = np.tile(x[k],2)
+        yi = np.zeros((2,))
+        j=k
+        # for j in k:
+        yi[1] = diff_clean[0,j]
+        ax.plot(xi - 2.5*width, 100*yi, color = 'w', linewidth=.5)
+        yi[0] = np.min(np.vstack((diff_mix[0,j],diff_clean[0,j],0)))
+        yi[1] = np.max(np.vstack((diff_mix[0,j],diff_clean[0,j],0)))
+        ax.plot(xi - 1.5*width, 100*yi, color = 'w', linewidth=.5)
+        yi[0] = np.min(np.vstack((diff_mix[0,j],diff_mix[1,j],0)))
+        yi[1] = np.max(np.vstack((diff_mix[0,j],diff_mix[1,j],0)))
+        ax.plot(xi - 0.5*width, 100*yi, color = 'w', linewidth=.5)
+        yi[0] = np.min(np.vstack((diff_mix[1,j],diff_mix[2,j],0)))
+        yi[1] = np.max(np.vstack((diff_mix[1,j],diff_mix[2,j],0)))
+        ax.plot(xi + 0.5*width, 100*yi, color = 'w',linewidth=.5)
+        yi[0] = np.min(np.vstack((diff_mix[2,j],diff_mix[3,j],0)))
+        yi[1] = np.max(np.vstack((diff_mix[2,j],diff_mix[3,j],0)))
+        ax.plot(xi + 1.5*width, 100*yi, color = 'w',linewidth=.5)
+        yi[1] = diff_mix[3,j]
+        ax.plot(xi + 2.5*width, 100*yi, color = 'w', linewidth=.5)
+
+    i = [1,3]
+    c1 = []
+    # c1.append(line_col[1])
+    # c1.append(line_col[3])
+    c1.extend((c[1],c[2]))
+    # c1 = line_col
+    ax.bar(x[i] - 2*width, 100*diff_clean[0,i], width, color = c1, edgecolor='k',yerr=std_clean[0,i],linewidth=1,error_kw={'elinewidth':1.5})
+    ax.bar(x[i] - width, 100*diff_mix[0,i], width, color = c1, edgecolor='k',yerr=std_mix[0,i],linewidth=1,error_kw={'elinewidth':1.5})
+    ax.bar(x[i], 100*diff_mix[1,i], width, color = c1, edgecolor='k',yerr=std_mix[1,i],linewidth=1,error_kw={'elinewidth':1.5})
+    ax.bar(x[i] + width, 100*diff_mix[2,i], width, color = c1, edgecolor='k',yerr=std_mix[2,i],linewidth=1,error_kw={'elinewidth':1.5})
+    ax.bar(x[i] + 2*width, 100*diff_mix[3,i], width, color = c1, edgecolor='k',yerr=std_mix[3,i],linewidth=1,error_kw={'elinewidth':1.5})
+
+    
+
+    xticks = [-2*width, -width,0,width,2*width]
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.set_ylabel('Difference from Baseline LDA (%)')
+    # ax.set_xlabel('Number of Noisy Electrodes',loc='left')
+    ax.set_xticks(xticks)
+    ax.set_xticklabels(['0','1','2','3','4'])
+    ax.axhline(linewidth=.5,color='k')
+    ax.set_ylim([-30,50])
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(1,color='lightgrey',linewidth=.5)
+
+    return diff_mix, c, c1
 
 def plot_summary(acc_clean, acc_mix,gs=0):
     n_subs = np.sum(~np.isnan(acc_clean[:,0,0]))
