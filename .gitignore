@@ -8,6 +8,7 @@
 *.fig
 *.PVD
 *.bmp
+*.svg
 MyoArmbandDataset-master/EvaluationDataset
 MyoArmbandDataset-master/PreTrainingDataset
 figures
