@@ -39,7 +39,7 @@ def get_mods(df):
     if 0: # old models
         out_df = df[(df['mod']!=0) & (df['mod']!=3)& (df['mod']!=5)& (df['mod']!=8)& (df['mod']!=12)& (df['mod']!=13)]
     else:
-        out_df = df[(df['mod']==7) | (df['mod']==14)| (df['mod']==11)| (df['mod']==10)| (df['mod']==6)]
+        out_df = df[(df['mod']==7) | (df['mod']==14)| (df['mod']==11)| (df['mod']==10)| (df['mod']==6) | (df['mod']==5) | (df['mod']==4)]
 
     return out_df
 
@@ -72,20 +72,20 @@ def get_coefs(mdf):
     for ind in coef.index:
         for iter in range(14):
             if iter > 8:
-                st = 7
+                st = 2
             else:
-                st = 6
+                st = 1
             str_i = 'T.' + str(iter+1) + '.0]'
             if ind[-st:] == str_i:
                 T[iter] = coef[i]
             str_i = 'T.' + str(iter+1) + '.0]:elec'
-            if ind[-(st+5):] == str_i:
+            if ind[-(st):] == str_i:
                 Telec[iter] = coef[i]
             str_i = 'T.' + str(iter+1) + '.0]:elec2'
-            if ind[-(st+6):] == str_i:
+            if ind[-(st+1):] == str_i:
                 Telec2[iter] = coef[i]
             str_i = 'T.' + str(iter+1) + '.0]:elec3'
-            if ind[-(st+6):] == str_i:
+            if ind[-(st+1):] == str_i:
                 Telec3[iter] = coef[i]
         i +=1
     
