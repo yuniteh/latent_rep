@@ -368,7 +368,7 @@ def loop_test(raw, params, sub_type, train_grp=2, dt=0, feat_type='feat', load=T
     foldername = create_foldername(train_grp=train_grp, dt=dt)
 
     # loop through subjects
-    for sub in range(1,2):#6):#np.max(params[:,0])+1):            
+    for sub in range(1,np.max(params[:,0])+1):            
         # index based on training group and subject
         ind = (params[:,0] == sub) & (params[:,3] == train_grp)
 
