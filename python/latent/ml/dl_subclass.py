@@ -9,7 +9,7 @@ class MLPenc(Model):
         super(MLPenc, self).__init__(name=name)
         self.dense1 = Dense(24, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn1 = BatchNormalization()
-        self.dense2 = Dense(24, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
+        self.dense2 = Dense(12, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn2 = BatchNormalization()
         self.dense3 = Dense(8, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn3 = BatchNormalization()
