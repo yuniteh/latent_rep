@@ -48,7 +48,7 @@ class Session():
             if self.feat_type == 'tdar':
                 foldername += '_tdar'
         elif ftype == 'testnoise':
-            foldername = 'testdata_' + self.dt + '_' + self.mod_dt + '_' + self.test_dt
+            foldername = 'testdatarev2_' + self.dt + '_' + self.mod_dt + '_' + self.test_dt
             if self.feat_type == 'tdar':
                 foldername += '_tdar'
         elif ftype =='results':
@@ -528,7 +528,7 @@ class Session():
 
         # Set folder
         foldername = self.create_foldername()
-        resultsfolder = self.create_foldername(ftype='results')
+        resultsfolder = self.create_foldername(ftype='results') +'/rev2'
 
         if self.feat_type == 'feat':
             num_feats = 4
@@ -536,9 +536,10 @@ class Session():
             num_feats = 10
 
         # loop through subjects
-        for sub in range(1,2):#np.max(params[:,0])+1):            
+        for sub in range(2,np.max(params[:,0])+1):            
             # index based on training group and subject
             ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
+            print(np.sum(ind))
 
             # Check if training data exists
             if np.sum(ind):
@@ -563,7 +564,7 @@ class Session():
                         scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise,emg_scale = pickle.load(f)   
                         # scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)  
                         # emg_scale = 1 
-                    with open('subclass/models/' + str(self.sub_type) + str(sub) + '_' + str(self.feat_type) + '.p','rb') as f:
+                    with open('subclass/models_rev2/' + str(self.sub_type) + str(sub) + '_' + str(self.feat_type) + '.p','rb') as f:
                         sae_w, _, cnn_w, w_sae, c_sae, _, _, w_cnn, c_cnn, w, c, w_noise, c_noise, emg_scale, scaler, mu, C = pickle.load(f)
 
                     # Add noise to training data
@@ -705,7 +706,11 @@ class Session():
                             # Align test data for ENC-LDA
                             # _, x_test_svae = svae_clf.predict(x_test_vae)
                             x_test_sae = sae.enc(x_test_dlsae.astype('float32')).numpy()
-                            x_test_cnn = cnn.enc(x_test_vae.astype('float32')).numpy()
+                            x_test_vae = x_test_vae.astype('float32')
+                            temp2 = np.vstack((cnn.enc(x_test_vae[:x_test_vae.shape[0]//4,...]),cnn.enc(x_test_vae[x_test_vae.shape[0]//4:x_test_vae.shape[0]//2,...]).numpy()))
+                            x_test_cnn = np.vstack((temp2, cnn.enc(x_test_vae[x_test_vae.shape[0]//2:3*x_test_vae.shape[0]//4,...]),cnn.enc(x_test_vae[3*x_test_vae.shape[0]//4:,...]).numpy()))
+                        
+                            # x_test_cnn = cnn_enc(temp2.astype('float32')).numpy()
                             # x_test_sae = sae_enc.predict(x_test_dlsae)
                             # x_test_cnn = cnn_enc.predict(x_test_vae)
                             # _,_,_,x_test_ecnn = ecnn_enc.predict(x_test_vae)
@@ -733,7 +738,7 @@ class Session():
                             ## for timing
                             sae_start = time.time()
                             x_temp_sae = sae_enc(x_test_dlsae[[0],...].astype('float32')).numpy()
-                            print(x_temp_sae)
+                            # print(x_temp_sae)
                             # temp_out = predict(x_temp_sae, w_sae, c_sae)
                             sae_time[sub-1] = time.time() - sae_start
 
@@ -745,7 +750,7 @@ class Session():
                             # lda_start = time.time()
                             # temp_out = predict(x_test_lda[[0],...], w, c)
                             lda_temp = timeit.timeit(lambda: predict(x_test_lda[[0],...], w, c),number= 100)
-                            print(lda_temp)
+                            # print(lda_temp)
                             # print(temp_time)
                             # print(lda_start)
                             # print(time.time())
@@ -767,7 +772,7 @@ class Session():
                             acc_all[sub-1,cv-1,test_scale - 1,:], acc_noise[sub-1,cv-1,test_scale - 1,:], acc_clean[sub-1,cv-1,test_scale - 1,:] = np.nan, np.nan, np.nan
                 
                 # Save subject specific cv results
-                resultsfolder += '/temp'
+                # resultsfolder += '/rev2'
                 subresults = self.create_filename(resultsfolder, cv, sub)
                 # print(np.squeeze(acc_noise[sub-1,...]))
                 # print(np.squeeze(acc_clean[sub-1,...]))
@@ -781,9 +786,9 @@ class Session():
         # with open(allresults + '_' + self.n_test + '_results.p', 'wb') as f:
         #     pickle.dump([acc_all, acc_clean, acc_noise],f)
 
-        # out = {'acc_all':acc_all, 'acc_noise':acc_noise, 'acc_clean':acc_clean}
+        out = {'acc_all':acc_all, 'acc_noise':acc_noise, 'acc_clean':acc_clean}
         # return out , x_test_noise, x_test_clean, y_test_clean
-        out = {'sae_time': sae_time, 'cnn_time':cnn_time, 'lda_time': lda_time, 'aug_time': aug_time}
+        # out = {'sae_time': sae_time, 'cnn_time':cnn_time, 'lda_time': lda_time, 'aug_time': aug_time}
 
         return out
 

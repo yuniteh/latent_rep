@@ -971,7 +971,8 @@ def eval_vae(vae, x_test, y_test):
                 y_pred = np.argmax(temp, axis=1)
         except:
             test_y = np.zeros((len(x_test),np.shape(y_test)[1]))
-            y_pred = np.argmax(vae.predict(x=[x_test,test_y,test_weights])[1], axis=1)
+            y_pred = np.argmax(vae.predict(x=[x_test,test_y])[1], axis=1)
+            # y_pred = np.argmax(vae.predict(x=[x_test,test_y,test_weights])[1], axis=1)
                           
     acc = np.sum(np.argmax(y_test, axis=1) == y_pred)/y_pred.shape[0]
     # print('acc: ' + str(acc))
