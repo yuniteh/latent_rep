@@ -528,7 +528,7 @@ class Session():
 
         # Set folder
         foldername = self.create_foldername()
-        resultsfolder = self.create_foldername(ftype='results') +'/rev2'
+        resultsfolder = self.create_foldername(ftype='results') +'/rev2_noreg'
 
         if self.feat_type == 'feat':
             num_feats = 4
@@ -536,7 +536,7 @@ class Session():
             num_feats = 10
 
         # loop through subjects
-        for sub in range(2,np.max(params[:,0])+1):            
+        for sub in range(1,np.max(params[:,0])+1):            
             # index based on training group and subject
             ind = (params[:,0] == sub) & (params[:,3] == self.train_grp)
             print(np.sum(ind))
@@ -564,7 +564,7 @@ class Session():
                         scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise,emg_scale = pickle.load(f)   
                         # scaler, svae_w, svae_enc_w, svae_dec_w, svae_clf_w, sae_w, sae_enc_w, sae_clf_w, cnn_w, cnn_enc_w, cnn_clf_w, vcnn_w, vcnn_enc_w, vcnn_clf_w, ecnn_w, ecnn_enc_w, ecnn_clf_w, w_svae, c_svae, w_sae, c_sae, w_cnn, c_cnn, w_vcnn, c_vcnn, w_ecnn, c_ecnn, w, c, w_noise, c_noise, mu, C, qda, qda_noise = pickle.load(f)  
                         # emg_scale = 1 
-                    with open('subclass/models_rev2/' + str(self.sub_type) + str(sub) + '_' + str(self.feat_type) + '.p','rb') as f:
+                    with open('subclass/models_rev2_noreg/' + str(self.sub_type) + str(sub) + '_' + str(self.feat_type) + '.p','rb') as f:
                         sae_w, _, cnn_w, w_sae, c_sae, _, _, w_cnn, c_cnn, w, c, w_noise, c_noise, emg_scale, scaler, mu, C = pickle.load(f)
 
                     # Add noise to training data
