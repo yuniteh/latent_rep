@@ -25,6 +25,7 @@ class Sess():
 
         self.emg_scale = settings.get('emg_scale',1)
         self.scaler = settings.get('scaler',MinMaxScaler(feature_range=(0,1)))
+        self.scaler_noise = settings.get('scaler',MinMaxScaler(feature_range=(0,1)))
     
     def update(self,**settings):
         for k in settings:
