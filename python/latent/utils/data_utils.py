@@ -251,7 +251,7 @@ def prep_noise_data(d, raw, params):
     # x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.train, d.train_scale)
     x_valid_noise, x_valid, y_valid_clean = add_noise(x_valid, p_valid, d.train, d.train_scale)
 
-    return x_valid_noise, x_valid
+    return x_valid_noise, x_valid, emg_scale
 
 def prep_test_data(d,raw,params,real_noise_temp):
     _, x_test, _, _, p_test, _ = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,train_grp=d.test_grp)
