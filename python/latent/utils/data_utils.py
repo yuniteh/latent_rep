@@ -304,7 +304,13 @@ def prep_test_data(d,raw,params,real_noise_temp):
 
     x_test_lda = extract_feats(x_test_noise,ft=d.feat_type,emg_scale=d.emg_scale)
 
-    return x_test_cnn, x_test_mlp, x_test_lda, y_test_clean, clean_size
+    x_aug_cnn, _ = extract_scale(x_test_noise,d.scaler_noise,ft=d.feat_type,emg_scale=d.emg_scale)
+    x_aug_cnn = x_aug_cnn.astype('float32')
+    x_aug_mlp = x_aug_cnn.reshape(x_aug_cnn.shape[0],-1)
+
+    x_test_lda = extract_feats(x_test_noise,ft=d.feat_type,emg_scale=d.emg_scale)
+
+    return x_test_cnn, x_test_mlp, x_aug_cnn, x_aug_mlp, x_test_lda, y_test_clean, clean_size, x_test, p_test[:,4]-1
 
 def sub_train_test(feat,params,sub,train_grp,test_grp):
     # Index EMG data
