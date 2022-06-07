@@ -7,11 +7,11 @@ import numpy as np
 class MLPenc(Model):
     def __init__(self, latent_dim=4, name='enc'):
         super(MLPenc, self).__init__(name=name)
-        self.dense1 = Dense(24, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
+        self.dense1 = Dense(128, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn1 = BatchNormalization()
-        self.dense2 = Dense(12, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
+        self.dense2 = Dense(64, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn2 = BatchNormalization()
-        self.dense3 = Dense(8, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
+        self.dense3 = Dense(16, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn3 = BatchNormalization()
         self.latent = Dense(latent_dim, activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn4 = BatchNormalization()
@@ -29,7 +29,7 @@ class MLPenc(Model):
 class MLPenc_beta(Model):
     def __init__(self, latent_dim=4, name='enc'):
         super(MLPenc_beta, self).__init__(name=name)
-        self.dense1 = Dense(246, activation='relu')
+        self.dense1 = Dense(256, activation='relu')
         self.bn1 = BatchNormalization()
         self.dense2 = Dense(128, activation='relu')
         self.bn2 = BatchNormalization()
@@ -51,12 +51,12 @@ class MLPenc_beta(Model):
 class CNNenc(Model):
     def __init__(self, latent_dim=4, c1=32, c2=32,name='enc'):
         super(CNNenc, self).__init__(name=name)
-        self.conv1 = Conv2D(c1,3, activation='relu', strides=1, padding="same")#, activity_regularizer=tf.keras.regularizers.l1(10e-5))
+        self.conv1 = Conv2D(c1,3, activation='relu', strides=1, padding="same", activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn1 = BatchNormalization()
-        self.conv2 = Conv2D(c2,3, activation='relu', strides=1, padding="same")#, activity_regularizer=tf.keras.regularizers.l1(10e-5))
+        self.conv2 = Conv2D(c2,3, activation='relu', strides=1, padding="same", activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn2 = BatchNormalization()
         self.flatten = Flatten()
-        self.dense1 = Dense(16, activation='relu')#, activity_regularizer=tf.keras.regularizers.l1(10e-5))
+        self.dense1 = Dense(16, activation='relu', activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn3 = BatchNormalization()
         self.latent = Dense(latent_dim, activity_regularizer=tf.keras.regularizers.l1(10e-5))
         self.bn4 = BatchNormalization()
