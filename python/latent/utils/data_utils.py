@@ -235,7 +235,7 @@ def prep_train_data(d, raw, params):
     emg_scale = np.ones((np.size(x_train,1),1))
     for i in range(np.size(x_train,1)):
         emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
-    x_train = x_train*emg_scale
+    x_train *= emg_scale
 
     y = to_categorical(p_train[:,4]-1)
     x_train_clean, y_train_clean = shuffle(x_train,y,random_state=0)
@@ -294,7 +294,7 @@ def prep_noise_data(d, raw, params):
 def prep_test_data(d,raw,params,real_noise_temp):
     _, x_test, _, _, p_test, _ = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,train_grp=d.test_grp)
     clean_size = int(np.size(x_test,axis=0))
-    x_test = x_test*d.emg_scale
+    x_test *= d.emg_scale
     x_test_noise, _, y_test_clean = add_noise(x_test, p_test, n_type=d.test, real_noise=real_noise_temp, emg_scale = d.emg_scale)
 
     # x_test_noise, _, y_test_clean = add_noise(x_test, p_test, d.sub, d.test, 1, real_noise=real_noise_temp, emg_scale = d.emg_scale)
@@ -307,8 +307,6 @@ def prep_test_data(d,raw,params,real_noise_temp):
     x_aug_cnn, _ = extract_scale(x_test_noise,d.scaler_noise,ft=d.feat_type,emg_scale=d.emg_scale)
     x_aug_cnn = x_aug_cnn.astype('float32')
     x_aug_mlp = x_aug_cnn.reshape(x_aug_cnn.shape[0],-1)
-
-    x_test_lda = extract_feats(x_test_noise,ft=d.feat_type,emg_scale=d.emg_scale)
 
     return x_test_cnn, x_test_mlp, x_aug_cnn, x_aug_mlp, x_test_lda, y_test_clean, clean_size, x_test, p_test[:,4]-1
 
@@ -939,7 +937,7 @@ def add_noise(raw, params, n_type='flat', scale=5, real_noise=0,emg_scale=[1,1,1
                             temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
                             temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])                    
                     elif noise_type == 'allmix':
-                        phi = np.random.rand()*2*np.pi*60
+                        phi = 0#np.random.rand()*2*np.pi*60
                         if rep_i == 0:
                             temp[6*ch*ch_split:(6*ch+1)*ch_split,i,:] += np.random.normal(0,.005,temp.shape[2])#= 0
                             temp[(6*ch+2)*ch_split:(6*ch+3)*ch_split,i,:] += np.sin(2*np.pi*60*(x+phi))

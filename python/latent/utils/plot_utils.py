@@ -250,21 +250,17 @@ def plot_noise_ch(params, sess):
     plot_electrode_results(ave_noise,ave_clean)
     return 
 
-def plot_subclass_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',gs=0):
-    clean_lda,clean_aug,clean_mlp,clean_mlplda,clean_cnn,clean_cnnlda,clean_mlp_noise,clean_mlplda_noise,clean_cnn_noise,clean_cnnlda_noise
+def plot_subclass_results(acc,gs=0):
     line_col = sns.color_palette("Paired")
     eb_col = sns.color_palette("Paired")
 
     line_col[8] = ((0.6,0.6,0.6))
     line_col[9] = ((0,0,0))
 
-    n_subs = np.sum(~np.isnan(acc_clean[:,0,0]))
+    n_subs = np.sum(~np.isnan(acc[:,0,0]))
 
-    acc_clean[:,0,-1] = acc_clean[:,0,10]
-    acc_noise = np.hstack([acc_clean[:,0,:][:,np.newaxis,:],acc_noise])
-    ave_noise = np.nanmean(100*acc_noise,axis=0)
-
-    all_std = np.nanstd(100*acc_noise,axis=0)/n_subs
+    ave_acc = np.nanmean(100*acc,axis=0)
+    std_acc = np.nanstd(100*acc,axis=0)/n_subs
 
     x = [-.02, 1, 2, 3, 4.02]
     # Plot accuracy vs. # noisy electrodes
@@ -273,11 +269,11 @@ def plot_subclass_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',gs
         fig,ax = plt.subplots()
     else:
         ax = plt.subplot(gs)
-
-    for i in [3, 5, 7, 9, 0, 1]:#,9]:    
+    print(std_acc.shape)
+    for i in [8, 10, 0, 1, 2]:#,9]:    
     # for i in [6,7,1,14,2]:#,9]:    
-        ax.fill_between(np.arange(5),ave_noise[:,i]+all_std[:,i],ave_noise[:,i]-all_std[:,i],color=line_col[c_i],alpha=.5,ec=None)
-        ax.plot(ave_noise[:,i],'-o',color=line_col[c_i+1],ms=3,linewidth=.75)
+        ax.fill_between(np.arange(5),ave_acc[i,:]+std_acc[i,:],ave_acc[i,:]-std_acc[i,:],color=line_col[c_i],alpha=.5,ec=None)
+        ax.plot(ave_acc[i,:],'-o',color=line_col[c_i+1],ms=3,linewidth=.75)
         c_i+=2
 
     ax.spines['top'].set_visible(False)
@@ -292,7 +288,7 @@ def plot_subclass_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',gs
     ax.set_xticks(range(0,5))
     ax.set_xticklabels(['0','1','2','3','4'])
     # ax.set_title(subtype + ', Train: ' + ntrain + ', test: ' + ntest)
-    return ave_noise, all_std
+
 
 def plot_electrode_results(acc_noise,acc_clean,ntrain='',ntest='',subtype='AB',gs=0):
     line_col = sns.color_palette("Paired")
