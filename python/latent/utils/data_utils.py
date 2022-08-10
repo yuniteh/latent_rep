@@ -183,7 +183,7 @@ def prep_train_data_lite(d, x_train, p_train, mod='mlp', noise=True):
 
     return trainds, y_train_clean, x_train_out
 
-def prep_train_data(d, raw, params):
+def prep_valid_data(d, raw, params):
     x_train, _, x_valid, p_train, _, p_valid = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,load=True,train_grp=d.train_grp)
 
     emg_scale = np.ones((np.size(x_train,1),1))
@@ -195,12 +195,8 @@ def prep_train_data(d, raw, params):
     y = to_categorical(p_train[:,4]-1)
     x_train_clean, y_train_clean = shuffle(x_train,y,random_state=0)
 
-    # x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.sub, d.train, d.train_scale)
-    # x_valid_noise, _, y_valid_clean = add_noise(x_valid, p_valid, d.sub, d.train, d.train_scale)
-
     x_train_noise, _, y_train_clean = add_noise(x_train, p_train, d.train, d.train_scale)
     x_valid_noise, _, y_valid_clean = add_noise(x_valid, p_valid, d.train, d.train_scale)
-    # x_train_noise = cp.deepcopy(x_train_clean)
     
     # shuffle data to make even batches
     x_train_noise, y_train_clean = shuffle(x_train_noise, y_train_clean, random_state = 0)
@@ -233,6 +229,48 @@ def prep_train_data(d, raw, params):
 
     return trainmlp, validmlp, traincnn, validcnn, y_train_clean, y_valid_clean, x_train_noise_mlp, x_train_noise_cnn, x_train_lda, y_train_lda, x_train_aug
 
+def prep_train_data(d, raw, params):
+    x_train, _, _, p_train, _, _ = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,load=True,train_grp=d.train_grp)
+
+    emg_scale = np.ones((np.size(x_train,1),1))
+    for i in range(np.size(x_train,1)):
+        emg_scale[i] = 5/np.max(np.abs(x_train[:,i,:]))
+    x_train *= emg_scale
+
+    y = to_categorical(p_train[:,4]-1)
+    x_train_clean, y_train_clean = shuffle(x_train,y,random_state=0)
+
+    x_train_noise, _, y_train_noise = add_noise(x_train, p_train, d.train, d.train_scale)
+    
+    # shuffle data to make even batches
+    x_train_noise, y_train_noise = shuffle(x_train_noise, y_train_noise, random_state = 0)
+
+    # Extract features
+    scaler_noise = MinMaxScaler(feature_range=(0,1))
+    x_train_noise_cnn, scaler_noise = extract_scale(x_train_noise,scaler_noise,d.scaler_load,ft=d.feat_type,emg_scale=emg_scale) 
+    x_train_noise_cnn = x_train_noise_cnn.astype('float32')
+
+    scaler = MinMaxScaler(feature_range=(0,1))
+    x_train_cnn, scaler = extract_scale(x_train_clean,scaler,d.scaler_load,ft=d.feat_type,emg_scale=emg_scale) 
+    x_train_cnn = x_train_cnn.astype('float32')
+
+    # reshape data for nonconvolutional network
+    x_train_noise_mlp = x_train_noise_cnn.reshape(x_train_noise_cnn.shape[0],-1)
+    x_train_mlp = x_train_cnn.reshape(x_train_cnn.shape[0],-1)
+
+    d.emg_scale = emg_scale
+    d.scaler = scaler
+    d.scaler_noise = scaler_noise
+
+    # LDA data
+    y_train = p_train[:,4]
+    y_train_lda = y_train[...,np.newaxis] - 1
+    x_train_lda = extract_feats(x_train,ft=d.feat_type,emg_scale=emg_scale)
+    x_train_aug = extract_feats(x_train_noise,ft=d.feat_type,emg_scale=emg_scale)
+
+    return y_train_clean, x_train_mlp, x_train_cnn, y_train_noise, x_train_noise_mlp, x_train_noise_cnn, y_train_lda, x_train_lda, x_train_aug
+
+
 def prep_noise_data(d, raw, params):
     x_train, _, x_valid, p_train, _, p_valid = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,load=True,train_grp=d.train_grp)
 
@@ -256,7 +294,7 @@ def prep_noise_data(d, raw, params):
 def prep_test_data(d,raw,params,real_noise_temp):
     _, x_test, _, _, p_test, _ = train_data_split(raw,params,d.sub,d.sub_type,dt=d.cv_type,train_grp=d.test_grp)
     clean_size = int(np.size(x_test,axis=0))
-    x_test = x_test*d.emg_scale
+    x_test *= d.emg_scale
     x_test_noise, _, y_test_clean = add_noise(x_test, p_test, n_type=d.test, real_noise=real_noise_temp, emg_scale = d.emg_scale)
 
     # x_test_noise, _, y_test_clean = add_noise(x_test, p_test, d.sub, d.test, 1, real_noise=real_noise_temp, emg_scale = d.emg_scale)
@@ -266,7 +304,11 @@ def prep_test_data(d,raw,params,real_noise_temp):
 
     x_test_lda = extract_feats(x_test_noise,ft=d.feat_type,emg_scale=d.emg_scale)
 
-    return x_test_cnn, x_test_mlp, x_test_lda, y_test_clean, clean_size
+    x_aug_cnn, _ = extract_scale(x_test_noise,d.scaler_noise,ft=d.feat_type,emg_scale=d.emg_scale)
+    x_aug_cnn = x_aug_cnn.astype('float32')
+    x_aug_mlp = x_aug_cnn.reshape(x_aug_cnn.shape[0],-1)
+
+    return x_test_cnn, x_test_mlp, x_aug_cnn, x_aug_mlp, x_test_lda, y_test_clean, clean_size, x_test, p_test[:,4]-1
 
 def sub_train_test(feat,params,sub,train_grp,test_grp):
     # Index EMG data
@@ -895,7 +937,7 @@ def add_noise(raw, params, n_type='flat', scale=5, real_noise=0,emg_scale=[1,1,1
                             temp[(6*ch+4)*ch_split:(6*ch+5)*ch_split,i,:] += np.random.normal(0,4,temp.shape[2])
                             temp[(6*ch+5)*ch_split:(6*ch+6)*ch_split,i,:] += np.random.normal(0,5,temp.shape[2])                    
                     elif noise_type == 'allmix':
-                        phi = np.random.rand()*2*np.pi*60
+                        phi = 0#np.random.rand()*2*np.pi*60
                         if rep_i == 0:
                             temp[6*ch*ch_split:(6*ch+1)*ch_split,i,:] += np.random.normal(0,.005,temp.shape[2])#= 0
                             temp[(6*ch+2)*ch_split:(6*ch+3)*ch_split,i,:] += np.sin(2*np.pi*60*(x+phi))
